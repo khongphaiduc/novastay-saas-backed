@@ -2,7 +2,7 @@ using Host.Domain.ValueObject;
 
 namespace Host.Domain.Entities;
 
-public sealed class SubscriptionPackage : Entity
+public sealed class SubscriptionPackageEntity : Entity
 {
     public EntityName PackageName { get; set; }
     public Code PackageKey { get; set; }

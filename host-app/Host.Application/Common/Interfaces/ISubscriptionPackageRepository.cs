@@ -1,5 +1,5 @@
 using Host.Domain.Entities;
 namespace Host.Application.Common.Interfaces;
-public interface ISubscriptionPackageRepository : IRepository<SubscriptionPackage>
+public interface ISubscriptionPackageRepository : IRepository<SubscriptionPackageEntity>
 {
 }

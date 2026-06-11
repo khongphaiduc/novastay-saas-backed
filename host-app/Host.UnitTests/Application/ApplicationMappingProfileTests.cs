@@ -35,7 +35,7 @@ public class ApplicationMappingProfileTests
             TokenBalance = 100
         };
 
-        var tenant = _mapper.Map<Tenant>(dto);
+        var tenant = _mapper.Map<TenantEntity>(dto);
 
         Assert.Equal(dto.Id, tenant.Id);
         Assert.Equal(new EntityName(dto.BusinessName), tenant.BusinessName);
@@ -47,7 +47,7 @@ public class ApplicationMappingProfileTests
     [Fact]
     public void Room_Maps_To_RoomDto()
     {
-        var room = new Room
+        var room = new RoomEntity
         {
             Id = Guid.NewGuid(),
             PropertyId = Guid.NewGuid(),

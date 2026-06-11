@@ -22,26 +22,26 @@ public sealed class ApplicationMappingProfile : Profile
         CreateMap<string, Status>().ConvertUsing(value => new Status(value));
         CreateMap<Status, string>().ConvertUsing(value => value.Value);
 
-        CreateMap<Asset, AssetDto>().ReverseMap();
-        CreateMap<AssetAssignment, AssetAssignmentDto>().ReverseMap();
-        CreateMap<Bed, BedDto>().ReverseMap();
-        CreateMap<Booking, BookingDto>().ReverseMap();
-        CreateMap<Broker, BrokerDto>().ReverseMap();
-        CreateMap<Contract, ContractDto>().ReverseMap();
-        CreateMap<Invoice, InvoiceDto>().ReverseMap();
-        CreateMap<Listing, ListingDto>().ReverseMap();
-        CreateMap<ListingImage, ListingImageDto>().ReverseMap();
-        CreateMap<MaintenanceTicket, MaintenanceTicketDto>().ReverseMap();
-        CreateMap<Permission, PermissionDto>().ReverseMap();
-        CreateMap<Property, PropertyDto>().ReverseMap();
-        CreateMap<Resident, ResidentDto>().ReverseMap();
-        CreateMap<Role, RoleDto>().ReverseMap();
-        CreateMap<Room, RoomDto>().ReverseMap();
-        CreateMap<RoomAvailability, RoomAvailabilityDto>().ReverseMap();
-        CreateMap<RoomImage, RoomImageDto>().ReverseMap();
-        CreateMap<SubscriptionPackage, SubscriptionPackageDto>().ReverseMap();
-        CreateMap<Technician, TechnicianDto>().ReverseMap();
-        CreateMap<Tenant, TenantDto>().ReverseMap();
-        CreateMap<User, UserDto>().ReverseMap();
+        CreateMap<AssetEntity, AssetDto>().ReverseMap();
+        CreateMap<AssetAssignmentEntity, AssetAssignmentDto>().ReverseMap();
+        CreateMap<BedEntity, BedDto>().ReverseMap();
+        CreateMap<BookingEntity, BookingDto>().ReverseMap();
+        CreateMap<BrokerEntity, BrokerDto>().ReverseMap();
+        CreateMap<ContractEntity, ContractDto>().ReverseMap();
+        CreateMap<InvoiceEntity, InvoiceDto>().ReverseMap();
+        CreateMap<ListingEntity, ListingDto>().ReverseMap();
+        CreateMap<ListingImageEntity, ListingImageDto>().ReverseMap();
+        CreateMap<MaintenanceTicketEntity, MaintenanceTicketDto>().ReverseMap();
+        CreateMap<PermissionEntity, PermissionDto>().ReverseMap();
+        CreateMap<PropertyEntity, PropertyDto>().ReverseMap();
+        CreateMap<ResidentEntity, ResidentDto>().ReverseMap();
+        CreateMap<RoleEntity, RoleDto>().ReverseMap();
+        CreateMap<RoomEntity, RoomDto>().ReverseMap();
+        CreateMap<RoomAvailabilityEntity, RoomAvailabilityDto>().ReverseMap();
+        CreateMap<RoomImageEntity, RoomImageDto>().ReverseMap();
+        CreateMap<SubscriptionPackageEntity, SubscriptionPackageDto>().ReverseMap();
+        CreateMap<TechnicianEntity, TechnicianDto>().ReverseMap();
+        CreateMap<TenantEntity, TenantDto>().ReverseMap();
+        CreateMap<UserEntity, UserDto>().ReverseMap();
     }
 }

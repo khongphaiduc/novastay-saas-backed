@@ -1,5 +1,5 @@
 using Host.Domain.Entities;
 namespace Host.Application.Common.Interfaces;
-public interface IPermissionRepository : IRepository<Permission>
+public interface IPermissionRepository : IRepository<PermissionEntity>
 {
 }
