@@ -1,5 +1,7 @@
 using Host.Infrastructure;
 using Host.Application.Common.Mappings;
+using Host.Application.Services;
+using DotNetEnv;
 
 namespace Host.API
 {
@@ -7,6 +9,8 @@ namespace Host.API
     {
         public static void Main(string[] args)
         {
+            Env.Load(Path.Combine(AppContext.BaseDirectory, "Config", ".env"));
+
             var builder = WebApplication.CreateBuilder(args);
 
 
@@ -14,6 +18,7 @@ namespace Host.API
 
             builder.Services.AddAutoMapper(configuration =>
                 configuration.AddProfile<ApplicationMappingProfile>());
+            builder.Services.AddScoped<ISampleDataService, SampleDataService>();
 
             builder.Services.AddControllers();
 
