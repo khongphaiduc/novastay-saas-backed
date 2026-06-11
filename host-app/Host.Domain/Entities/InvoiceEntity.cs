@@ -2,7 +2,7 @@ using Host.Domain.ValueObject;
 
 namespace Host.Domain.Entities;
 
-public sealed class Invoice : Entity
+public sealed class InvoiceEntity : Entity
 {
     public Guid TenantId { get; set; }
     public Guid? ContractId { get; set; }

@@ -1,5 +1,5 @@
 using Host.Domain.Entities;
 namespace Host.Application.Common.Interfaces;
-public interface IBrokerRepository : IRepository<Broker>
+public interface IBrokerRepository : IRepository<BrokerEntity>
 {
 }

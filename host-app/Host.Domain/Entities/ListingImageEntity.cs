@@ -2,10 +2,10 @@ using Host.Domain.ValueObject;
 
 namespace Host.Domain.Entities;
 
-public sealed class RoomImage : Entity
+public sealed class ListingImageEntity : Entity
 {
-    public Guid RoomId { get; set; }
+    public Guid ListingId { get; set; }
     public string ImageUrl { get; set; } = string.Empty;
-    public bool? IsCover { get; set; }
+    public int? DisplayOrder { get; set; }
     public DateTime? UploadedAt { get; set; }
 }
