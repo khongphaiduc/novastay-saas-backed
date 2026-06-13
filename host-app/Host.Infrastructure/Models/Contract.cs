@@ -13,8 +13,6 @@ public partial class Contract
 
     public Guid RoomId { get; set; }
 
-    public Guid? BedId { get; set; }
-
     public Guid ResidentId { get; set; }
 
     public Guid? BrokerId { get; set; }
@@ -36,8 +34,6 @@ public partial class Contract
     public string Status { get; set; } = null!;
 
     public DateTime? CreatedAt { get; set; }
-
-    public virtual Bed? Bed { get; set; }
 
     public virtual Booking? Booking { get; set; }
 

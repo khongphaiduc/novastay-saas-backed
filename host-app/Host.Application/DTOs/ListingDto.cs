@@ -6,7 +6,6 @@ public sealed class ListingDto
     public Guid TenantId { get; set; }
     public Guid PropertyId { get; set; }
     public Guid RoomId { get; set; }
-    public Guid? BedId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Amenities { get; set; }

@@ -7,7 +7,6 @@ public sealed class BookingEntity : Entity
     public Guid TenantId { get; set; }
     public Guid PropertyId { get; set; }
     public Guid RoomId { get; set; }
-    public Guid? BedId { get; set; }
     public EntityName GuestName { get; set; }
     public PhoneNumber GuestPhone { get; set; }
     public string? GuestEmail { get; set; }

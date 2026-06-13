@@ -24,7 +24,6 @@ public sealed class ApplicationMappingProfile : Profile
 
         CreateMap<AssetEntity, AssetDto>().ReverseMap();
         CreateMap<AssetAssignmentEntity, AssetAssignmentDto>().ReverseMap();
-        CreateMap<BedEntity, BedDto>().ReverseMap();
         CreateMap<BookingEntity, BookingDto>().ReverseMap();
         CreateMap<BrokerEntity, BrokerDto>().ReverseMap();
         CreateMap<ContractEntity, ContractDto>().ReverseMap();
@@ -42,6 +41,8 @@ public sealed class ApplicationMappingProfile : Profile
         CreateMap<SubscriptionPackageEntity, SubscriptionPackageDto>().ReverseMap();
         CreateMap<TechnicianEntity, TechnicianDto>().ReverseMap();
         CreateMap<TenantEntity, TenantDto>().ReverseMap();
+        CreateMap<UserAccessTokenEntity, UserAccessTokenDto>().ReverseMap();
+        CreateMap<UserRefreshTokenEntity, UserRefreshTokenDto>().ReverseMap();
         CreateMap<UserEntity, UserDto>().ReverseMap();
     }
 }

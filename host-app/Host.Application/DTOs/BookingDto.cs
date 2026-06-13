@@ -6,7 +6,6 @@ public sealed class BookingDto
     public Guid TenantId { get; set; }
     public Guid PropertyId { get; set; }
     public Guid RoomId { get; set; }
-    public Guid? BedId { get; set; }
     public string GuestName { get; set; } = string.Empty;
     public string GuestPhone { get; set; } = string.Empty;
     public string? GuestEmail { get; set; }

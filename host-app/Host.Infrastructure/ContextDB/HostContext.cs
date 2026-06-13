@@ -20,8 +20,6 @@ public partial class HostContext : DbContext
 
     public virtual DbSet<AssetAssignment> AssetAssignments { get; set; }
 
-    public virtual DbSet<Bed> Beds { get; set; }
-
     public virtual DbSet<Booking> Bookings { get; set; }
 
     public virtual DbSet<Broker> Brokers { get; set; }
@@ -58,6 +56,10 @@ public partial class HostContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UserAccessToken> UserAccessTokens { get; set; }
+
+    public virtual DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Asset>(entity =>
@@ -89,7 +91,7 @@ public partial class HostContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__AssetAss__3214EC073B842B58");
 
-            entity.HasIndex(e => new { e.RoomId, e.BedId }, "IX_AssetAssignments_RoomId_BedId");
+            entity.HasIndex(e => e.RoomId, "IX_AssetAssignments_RoomId");
 
             entity.Property(e => e.AssignedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -104,10 +106,6 @@ public partial class HostContext : DbContext
                 .HasForeignKey(d => d.AssetId)
                 .HasConstraintName("FK__AssetAssi__Asset__08B54D69");
 
-            entity.HasOne(d => d.Bed).WithMany(p => p.AssetAssignments)
-                .HasForeignKey(d => d.BedId)
-                .HasConstraintName("FK__AssetAssi__BedId__0A9D95DB");
-
             entity.HasOne(d => d.Room).WithMany(p => p.AssetAssignments)
                 .HasForeignKey(d => d.RoomId)
                 .HasConstraintName("FK__AssetAssi__RoomI__09A971A2");
@@ -116,30 +114,6 @@ public partial class HostContext : DbContext
                 .HasForeignKey(d => d.TenantId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__AssetAssi__Tenan__07C12930");
-        });
-
-        modelBuilder.Entity<Bed>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__Beds__3214EC07D3D03E54");
-
-            entity.Property(e => e.BasePrice).HasColumnType("decimal(18, 2)");
-            entity.Property(e => e.BedNumber)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.CardToken)
-                .HasMaxLength(100)
-                .IsUnicode(false);
-            entity.Property(e => e.LockerId)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.Status)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-
-            entity.HasOne(d => d.Room).WithMany(p => p.Beds)
-                .HasForeignKey(d => d.RoomId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Beds__RoomId__7A672E12");
         });
 
         modelBuilder.Entity<Booking>(entity =>
@@ -167,10 +141,6 @@ public partial class HostContext : DbContext
             entity.Property(e => e.PaymentTransactionId)
                 .HasMaxLength(100)
                 .IsUnicode(false);
-
-            entity.HasOne(d => d.Bed).WithMany(p => p.Bookings)
-                .HasForeignKey(d => d.BedId)
-                .HasConstraintName("FK__Bookings__BedId__1EA48E88");
 
             entity.HasOne(d => d.Property).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.PropertyId)
@@ -230,10 +200,6 @@ public partial class HostContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-
-            entity.HasOne(d => d.Bed).WithMany(p => p.Contracts)
-                .HasForeignKey(d => d.BedId)
-                .HasConstraintName("FK__Contracts__BedId__2FCF1A8A");
 
             entity.HasOne(d => d.Booking).WithMany(p => p.Contracts)
                 .HasForeignKey(d => d.BookingId)
@@ -314,10 +280,6 @@ public partial class HostContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.IsPublished).HasDefaultValue(true);
             entity.Property(e => e.Title).HasMaxLength(200);
-
-            entity.HasOne(d => d.Bed).WithMany(p => p.Listings)
-                .HasForeignKey(d => d.BedId)
-                .HasConstraintName("FK__Listings__BedId__123EB7A3");
 
             entity.HasOne(d => d.Property).WithMany(p => p.Listings)
                 .HasForeignKey(d => d.PropertyId)
@@ -685,6 +647,66 @@ public partial class HostContext : DbContext
                         j.HasKey("UserId", "RoleId").HasName("PK__UserRole__AF2760AD29238DE0");
                         j.ToTable("UserRoles");
                     });
+        });
+
+        modelBuilder.Entity<UserAccessToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_UserAccessTokens");
+
+            entity.HasIndex(e => e.TokenHash, "IX_UserAccessTokens_TokenHash");
+
+            entity.HasIndex(e => new { e.UserId, e.ExpiresAt }, "IX_UserAccessTokens_UserId_ExpiresAt");
+
+            entity.Property(e => e.TokenHash)
+                .HasMaxLength(512)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.CreatedByIp)
+                .HasMaxLength(45)
+                .IsUnicode(false);
+            entity.Property(e => e.ExpiresAt).HasColumnType("datetime");
+            entity.Property(e => e.RevokedAt).HasColumnType("datetime");
+            entity.Property(e => e.RevokedByIp)
+                .HasMaxLength(45)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserAccessTokens)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_UserAccessTokens_Users_UserId");
+        });
+
+        modelBuilder.Entity<UserRefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_UserRefreshTokens");
+
+            entity.HasIndex(e => e.TokenHash, "IX_UserRefreshTokens_TokenHash")
+                .IsUnique();
+
+            entity.HasIndex(e => new { e.UserId, e.ExpiresAt }, "IX_UserRefreshTokens_UserId_ExpiresAt");
+
+            entity.Property(e => e.TokenHash)
+                .HasMaxLength(512)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.CreatedByIp)
+                .HasMaxLength(45)
+                .IsUnicode(false);
+            entity.Property(e => e.ExpiresAt).HasColumnType("datetime");
+            entity.Property(e => e.ReplacedByTokenHash)
+                .HasMaxLength(512)
+                .IsUnicode(false);
+            entity.Property(e => e.RevokedAt).HasColumnType("datetime");
+            entity.Property(e => e.RevokedByIp)
+                .HasMaxLength(45)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserRefreshTokens)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_UserRefreshTokens_Users_UserId");
         });
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())

@@ -3,8 +3,6 @@ using DomainAsset = Host.Domain.Entities.AssetEntity;
 using DatabaseAsset = Host.Infrastructure.Models.Asset;
 using DomainAssetAssignment = Host.Domain.Entities.AssetAssignmentEntity;
 using DatabaseAssetAssignment = Host.Infrastructure.Models.AssetAssignment;
-using DomainBed = Host.Domain.Entities.BedEntity;
-using DatabaseBed = Host.Infrastructure.Models.Bed;
 using DomainBooking = Host.Domain.Entities.BookingEntity;
 using DatabaseBooking = Host.Infrastructure.Models.Booking;
 using DomainBroker = Host.Domain.Entities.BrokerEntity;
@@ -39,6 +37,10 @@ using DomainTechnician = Host.Domain.Entities.TechnicianEntity;
 using DatabaseTechnician = Host.Infrastructure.Models.Technician;
 using DomainTenant = Host.Domain.Entities.TenantEntity;
 using DatabaseTenant = Host.Infrastructure.Models.Tenant;
+using DomainUserAccessToken = Host.Domain.Entities.UserAccessTokenEntity;
+using DatabaseUserAccessToken = Host.Infrastructure.Models.UserAccessToken;
+using DomainUserRefreshToken = Host.Domain.Entities.UserRefreshTokenEntity;
+using DatabaseUserRefreshToken = Host.Infrastructure.Models.UserRefreshToken;
 using DomainUser = Host.Domain.Entities.UserEntity;
 using DatabaseUser = Host.Infrastructure.Models.User;
 
@@ -50,7 +52,6 @@ public sealed class DatabaseModelMappingProfile : Profile
     {
         CreateMap<DatabaseAsset, DomainAsset>().ReverseMap();
         CreateMap<DatabaseAssetAssignment, DomainAssetAssignment>().ReverseMap();
-        CreateMap<DatabaseBed, DomainBed>().ReverseMap();
         CreateMap<DatabaseBooking, DomainBooking>().ReverseMap();
         CreateMap<DatabaseBroker, DomainBroker>().ReverseMap();
         CreateMap<DatabaseContract, DomainContract>().ReverseMap();
@@ -68,6 +69,8 @@ public sealed class DatabaseModelMappingProfile : Profile
         CreateMap<DatabaseSubscriptionPackage, DomainSubscriptionPackage>().ReverseMap();
         CreateMap<DatabaseTechnician, DomainTechnician>().ReverseMap();
         CreateMap<DatabaseTenant, DomainTenant>().ReverseMap();
+        CreateMap<DatabaseUserAccessToken, DomainUserAccessToken>().ReverseMap();
+        CreateMap<DatabaseUserRefreshToken, DomainUserRefreshToken>().ReverseMap();
         CreateMap<DatabaseUser, DomainUser>().ReverseMap();
     }
 }
