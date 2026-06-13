@@ -7,8 +7,6 @@ using DomainAsset = Host.Domain.Entities.AssetEntity;
 using DatabaseAsset = Host.Infrastructure.Models.Asset;
 using DomainAssetAssignment = Host.Domain.Entities.AssetAssignmentEntity;
 using DatabaseAssetAssignment = Host.Infrastructure.Models.AssetAssignment;
-using DomainBed = Host.Domain.Entities.BedEntity;
-using DatabaseBed = Host.Infrastructure.Models.Bed;
 using DomainBooking = Host.Domain.Entities.BookingEntity;
 using DatabaseBooking = Host.Infrastructure.Models.Booking;
 using DomainBroker = Host.Domain.Entities.BrokerEntity;
@@ -41,6 +39,10 @@ using DomainSubscriptionPackage = Host.Domain.Entities.SubscriptionPackageEntity
 using DatabaseSubscriptionPackage = Host.Infrastructure.Models.SubscriptionPackage;
 using DomainTechnician = Host.Domain.Entities.TechnicianEntity;
 using DatabaseTechnician = Host.Infrastructure.Models.Technician;
+using DomainUserAccessToken = Host.Domain.Entities.UserAccessTokenEntity;
+using DatabaseUserAccessToken = Host.Infrastructure.Models.UserAccessToken;
+using DomainUserRefreshToken = Host.Domain.Entities.UserRefreshTokenEntity;
+using DatabaseUserRefreshToken = Host.Infrastructure.Models.UserRefreshToken;
 using DomainUser = Host.Domain.Entities.UserEntity;
 using DatabaseUser = Host.Infrastructure.Models.User;
 using Microsoft.EntityFrameworkCore;
@@ -58,14 +60,6 @@ internal sealed class AssetRepository : Repository<DomainAsset, DatabaseAsset>, 
 internal sealed class AssetAssignmentRepository : Repository<DomainAssetAssignment, DatabaseAssetAssignment>, IAssetAssignmentRepository
 {
     public AssetAssignmentRepository(HostContext context, IDatabaseModelMapper<DomainAssetAssignment, DatabaseAssetAssignment> mapper)
-        : base(context, mapper)
-    {
-    }
-}
-
-internal sealed class BedRepository : Repository<DomainBed, DatabaseBed>, IBedRepository
-{
-    public BedRepository(HostContext context, IDatabaseModelMapper<DomainBed, DatabaseBed> mapper)
         : base(context, mapper)
     {
     }
@@ -202,6 +196,22 @@ internal sealed class TechnicianRepository : Repository<DomainTechnician, Databa
 internal sealed class UserRepository : Repository<DomainUser, DatabaseUser>, IUserRepository
 {
     public UserRepository(HostContext context, IDatabaseModelMapper<DomainUser, DatabaseUser> mapper)
+        : base(context, mapper)
+    {
+    }
+}
+
+internal sealed class UserAccessTokenRepository : Repository<DomainUserAccessToken, DatabaseUserAccessToken>, IUserAccessTokenRepository
+{
+    public UserAccessTokenRepository(HostContext context, IDatabaseModelMapper<DomainUserAccessToken, DatabaseUserAccessToken> mapper)
+        : base(context, mapper)
+    {
+    }
+}
+
+internal sealed class UserRefreshTokenRepository : Repository<DomainUserRefreshToken, DatabaseUserRefreshToken>, IUserRefreshTokenRepository
+{
+    public UserRefreshTokenRepository(HostContext context, IDatabaseModelMapper<DomainUserRefreshToken, DatabaseUserRefreshToken> mapper)
         : base(context, mapper)
     {
     }

@@ -4,7 +4,6 @@ public interface IUnitOfWork : IAsyncDisposable
 {
     IAssetRepository Assets { get; }
     IAssetAssignmentRepository AssetAssignments { get; }
-    IBedRepository Beds { get; }
     IBookingRepository Bookings { get; }
     IBrokerRepository Brokers { get; }
     IContractRepository Contracts { get; }
@@ -22,6 +21,8 @@ public interface IUnitOfWork : IAsyncDisposable
     ISubscriptionPackageRepository SubscriptionPackages { get; }
     ITechnicianRepository Technicians { get; }
     ITenantRepository Tenants { get; }
+    IUserAccessTokenRepository UserAccessTokens { get; }
+    IUserRefreshTokenRepository UserRefreshTokens { get; }
     IUserRepository Users { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

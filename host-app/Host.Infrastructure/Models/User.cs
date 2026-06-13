@@ -26,4 +26,8 @@ public partial class User
     public virtual ICollection<Property> Properties { get; set; } = new List<Property>();
 
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+
+    public virtual ICollection<UserAccessToken> UserAccessTokens { get; set; } = new List<UserAccessToken>();
+
+    public virtual ICollection<UserRefreshToken> UserRefreshTokens { get; set; } = new List<UserRefreshToken>();
 }

@@ -11,7 +11,6 @@ public sealed class UnitOfWork : IUnitOfWork
         HostContext context,
         IAssetRepository assets,
         IAssetAssignmentRepository assetAssignments,
-        IBedRepository beds,
         IBookingRepository bookings,
         IBrokerRepository brokers,
         IContractRepository contracts,
@@ -29,12 +28,13 @@ public sealed class UnitOfWork : IUnitOfWork
         ISubscriptionPackageRepository subscriptionPackages,
         ITechnicianRepository technicians,
         ITenantRepository tenants,
+        IUserAccessTokenRepository userAccessTokens,
+        IUserRefreshTokenRepository userRefreshTokens,
         IUserRepository users)
     {
         _context = context;
         Assets = assets;
         AssetAssignments = assetAssignments;
-        Beds = beds;
         Bookings = bookings;
         Brokers = brokers;
         Contracts = contracts;
@@ -52,14 +52,14 @@ public sealed class UnitOfWork : IUnitOfWork
         SubscriptionPackages = subscriptionPackages;
         Technicians = technicians;
         Tenants = tenants;
+        UserAccessTokens = userAccessTokens;
+        UserRefreshTokens = userRefreshTokens;
         Users = users;
     }
 
     public IAssetRepository Assets { get; }
 
     public IAssetAssignmentRepository AssetAssignments { get; }
-
-    public IBedRepository Beds { get; }
 
     public IBookingRepository Bookings { get; }
 
@@ -94,6 +94,10 @@ public sealed class UnitOfWork : IUnitOfWork
     public ITechnicianRepository Technicians { get; }
 
     public ITenantRepository Tenants { get; }
+
+    public IUserAccessTokenRepository UserAccessTokens { get; }
+
+    public IUserRefreshTokenRepository UserRefreshTokens { get; }
 
     public IUserRepository Users { get; }
 

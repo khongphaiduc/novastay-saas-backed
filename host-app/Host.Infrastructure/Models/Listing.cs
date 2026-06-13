@@ -13,8 +13,6 @@ public partial class Listing
 
     public Guid RoomId { get; set; }
 
-    public Guid? BedId { get; set; }
-
     public string Title { get; set; } = null!;
 
     public string? Description { get; set; }
@@ -24,8 +22,6 @@ public partial class Listing
     public bool? IsPublished { get; set; }
 
     public DateTime? CreatedAt { get; set; }
-
-    public virtual Bed? Bed { get; set; }
 
     public virtual ICollection<ListingImage> ListingImages { get; set; } = new List<ListingImage>();
 

@@ -13,8 +13,6 @@ public partial class Booking
 
     public Guid RoomId { get; set; }
 
-    public Guid? BedId { get; set; }
-
     public string GuestName { get; set; } = null!;
 
     public string GuestPhone { get; set; } = null!;
@@ -34,8 +32,6 @@ public partial class Booking
     public string? PaymentTransactionId { get; set; }
 
     public DateTime? CreatedAt { get; set; }
-
-    public virtual Bed? Bed { get; set; }
 
     public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 

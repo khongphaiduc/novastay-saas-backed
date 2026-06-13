@@ -6,7 +6,6 @@ public sealed class ContractDto
     public Guid TenantId { get; set; }
     public Guid PropertyId { get; set; }
     public Guid RoomId { get; set; }
-    public Guid? BedId { get; set; }
     public Guid ResidentId { get; set; }
     public Guid? BrokerId { get; set; }
     public Guid? BookingId { get; set; }

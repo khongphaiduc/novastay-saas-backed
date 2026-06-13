@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Host.Infrastructure.Migrations
 {
     [DbContext(typeof(HostContext))]
-    [Migration("20260610173117_InitialGuidSchema")]
-    partial class InitialGuidSchema
+    [Migration("20260613100259_RemoveBeds")]
+    partial class RemoveBeds
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -93,9 +93,6 @@ namespace Host.Infrastructure.Migrations
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("(getdate())");
 
-                    b.Property<Guid?>("BedId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Note")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -118,56 +115,11 @@ namespace Host.Infrastructure.Migrations
 
                     b.HasIndex("AssetId");
 
-                    b.HasIndex("BedId");
-
                     b.HasIndex("TenantId");
 
-                    b.HasIndex(new[] { "RoomId", "BedId" }, "IX_AssetAssignments_RoomId_BedId");
+                    b.HasIndex(new[] { "RoomId" }, "IX_AssetAssignments_RoomId");
 
                     b.ToTable("AssetAssignments");
-                });
-
-            modelBuilder.Entity("Host.Infrastructure.Models.Bed", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newsequentialid())");
-
-                    b.Property<decimal>("BasePrice")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<string>("BedNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<string>("CardToken")
-                        .HasMaxLength(100)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("LockerId")
-                        .HasMaxLength(50)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<Guid>("RoomId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(20)");
-
-                    b.HasKey("Id")
-                        .HasName("PK__Beds__3214EC07D3D03E54");
-
-                    b.HasIndex("RoomId");
-
-                    b.ToTable("Beds");
                 });
 
             modelBuilder.Entity("Host.Infrastructure.Models.Booking", b =>
@@ -179,9 +131,6 @@ namespace Host.Infrastructure.Migrations
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18, 2)");
-
-                    b.Property<Guid?>("BedId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("BookingType")
                         .IsRequired()
@@ -240,8 +189,6 @@ namespace Host.Infrastructure.Migrations
                     b.HasKey("Id")
                         .HasName("PK__Bookings__3214EC07E0378A72");
 
-                    b.HasIndex("BedId");
-
                     b.HasIndex("PropertyId");
 
                     b.HasIndex("RoomId");
@@ -296,9 +243,6 @@ namespace Host.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("(newsequentialid())");
-
-                    b.Property<Guid?>("BedId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("BookingId")
                         .HasColumnType("uniqueidentifier");
@@ -357,8 +301,6 @@ namespace Host.Infrastructure.Migrations
 
                     b.HasKey("Id")
                         .HasName("PK__Contract__3214EC0707402DA0");
-
-                    b.HasIndex("BedId");
 
                     b.HasIndex("BookingId");
 
@@ -451,9 +393,6 @@ namespace Host.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<Guid?>("BedId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime?>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
@@ -483,8 +422,6 @@ namespace Host.Infrastructure.Migrations
 
                     b.HasKey("Id")
                         .HasName("PK__Listings__3214EC0739EB0492");
-
-                    b.HasIndex("BedId");
 
                     b.HasIndex("PropertyId");
 
@@ -1095,6 +1032,106 @@ namespace Host.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Host.Infrastructure.Models.UserAccessToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("(newsequentialid())");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<string>("CreatedByIp")
+                        .HasMaxLength(45)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(45)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("RevokedByIp")
+                        .HasMaxLength(45)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(45)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(512)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id")
+                        .HasName("PK_UserAccessTokens");
+
+                    b.HasIndex(new[] { "TokenHash" }, "IX_UserAccessTokens_TokenHash");
+
+                    b.HasIndex(new[] { "UserId", "ExpiresAt" }, "IX_UserAccessTokens_UserId_ExpiresAt");
+
+                    b.ToTable("UserAccessTokens");
+                });
+
+            modelBuilder.Entity("Host.Infrastructure.Models.UserRefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("(newsequentialid())");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<string>("CreatedByIp")
+                        .HasMaxLength(45)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(45)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("ReplacedByTokenHash")
+                        .HasMaxLength(512)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(512)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("RevokedByIp")
+                        .HasMaxLength(45)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(45)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(512)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id")
+                        .HasName("PK_UserRefreshTokens");
+
+                    b.HasIndex(new[] { "TokenHash" }, "IX_UserRefreshTokens_TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "UserId", "ExpiresAt" }, "IX_UserRefreshTokens_UserId_ExpiresAt");
+
+                    b.ToTable("UserRefreshTokens");
+                });
+
             modelBuilder.Entity("RolePermission", b =>
                 {
                     b.Property<Guid>("RoleId")
@@ -1163,11 +1200,6 @@ namespace Host.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("FK__AssetAssi__Asset__08B54D69");
 
-                    b.HasOne("Host.Infrastructure.Models.Bed", "Bed")
-                        .WithMany("AssetAssignments")
-                        .HasForeignKey("BedId")
-                        .HasConstraintName("FK__AssetAssi__BedId__0A9D95DB");
-
                     b.HasOne("Host.Infrastructure.Models.Room", "Room")
                         .WithMany("AssetAssignments")
                         .HasForeignKey("RoomId")
@@ -1181,31 +1213,13 @@ namespace Host.Infrastructure.Migrations
 
                     b.Navigation("Asset");
 
-                    b.Navigation("Bed");
-
                     b.Navigation("Room");
 
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("Host.Infrastructure.Models.Bed", b =>
-                {
-                    b.HasOne("Host.Infrastructure.Models.Room", "Room")
-                        .WithMany("Beds")
-                        .HasForeignKey("RoomId")
-                        .IsRequired()
-                        .HasConstraintName("FK__Beds__RoomId__7A672E12");
-
-                    b.Navigation("Room");
-                });
-
             modelBuilder.Entity("Host.Infrastructure.Models.Booking", b =>
                 {
-                    b.HasOne("Host.Infrastructure.Models.Bed", "Bed")
-                        .WithMany("Bookings")
-                        .HasForeignKey("BedId")
-                        .HasConstraintName("FK__Bookings__BedId__1EA48E88");
-
                     b.HasOne("Host.Infrastructure.Models.Property", "Property")
                         .WithMany("Bookings")
                         .HasForeignKey("PropertyId")
@@ -1223,8 +1237,6 @@ namespace Host.Infrastructure.Migrations
                         .HasForeignKey("TenantId")
                         .IsRequired()
                         .HasConstraintName("FK__Bookings__Tenant__1BC821DD");
-
-                    b.Navigation("Bed");
 
                     b.Navigation("Property");
 
@@ -1246,11 +1258,6 @@ namespace Host.Infrastructure.Migrations
 
             modelBuilder.Entity("Host.Infrastructure.Models.Contract", b =>
                 {
-                    b.HasOne("Host.Infrastructure.Models.Bed", "Bed")
-                        .WithMany("Contracts")
-                        .HasForeignKey("BedId")
-                        .HasConstraintName("FK__Contracts__BedId__2FCF1A8A");
-
                     b.HasOne("Host.Infrastructure.Models.Booking", "Booking")
                         .WithMany("Contracts")
                         .HasForeignKey("BookingId")
@@ -1284,8 +1291,6 @@ namespace Host.Infrastructure.Migrations
                         .HasForeignKey("TenantId")
                         .IsRequired()
                         .HasConstraintName("FK__Contracts__Tenan__2CF2ADDF");
-
-                    b.Navigation("Bed");
 
                     b.Navigation("Booking");
 
@@ -1327,11 +1332,6 @@ namespace Host.Infrastructure.Migrations
 
             modelBuilder.Entity("Host.Infrastructure.Models.Listing", b =>
                 {
-                    b.HasOne("Host.Infrastructure.Models.Bed", "Bed")
-                        .WithMany("Listings")
-                        .HasForeignKey("BedId")
-                        .HasConstraintName("FK__Listings__BedId__123EB7A3");
-
                     b.HasOne("Host.Infrastructure.Models.Property", "Property")
                         .WithMany("Listings")
                         .HasForeignKey("PropertyId")
@@ -1349,8 +1349,6 @@ namespace Host.Infrastructure.Migrations
                         .HasForeignKey("TenantId")
                         .IsRequired()
                         .HasConstraintName("FK__Listings__Tenant__0F624AF8");
-
-                    b.Navigation("Bed");
 
                     b.Navigation("Property");
 
@@ -1512,6 +1510,30 @@ namespace Host.Infrastructure.Migrations
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("Host.Infrastructure.Models.UserAccessToken", b =>
+                {
+                    b.HasOne("Host.Infrastructure.Models.User", "User")
+                        .WithMany("UserAccessTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UserAccessTokens_Users_UserId");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Host.Infrastructure.Models.UserRefreshToken", b =>
+                {
+                    b.HasOne("Host.Infrastructure.Models.User", "User")
+                        .WithMany("UserRefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UserRefreshTokens_Users_UserId");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("RolePermission", b =>
                 {
                     b.HasOne("Host.Infrastructure.Models.Permission", null)
@@ -1571,17 +1593,6 @@ namespace Host.Infrastructure.Migrations
                     b.Navigation("MaintenanceTickets");
                 });
 
-            modelBuilder.Entity("Host.Infrastructure.Models.Bed", b =>
-                {
-                    b.Navigation("AssetAssignments");
-
-                    b.Navigation("Bookings");
-
-                    b.Navigation("Contracts");
-
-                    b.Navigation("Listings");
-                });
-
             modelBuilder.Entity("Host.Infrastructure.Models.Booking", b =>
                 {
                     b.Navigation("Contracts");
@@ -1625,8 +1636,6 @@ namespace Host.Infrastructure.Migrations
             modelBuilder.Entity("Host.Infrastructure.Models.Room", b =>
                 {
                     b.Navigation("AssetAssignments");
-
-                    b.Navigation("Beds");
 
                     b.Navigation("Bookings");
 
@@ -1678,6 +1687,13 @@ namespace Host.Infrastructure.Migrations
                     b.Navigation("Technicians");
 
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("Host.Infrastructure.Models.User", b =>
+                {
+                    b.Navigation("UserAccessTokens");
+
+                    b.Navigation("UserRefreshTokens");
                 });
 #pragma warning restore 612, 618
         }

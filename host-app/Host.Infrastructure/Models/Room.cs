@@ -25,8 +25,6 @@ public partial class Room
 
     public virtual ICollection<AssetAssignment> AssetAssignments { get; set; } = new List<AssetAssignment>();
 
-    public virtual ICollection<Bed> Beds { get; set; } = new List<Bed>();
-
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
     public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
