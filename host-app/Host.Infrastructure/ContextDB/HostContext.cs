@@ -28,10 +28,6 @@ public partial class HostContext : DbContext
 
     public virtual DbSet<Invoice> Invoices { get; set; }
 
-    public virtual DbSet<Listing> Listings { get; set; }
-
-    public virtual DbSet<ListingImage> ListingImages { get; set; }
-
     public virtual DbSet<MaintenanceTicket> MaintenanceTickets { get; set; }
 
     public virtual DbSet<Permission> Permissions { get; set; }
@@ -266,54 +262,6 @@ public partial class HostContext : DbContext
                 .HasForeignKey(d => d.TenantId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Invoices__Tenant__37703C52");
-        });
-
-        modelBuilder.Entity<Listing>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__Listings__3214EC0739EB0492");
-
-            entity.HasIndex(e => e.IsPublished, "IX_Listings_IsPublished");
-
-            entity.Property(e => e.Amenities).HasMaxLength(500);
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.IsPublished).HasDefaultValue(true);
-            entity.Property(e => e.Title).HasMaxLength(200);
-
-            entity.HasOne(d => d.Property).WithMany(p => p.Listings)
-                .HasForeignKey(d => d.PropertyId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Listings__Proper__10566F31");
-
-            entity.HasOne(d => d.Room).WithMany(p => p.Listings)
-                .HasForeignKey(d => d.RoomId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Listings__RoomId__114A936A");
-
-            entity.HasOne(d => d.Tenant).WithMany(p => p.Listings)
-                .HasForeignKey(d => d.TenantId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Listings__Tenant__0F624AF8");
-        });
-
-        modelBuilder.Entity<ListingImage>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__ListingI__3214EC072BEE08C6");
-
-            entity.HasIndex(e => e.ListingId, "IX_ListingImages_ListingId");
-
-            entity.Property(e => e.DisplayOrder).HasDefaultValue(0);
-            entity.Property(e => e.ImageUrl)
-                .HasMaxLength(255)
-                .IsUnicode(false);
-            entity.Property(e => e.UploadedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-
-            entity.HasOne(d => d.Listing).WithMany(p => p.ListingImages)
-                .HasForeignKey(d => d.ListingId)
-                .HasConstraintName("FK__ListingIm__Listi__17036CC0");
         });
 
         modelBuilder.Entity<MaintenanceTicket>(entity =>

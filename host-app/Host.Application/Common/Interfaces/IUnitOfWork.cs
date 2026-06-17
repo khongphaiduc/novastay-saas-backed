@@ -8,8 +8,6 @@ public interface IUnitOfWork : IAsyncDisposable
     IBrokerRepository Brokers { get; }
     IContractRepository Contracts { get; }
     IInvoiceRepository Invoices { get; }
-    IListingRepository Listings { get; }
-    IListingImageRepository ListingImages { get; }
     IMaintenanceTicketRepository MaintenanceTickets { get; }
     IPermissionRepository Permissions { get; }
     IPropertyRepository Properties { get; }

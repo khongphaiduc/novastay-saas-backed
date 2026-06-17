@@ -21,8 +21,6 @@ public partial class Property
 
     public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 
-    public virtual ICollection<Listing> Listings { get; set; } = new List<Listing>();
-
     public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
 
     public virtual Tenant Tenant { get; set; } = null!;

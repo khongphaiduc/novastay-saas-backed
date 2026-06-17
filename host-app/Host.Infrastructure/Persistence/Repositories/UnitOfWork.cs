@@ -15,8 +15,6 @@ public sealed class UnitOfWork : IUnitOfWork
         IBrokerRepository brokers,
         IContractRepository contracts,
         IInvoiceRepository invoices,
-        IListingRepository listings,
-        IListingImageRepository listingImages,
         IMaintenanceTicketRepository maintenanceTickets,
         IPermissionRepository permissions,
         IPropertyRepository properties,
@@ -39,8 +37,6 @@ public sealed class UnitOfWork : IUnitOfWork
         Brokers = brokers;
         Contracts = contracts;
         Invoices = invoices;
-        Listings = listings;
-        ListingImages = listingImages;
         MaintenanceTickets = maintenanceTickets;
         Permissions = permissions;
         Properties = properties;
@@ -68,10 +64,6 @@ public sealed class UnitOfWork : IUnitOfWork
     public IContractRepository Contracts { get; }
 
     public IInvoiceRepository Invoices { get; }
-
-    public IListingRepository Listings { get; }
-
-    public IListingImageRepository ListingImages { get; }
 
     public IMaintenanceTicketRepository MaintenanceTickets { get; }
 

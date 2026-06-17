@@ -28,8 +28,6 @@ public sealed class ApplicationMappingProfile : Profile
         CreateMap<BrokerEntity, BrokerDto>().ReverseMap();
         CreateMap<ContractEntity, ContractDto>().ReverseMap();
         CreateMap<InvoiceEntity, InvoiceDto>().ReverseMap();
-        CreateMap<ListingEntity, ListingDto>().ReverseMap();
-        CreateMap<ListingImageEntity, ListingImageDto>().ReverseMap();
         CreateMap<MaintenanceTicketEntity, MaintenanceTicketDto>().ReverseMap();
         CreateMap<PermissionEntity, PermissionDto>().ReverseMap();
         CreateMap<PropertyEntity, PropertyDto>().ReverseMap();
