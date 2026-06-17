@@ -37,8 +37,6 @@ public partial class Tenant
 
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
-    public virtual ICollection<Listing> Listings { get; set; } = new List<Listing>();
-
     public virtual ICollection<MaintenanceTicket> MaintenanceTickets { get; set; } = new List<MaintenanceTicket>();
 
     public virtual SubscriptionPackage Package { get; set; } = null!;

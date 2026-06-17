@@ -25,8 +25,6 @@ public static class DependencyInjection
         services.AddScoped<IBrokerRepository, BrokerRepository>();
         services.AddScoped<IContractRepository, ContractRepository>();
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
-        services.AddScoped<IListingRepository, ListingRepository>();
-        services.AddScoped<IListingImageRepository, ListingImageRepository>();
         services.AddScoped<IMaintenanceTicketRepository, MaintenanceTicketRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<IPropertyRepository, PropertyRepository>();

@@ -15,10 +15,6 @@ using DomainContract = Host.Domain.Entities.ContractEntity;
 using DatabaseContract = Host.Infrastructure.Models.Contract;
 using DomainInvoice = Host.Domain.Entities.InvoiceEntity;
 using DatabaseInvoice = Host.Infrastructure.Models.Invoice;
-using DomainListing = Host.Domain.Entities.ListingEntity;
-using DatabaseListing = Host.Infrastructure.Models.Listing;
-using DomainListingImage = Host.Domain.Entities.ListingImageEntity;
-using DatabaseListingImage = Host.Infrastructure.Models.ListingImage;
 using DomainMaintenanceTicket = Host.Domain.Entities.MaintenanceTicketEntity;
 using DatabaseMaintenanceTicket = Host.Infrastructure.Models.MaintenanceTicket;
 using DomainPermission = Host.Domain.Entities.PermissionEntity;
@@ -92,22 +88,6 @@ internal sealed class ContractRepository : Repository<DomainContract, DatabaseCo
 internal sealed class InvoiceRepository : Repository<DomainInvoice, DatabaseInvoice>, IInvoiceRepository
 {
     public InvoiceRepository(HostContext context, IDatabaseModelMapper<DomainInvoice, DatabaseInvoice> mapper)
-        : base(context, mapper)
-    {
-    }
-}
-
-internal sealed class ListingRepository : Repository<DomainListing, DatabaseListing>, IListingRepository
-{
-    public ListingRepository(HostContext context, IDatabaseModelMapper<DomainListing, DatabaseListing> mapper)
-        : base(context, mapper)
-    {
-    }
-}
-
-internal sealed class ListingImageRepository : Repository<DomainListingImage, DatabaseListingImage>, IListingImageRepository
-{
-    public ListingImageRepository(HostContext context, IDatabaseModelMapper<DomainListingImage, DatabaseListingImage> mapper)
         : base(context, mapper)
     {
     }
