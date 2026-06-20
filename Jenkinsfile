@@ -2,20 +2,11 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Debug Project Structure') {
             steps {
                 sh '''
                     echo "=== WORKSPACE ==="
                     echo "$WORKSPACE"
-
-                    echo "=== LIST ROOT ==="
-                    ls -la "$WORKSPACE"
 
                     echo "=== FIND SOLUTION ==="
                     find "$WORKSPACE" -name "*.sln"
@@ -31,10 +22,9 @@ pipeline {
                 echo '=== Running Unit Tests inside Docker SDK ==='
                 sh '''
                     docker run --rm \
-                        -v "$WORKSPACE:/src" \
-                        -w /src/NovaStay \
+                        -v "$WORKSPACE/NovaStay:/src" \
                         mcr.microsoft.com/dotnet/sdk:8.0 \
-                        dotnet test NovaStay.sln --configuration Release --logger "console;verbosity=detailed"
+                        dotnet test /src/NovaStay.UnitTests/NovaStay.UnitTests.csproj --configuration Release --logger "console;verbosity=detailed"
                 '''
             }
         }
