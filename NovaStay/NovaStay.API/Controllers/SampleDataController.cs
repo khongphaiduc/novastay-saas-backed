@@ -19,7 +19,7 @@ public class SampleDataController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<TenantDto>>> GetTenants([FromQuery] int take = 20,CancellationToken cancellationToken = default)     
     {
         var tenants = await _sampleDataService.GetTenantsAsync(take, cancellationToken);
-
+        // test
         return Ok(tenants);
     }
 }
