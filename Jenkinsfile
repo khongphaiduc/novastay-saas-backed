@@ -5,15 +5,14 @@ pipeline {
         stage('Run Unit Tests') {
             steps {
                 echo '=== Running Unit Tests inside Docker SDK ==='
-                // Di chuyển vào thư mục NovaStay trước để lấy đúng ngữ cảnh (Context)
                 dir('NovaStay') {
-                    // Mount thư mục NovaStay hiện tại (chứa đầy đủ các project con và file .sln) vào /src
+                    // Trỏ thẳng lệnh dotnet test mà không truyền path .csproj nữa, nó sẽ tự ăn file NovaStay.sln ở đây
                     sh '''
                         docker run --rm \
                             -v "$(pwd)":/src \
                             -w /src \
                             mcr.microsoft.com/dotnet/sdk:8.0 \
-                            dotnet test NovaStay.UnitTests/NovaStay.UnitTests.csproj --configuration Release --logger "console;verbosity=detailed"
+                            dotnet test --configuration Release --logger "console;verbosity=detailed"
                     '''
                 }
             }
@@ -22,7 +21,6 @@ pipeline {
         stage('Build and Push Image') {
             steps {
                 withDockerRegistry(credentialsId: 'docker', url: 'https://index.docker.io/v1/') {
-                    // Di chuyển vào thư mục NovaStay vì Dockerfile nằm ở đây
                     dir('NovaStay') {
                         echo '=== Building and Pushing Docker Image ==='
                         sh 'docker build -t ptrungduc1011/benovastay:v1 .' 
