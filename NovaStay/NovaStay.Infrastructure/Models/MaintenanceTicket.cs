@@ -7,7 +7,7 @@ public partial class MaintenanceTicket
 {
     public Guid Id { get; set; }
 
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
 
     public Guid RoomId { get; set; }
 
@@ -39,5 +39,5 @@ public partial class MaintenanceTicket
 
     public virtual Technician? Technician { get; set; }
 
-    public virtual Tenant Tenant { get; set; } = null!;
+    public virtual Organization Organization { get; set; } = null!;
 }

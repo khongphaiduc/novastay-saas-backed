@@ -1,8 +1,8 @@
 using NovaStay.Application.Common.Interfaces;
 using NovaStay.Infrastructure.ContextDB;
 using NovaStay.Infrastructure.Persistence.Mapping;
-using DomainTenant = NovaStay.Domain.Entities.TenantEntity;
-using DatabaseTenant = NovaStay.Infrastructure.Models.Tenant;
+using DomainOrganization = NovaStay.Domain.Entities.OrganizationEntity;
+using DatabaseOrganization = NovaStay.Infrastructure.Models.Organization;
 using DomainAsset = NovaStay.Domain.Entities.AssetEntity;
 using DatabaseAsset = NovaStay.Infrastructure.Models.Asset;
 using DomainAssetAssignment = NovaStay.Domain.Entities.AssetAssignmentEntity;
@@ -35,12 +35,14 @@ using DomainSubscriptionPackage = NovaStay.Domain.Entities.SubscriptionPackageEn
 using DatabaseSubscriptionPackage = NovaStay.Infrastructure.Models.SubscriptionPackage;
 using DomainTechnician = NovaStay.Domain.Entities.TechnicianEntity;
 using DatabaseTechnician = NovaStay.Infrastructure.Models.Technician;
-using DomainUserAccessToken = NovaStay.Domain.Entities.UserAccessTokenEntity;
-using DatabaseUserAccessToken = NovaStay.Infrastructure.Models.UserAccessToken;
-using DomainUserRefreshToken = NovaStay.Domain.Entities.UserRefreshTokenEntity;
-using DatabaseUserRefreshToken = NovaStay.Infrastructure.Models.UserRefreshToken;
-using DomainUser = NovaStay.Domain.Entities.UserEntity;
-using DatabaseUser = NovaStay.Infrastructure.Models.User;
+using DomainAccount = NovaStay.Domain.Entities.AccountEntity;
+using DatabaseAccount = NovaStay.Infrastructure.Models.Account;
+using DomainAccountAccessToken = NovaStay.Domain.Entities.AccountAccessTokenEntity;
+using DatabaseAccountAccessToken = NovaStay.Infrastructure.Models.AccountAccessToken;
+using DomainAccountRefreshToken = NovaStay.Domain.Entities.AccountRefreshTokenEntity;
+using DatabaseAccountRefreshToken = NovaStay.Infrastructure.Models.AccountRefreshToken;
+using DomainStaffUser = NovaStay.Domain.Entities.StaffUserEntity;
+using DatabaseStaffUser = NovaStay.Infrastructure.Models.StaffUser;
 using Microsoft.EntityFrameworkCore;
 
 namespace NovaStay.Infrastructure.Persistence.Repositories;
@@ -173,48 +175,79 @@ internal sealed class TechnicianRepository : Repository<DomainTechnician, Databa
     }
 }
 
-internal sealed class UserRepository : Repository<DomainUser, DatabaseUser>, IUserRepository
+internal sealed class StaffUserRepository : Repository<DomainStaffUser, DatabaseStaffUser>, IStaffUserRepository
 {
-    public UserRepository(HostContext context, IDatabaseModelMapper<DomainUser, DatabaseUser> mapper)
+    public StaffUserRepository(HostContext context, IDatabaseModelMapper<DomainStaffUser, DatabaseStaffUser> mapper)
         : base(context, mapper)
     {
     }
 }
 
-internal sealed class UserAccessTokenRepository : Repository<DomainUserAccessToken, DatabaseUserAccessToken>, IUserAccessTokenRepository
-{
-    public UserAccessTokenRepository(HostContext context, IDatabaseModelMapper<DomainUserAccessToken, DatabaseUserAccessToken> mapper)
-        : base(context, mapper)
-    {
-    }
-}
-
-internal sealed class UserRefreshTokenRepository : Repository<DomainUserRefreshToken, DatabaseUserRefreshToken>, IUserRefreshTokenRepository
-{
-    public UserRefreshTokenRepository(HostContext context, IDatabaseModelMapper<DomainUserRefreshToken, DatabaseUserRefreshToken> mapper)
-        : base(context, mapper)
-    {
-    }
-}
-
-internal sealed class TenantRepository : Repository<DomainTenant, DatabaseTenant>, ITenantRepository
+internal sealed class AccountRepository : Repository<DomainAccount, DatabaseAccount>, IAccountRepository
 {
     private readonly HostContext _context;
-    private readonly IDatabaseModelMapper<DomainTenant, DatabaseTenant> _mapper;
+    private readonly IDatabaseModelMapper<DomainAccount, DatabaseAccount> _mapper;
 
-    public TenantRepository(HostContext context, IDatabaseModelMapper<DomainTenant, DatabaseTenant> mapper)
+    public AccountRepository(HostContext context, IDatabaseModelMapper<DomainAccount, DatabaseAccount> mapper)
         : base(context, mapper)
     {
         _context = context;
         _mapper = mapper;
     }
 
-    public async Task<DomainTenant?> GetByOwnerEmailAsync(string ownerEmail, CancellationToken cancellationToken = default)
+    public async Task<DomainAccount?> GetByPhoneAsync(string phone, CancellationToken cancellationToken = default)
     {
-        var tenant = await _context.Tenants
+        var account = await _context.Accounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(entity => entity.Phone == phone, cancellationToken);
+
+        return account is null ? null : _mapper.ToDomain(account);
+    }
+
+    public async Task<DomainAccount?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var account = await _context.Accounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(entity => entity.Email == email, cancellationToken);
+
+        return account is null ? null : _mapper.ToDomain(account);
+    }
+}
+
+internal sealed class AccountAccessTokenRepository : Repository<DomainAccountAccessToken, DatabaseAccountAccessToken>, IAccountAccessTokenRepository
+{
+    public AccountAccessTokenRepository(HostContext context, IDatabaseModelMapper<DomainAccountAccessToken, DatabaseAccountAccessToken> mapper)
+        : base(context, mapper)
+    {
+    }
+}
+
+internal sealed class AccountRefreshTokenRepository : Repository<DomainAccountRefreshToken, DatabaseAccountRefreshToken>, IAccountRefreshTokenRepository
+{
+    public AccountRefreshTokenRepository(HostContext context, IDatabaseModelMapper<DomainAccountRefreshToken, DatabaseAccountRefreshToken> mapper)
+        : base(context, mapper)
+    {
+    }
+}
+
+internal sealed class OrganizationRepository : Repository<DomainOrganization, DatabaseOrganization>, IOrganizationRepository
+{
+    private readonly HostContext _context;
+    private readonly IDatabaseModelMapper<DomainOrganization, DatabaseOrganization> _mapper;
+
+    public OrganizationRepository(HostContext context, IDatabaseModelMapper<DomainOrganization, DatabaseOrganization> mapper)
+        : base(context, mapper)
+    {
+        _context = context;
+        _mapper = mapper;
+    }
+
+    public async Task<DomainOrganization?> GetByOwnerEmailAsync(string ownerEmail, CancellationToken cancellationToken = default)
+    {
+        var Organization = await _context.Organizations
             .AsNoTracking()
             .FirstOrDefaultAsync(entity => entity.OwnerEmail == ownerEmail, cancellationToken);
 
-        return tenant is null ? null : _mapper.ToDomain(tenant);
+        return Organization is null ? null : _mapper.ToDomain(Organization);
     }
 }

@@ -25,5 +25,5 @@ public partial class SubscriptionPackage
 
     public DateTime? CreatedAt { get; set; }
 
-    public virtual ICollection<Tenant> Tenants { get; set; } = new List<Tenant>();
+    public virtual ICollection<Organization> Organizations { get; set; } = new List<Organization>();
 }

@@ -4,7 +4,7 @@ namespace NovaStay.Application.Services;
 
 public interface ISampleDataService
 {
-    Task<IReadOnlyList<TenantDto>> GetTenantsAsync(
+    Task<IReadOnlyList<OrganizationDto>> GetOrganizationsAsync(
         int take = 20,
         CancellationToken cancellationToken = default);
 }

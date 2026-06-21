@@ -1,14 +1,24 @@
-namespace NovaStay.Application.DTOs;
+using System;
 
-public sealed class UserRefreshTokenDto
+namespace NovaStay.Infrastructure.Models;
+
+public partial class AccountAccessToken
 {
     public Guid Id { get; set; }
-    public Guid UserId { get; set; }
-    public string TokenHash { get; set; } = string.Empty;
+
+    public Guid AccountId { get; set; }
+
+    public string TokenHash { get; set; } = null!;
+
     public DateTime ExpiresAt { get; set; }
+
     public DateTime? RevokedAt { get; set; }
+
     public DateTime? CreatedAt { get; set; }
+
     public string? CreatedByIp { get; set; }
+
     public string? RevokedByIp { get; set; }
-    public string? ReplacedByTokenHash { get; set; }
+
+    public virtual Account Account { get; set; } = null!;
 }

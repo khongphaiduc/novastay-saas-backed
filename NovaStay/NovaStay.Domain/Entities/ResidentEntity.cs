@@ -4,7 +4,8 @@ namespace NovaStay.Domain.Entities;
 
 public sealed class ResidentEntity : Entity
 {
-    public Guid TenantId { get; set; }
+    public Guid AccountId { get; set; }
+    public Guid OrganizationId { get; set; }
     public EntityName FullName { get; set; }
     public PhoneNumber Phone { get; set; }
     public string? Email { get; set; }

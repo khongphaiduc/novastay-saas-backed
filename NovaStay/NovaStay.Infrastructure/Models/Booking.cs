@@ -7,7 +7,7 @@ public partial class Booking
 {
     public Guid Id { get; set; }
 
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
 
     public Guid PropertyId { get; set; }
 
@@ -41,5 +41,5 @@ public partial class Booking
 
     public virtual Room Room { get; set; } = null!;
 
-    public virtual Tenant Tenant { get; set; } = null!;
+    public virtual Organization Organization { get; set; } = null!;
 }

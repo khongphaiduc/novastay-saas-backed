@@ -18,10 +18,11 @@ public interface IUnitOfWork : IAsyncDisposable
     IRoomImageRepository RoomImages { get; }
     ISubscriptionPackageRepository SubscriptionPackages { get; }
     ITechnicianRepository Technicians { get; }
-    ITenantRepository Tenants { get; }
-    IUserAccessTokenRepository UserAccessTokens { get; }
-    IUserRefreshTokenRepository UserRefreshTokens { get; }
-    IUserRepository Users { get; }
+    IAccountRepository Accounts { get; }
+    IOrganizationRepository Organizations { get; }
+    IAccountAccessTokenRepository AccountAccessTokens { get; }
+    IAccountRefreshTokenRepository AccountRefreshTokens { get; }
+    IStaffUserRepository StaffUsers { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

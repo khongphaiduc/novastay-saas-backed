@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -46,7 +46,7 @@ namespace NovaStay.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Tenants",
+                name: "Organizations",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
@@ -62,9 +62,9 @@ namespace NovaStay.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK__Tenants__3214EC070623D35C", x => x.Id);
+                    table.PrimaryKey("PK__Organizations__3214EC070623D35C", x => x.Id);
                     table.ForeignKey(
-                        name: "FK__Tenants__Package__534D60F1",
+                        name: "FK__Organizations__Package__534D60F1",
                         column: x => x.PackageId,
                         principalTable: "SubscriptionPackages",
                         principalColumn: "Id");
@@ -75,7 +75,7 @@ namespace NovaStay.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AssetName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Brand = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Model = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: true),
@@ -89,9 +89,9 @@ namespace NovaStay.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK__Assets__3214EC071B1A8B14", x => x.Id);
                     table.ForeignKey(
-                        name: "FK__Assets__TenantId__02FC7413",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
+                        name: "FK__Assets__OrganizationId__02FC7413",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id");
                 });
 
@@ -100,7 +100,7 @@ namespace NovaStay.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Phone = table.Column<string>(type: "varchar(15)", unicode: false, maxLength: 15, nullable: false),
                     WalletBalance = table.Column<decimal>(type: "decimal(18,2)", nullable: true, defaultValue: 0m),
@@ -110,9 +110,9 @@ namespace NovaStay.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK__Brokers__3214EC07D3AA9FC2", x => x.Id);
                     table.ForeignKey(
-                        name: "FK__Brokers__TenantI__2739D489",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
+                        name: "FK__Brokers__OrganizationI__2739D489",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id");
                 });
 
@@ -121,7 +121,7 @@ namespace NovaStay.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PropertyName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Address = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     PropertyType = table.Column<string>(type: "varchar(20)", unicode: false, maxLength: 20, nullable: false),
@@ -132,8 +132,8 @@ namespace NovaStay.Infrastructure.Migrations
                     table.PrimaryKey("PK__Properti__3214EC07FE441D45", x => x.Id);
                     table.ForeignKey(
                         name: "FK__Propertie__Tenan__6A30C649",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id");
                 });
 
@@ -142,7 +142,7 @@ namespace NovaStay.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Phone = table.Column<string>(type: "varchar(15)", unicode: false, maxLength: 15, nullable: false),
                     Email = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true),
@@ -157,8 +157,8 @@ namespace NovaStay.Infrastructure.Migrations
                     table.PrimaryKey("PK__Resident__3214EC07115F9503", x => x.Id);
                     table.ForeignKey(
                         name: "FK__Residents__Tenan__22751F6C",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id");
                 });
 
@@ -167,7 +167,7 @@ namespace NovaStay.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RoleName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     RoleKey = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
@@ -177,9 +177,9 @@ namespace NovaStay.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK__Roles__3214EC07BE72DF6E", x => x.Id);
                     table.ForeignKey(
-                        name: "FK__Roles__TenantId__5BE2A6F2",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
+                        name: "FK__Roles__OrganizationId__5BE2A6F2",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id");
                 });
 
@@ -188,7 +188,7 @@ namespace NovaStay.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Phone = table.Column<string>(type: "varchar(15)", unicode: false, maxLength: 15, nullable: false),
                     Specialty = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
@@ -199,17 +199,17 @@ namespace NovaStay.Infrastructure.Migrations
                     table.PrimaryKey("PK__Technici__3214EC0701E593D1", x => x.Id);
                     table.ForeignKey(
                         name: "FK__Technicia__Tenan__3D2915A8",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "Users",
+                name: "StaffUsers",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Email = table.Column<string>(type: "varchar(100)", unicode: false, maxLength: 100, nullable: true),
                     Phone = table.Column<string>(type: "varchar(15)", unicode: false, maxLength: 15, nullable: false),
@@ -221,9 +221,9 @@ namespace NovaStay.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK__Users__3214EC078909D83A", x => x.Id);
                     table.ForeignKey(
-                        name: "FK__Users__TenantId__5812160E",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
+                        name: "FK__Users__OrganizationId__5812160E",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id");
                 });
 
@@ -276,11 +276,11 @@ namespace NovaStay.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserAccessTokens",
+                name: "AccountAccessTokens",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StaffUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TokenHash = table.Column<string>(type: "varchar(512)", unicode: false, maxLength: 512, nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "datetime", nullable: false),
                     RevokedAt = table.Column<DateTime>(type: "datetime", nullable: true),
@@ -290,25 +290,25 @@ namespace NovaStay.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserAccessTokens", x => x.Id);
+                    table.PrimaryKey("PK_AccountAccessTokens", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserAccessTokens_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
+                        name: "FK_AccountAccessTokens_Users_UserId",
+                        column: x => x.StaffUserId,
+                        principalTable: "StaffUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserPropertyMapping",
+                name: "StaffUserPropertyMapping",
                 columns: table => new
                 {
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StaffUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PropertyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK__UserProp__5084563FC247FEEC", x => new { x.UserId, x.PropertyId });
+                    table.PrimaryKey("PK__UserProp__5084563FC247FEEC", x => new { x.StaffUserId, x.PropertyId });
                     table.ForeignKey(
                         name: "FK__UserPrope__Prope__6E01572D",
                         column: x => x.PropertyId,
@@ -316,17 +316,17 @@ namespace NovaStay.Infrastructure.Migrations
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK__UserPrope__UserI__6D0D32F4",
-                        column: x => x.UserId,
-                        principalTable: "Users",
+                        column: x => x.StaffUserId,
+                        principalTable: "StaffUsers",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserRefreshTokens",
+                name: "AccountRefreshTokens",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StaffUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TokenHash = table.Column<string>(type: "varchar(512)", unicode: false, maxLength: 512, nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "datetime", nullable: false),
                     RevokedAt = table.Column<DateTime>(type: "datetime", nullable: true),
@@ -337,35 +337,35 @@ namespace NovaStay.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserRefreshTokens", x => x.Id);
+                    table.PrimaryKey("PK_AccountRefreshTokens", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserRefreshTokens_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
+                        name: "FK_AccountRefreshTokens_Users_UserId",
+                        column: x => x.StaffUserId,
+                        principalTable: "StaffUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserRoles",
+                name: "StaffUserRoles",
                 columns: table => new
                 {
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StaffUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RoleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK__UserRole__AF2760AD29238DE0", x => new { x.UserId, x.RoleId });
+                    table.PrimaryKey("PK__UserRole__AF2760AD29238DE0", x => new { x.StaffUserId, x.RoleId });
                     table.ForeignKey(
-                        name: "FK__UserRoles__RoleI__66603565",
+                        name: "FK__StaffUserRoles__RoleI__66603565",
                         column: x => x.RoleId,
                         principalTable: "Roles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK__UserRoles__UserI__656C112C",
-                        column: x => x.UserId,
-                        principalTable: "Users",
+                        name: "FK__StaffUserRoles__UserI__656C112C",
+                        column: x => x.StaffUserId,
+                        principalTable: "StaffUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -375,7 +375,7 @@ namespace NovaStay.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AssetId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RoomId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Status = table.Column<string>(type: "varchar(20)", unicode: false, maxLength: 20, nullable: true, defaultValue: "Good"),
@@ -398,8 +398,8 @@ namespace NovaStay.Infrastructure.Migrations
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK__AssetAssi__Tenan__07C12930",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id");
                 });
 
@@ -408,7 +408,7 @@ namespace NovaStay.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PropertyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RoomId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     GuestName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
@@ -436,9 +436,9 @@ namespace NovaStay.Infrastructure.Migrations
                         principalTable: "Rooms",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK__Bookings__Tenant__1BC821DD",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
+                        name: "FK__Bookings__Organization__1BC821DD",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id");
                 });
 
@@ -488,7 +488,7 @@ namespace NovaStay.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RoomId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ResidentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AssetAssignmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -526,8 +526,8 @@ namespace NovaStay.Infrastructure.Migrations
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK__Maintenan__Tenan__41EDCAC5",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id");
                 });
 
@@ -536,7 +536,7 @@ namespace NovaStay.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PropertyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RoomId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ResidentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -581,8 +581,8 @@ namespace NovaStay.Infrastructure.Migrations
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK__Contracts__Tenan__2CF2ADDF",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id");
                 });
 
@@ -591,7 +591,7 @@ namespace NovaStay.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newsequentialid())"),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ContractId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     BookingId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     InvoicePeriod = table.Column<string>(type: "varchar(7)", unicode: false, maxLength: 7, nullable: false),
@@ -617,9 +617,9 @@ namespace NovaStay.Infrastructure.Migrations
                         principalTable: "Contracts",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK__Invoices__Tenant__37703C52",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
+                        name: "FK__Invoices__Organization__37703C52",
+                        column: x => x.OrganizationId,
+                        principalTable: "Organizations",
                         principalColumn: "Id");
                 });
 
@@ -634,14 +634,14 @@ namespace NovaStay.Infrastructure.Migrations
                 column: "RoomId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AssetAssignments_TenantId",
+                name: "IX_AssetAssignments_OrganizationId",
                 table: "AssetAssignments",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Assets_TenantId",
+                name: "IX_Assets_OrganizationId",
                 table: "Assets",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Bookings_PropertyId",
@@ -654,14 +654,14 @@ namespace NovaStay.Infrastructure.Migrations
                 column: "RoomId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Bookings_TenantId",
+                name: "IX_Bookings_OrganizationId",
                 table: "Bookings",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Brokers_TenantId",
+                name: "IX_Brokers_OrganizationId",
                 table: "Brokers",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Contracts_BookingId",
@@ -689,9 +689,9 @@ namespace NovaStay.Infrastructure.Migrations
                 column: "RoomId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Contracts_TenantId",
+                name: "IX_Contracts_OrganizationId",
                 table: "Contracts",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Invoices_BookingId",
@@ -709,9 +709,9 @@ namespace NovaStay.Infrastructure.Migrations
                 columns: new[] { "Status", "InvoicePeriod" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Invoices_TenantId",
+                name: "IX_Invoices_OrganizationId",
                 table: "Invoices",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MaintenanceTickets_AssetAssignmentId",
@@ -734,9 +734,9 @@ namespace NovaStay.Infrastructure.Migrations
                 column: "TechnicianId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MaintenanceTickets_TenantId",
+                name: "IX_MaintenanceTickets_OrganizationId",
                 table: "MaintenanceTickets",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
                 name: "UQ__Permissi__8884ABD46702546C",
@@ -745,14 +745,14 @@ namespace NovaStay.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Properties_TenantId",
+                name: "IX_Properties_OrganizationId",
                 table: "Properties",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Residents_TenantId",
+                name: "IX_Residents_OrganizationId",
                 table: "Residents",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RolePermissions_PermissionId",
@@ -760,9 +760,9 @@ namespace NovaStay.Infrastructure.Migrations
                 column: "PermissionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Roles_TenantId",
+                name: "IX_Roles_OrganizationId",
                 table: "Roles",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RoomAvailabilities_RoomId",
@@ -786,56 +786,56 @@ namespace NovaStay.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Technicians_TenantId",
+                name: "IX_Technicians_OrganizationId",
                 table: "Technicians",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Tenants_PackageId",
-                table: "Tenants",
+                name: "IX_Organizations_PackageId",
+                table: "Organizations",
                 column: "PackageId");
 
             migrationBuilder.CreateIndex(
-                name: "UQ__Tenants__FF0186BBAE6B6868",
-                table: "Tenants",
+                name: "UQ__Organizations__FF0186BBAE6B6868",
+                table: "Organizations",
                 column: "OwnerEmail",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserAccessTokens_TokenHash",
-                table: "UserAccessTokens",
+                name: "IX_AccountAccessTokens_TokenHash",
+                table: "AccountAccessTokens",
                 column: "TokenHash");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserAccessTokens_UserId_ExpiresAt",
-                table: "UserAccessTokens",
-                columns: new[] { "UserId", "ExpiresAt" });
+                name: "IX_AccountAccessTokens_UserId_ExpiresAt",
+                table: "AccountAccessTokens",
+                columns: new[] { "StaffUserId", "ExpiresAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserPropertyMapping_PropertyId",
-                table: "UserPropertyMapping",
+                name: "IX_StaffUserPropertyMapping_PropertyId",
+                table: "StaffUserPropertyMapping",
                 column: "PropertyId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRefreshTokens_TokenHash",
-                table: "UserRefreshTokens",
+                name: "IX_AccountRefreshTokens_TokenHash",
+                table: "AccountRefreshTokens",
                 column: "TokenHash",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRefreshTokens_UserId_ExpiresAt",
-                table: "UserRefreshTokens",
-                columns: new[] { "UserId", "ExpiresAt" });
+                name: "IX_AccountRefreshTokens_UserId_ExpiresAt",
+                table: "AccountRefreshTokens",
+                columns: new[] { "StaffUserId", "ExpiresAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRoles_RoleId",
-                table: "UserRoles",
+                name: "IX_StaffUserRoles_RoleId",
+                table: "StaffUserRoles",
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Users_TenantId",
-                table: "Users",
-                column: "TenantId");
+                name: "IX_Users_OrganizationId",
+                table: "StaffUsers",
+                column: "OrganizationId");
         }
 
         /// <inheritdoc />
@@ -857,16 +857,16 @@ namespace NovaStay.Infrastructure.Migrations
                 name: "RoomImages");
 
             migrationBuilder.DropTable(
-                name: "UserAccessTokens");
+                name: "AccountAccessTokens");
 
             migrationBuilder.DropTable(
-                name: "UserPropertyMapping");
+                name: "StaffUserPropertyMapping");
 
             migrationBuilder.DropTable(
-                name: "UserRefreshTokens");
+                name: "AccountRefreshTokens");
 
             migrationBuilder.DropTable(
-                name: "UserRoles");
+                name: "StaffUserRoles");
 
             migrationBuilder.DropTable(
                 name: "Contracts");
@@ -884,7 +884,7 @@ namespace NovaStay.Infrastructure.Migrations
                 name: "Roles");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "StaffUsers");
 
             migrationBuilder.DropTable(
                 name: "Bookings");
@@ -905,7 +905,7 @@ namespace NovaStay.Infrastructure.Migrations
                 name: "Properties");
 
             migrationBuilder.DropTable(
-                name: "Tenants");
+                name: "Organizations");
 
             migrationBuilder.DropTable(
                 name: "SubscriptionPackages");

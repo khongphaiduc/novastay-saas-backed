@@ -4,7 +4,7 @@ namespace NovaStay.Domain.Entities;
 
 public sealed class InvoiceEntity : Entity
 {
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
     public Guid? ContractId { get; set; }
     public Guid? BookingId { get; set; }
     public Code InvoicePeriod { get; set; }

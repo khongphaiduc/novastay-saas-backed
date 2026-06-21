@@ -2,11 +2,11 @@ using System;
 
 namespace NovaStay.Infrastructure.Models;
 
-public partial class UserRefreshToken
+public partial class AccountRefreshToken
 {
     public Guid Id { get; set; }
 
-    public Guid UserId { get; set; }
+    public Guid AccountId { get; set; }
 
     public string TokenHash { get; set; } = null!;
 
@@ -22,5 +22,5 @@ public partial class UserRefreshToken
 
     public string? ReplacedByTokenHash { get; set; }
 
-    public virtual User User { get; set; } = null!;
+    public virtual Account Account { get; set; } = null!;
 }

@@ -4,7 +4,7 @@ namespace NovaStay.Domain.Entities;
 
 public sealed class AssetEntity : Entity
 {
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
     public EntityName AssetName { get; set; }
     public string? Brand { get; set; }
     public string? Model { get; set; }

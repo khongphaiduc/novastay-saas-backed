@@ -1,8 +1,8 @@
 namespace NovaStay.Domain.Entities;
 
-public sealed class UserAccessTokenEntity : Entity
+public sealed class AccountAccessTokenEntity : Entity
 {
-    public Guid UserId { get; set; }
+    public Guid AccountId { get; set; }
     public string TokenHash { get; set; } = string.Empty;
     public DateTime ExpiresAt { get; set; }
     public DateTime? RevokedAt { get; set; }

@@ -48,16 +48,44 @@ public partial class HostContext : DbContext
 
     public virtual DbSet<Technician> Technicians { get; set; }
 
-    public virtual DbSet<Tenant> Tenants { get; set; }
+    public virtual DbSet<Account> Accounts { get; set; }
 
-    public virtual DbSet<User> Users { get; set; }
+    public virtual DbSet<Organization> Organizations { get; set; }
 
-    public virtual DbSet<UserAccessToken> UserAccessTokens { get; set; }
+    public virtual DbSet<StaffUser> StaffUsers { get; set; }
 
-    public virtual DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
+    public virtual DbSet<AccountAccessToken> AccountAccessTokens { get; set; }
+
+    public virtual DbSet<AccountRefreshToken> AccountRefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Account>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_Accounts");
+
+            entity.HasIndex(e => e.Email, "IX_Accounts_Email");
+            entity.HasIndex(e => e.Phone, "IX_Accounts_Phone").IsUnique();
+
+            entity.Property(e => e.AccountType)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Email)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.LastLoginAt).HasColumnType("datetime");
+            entity.Property(e => e.PasswordHash)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.Phone)
+                .HasMaxLength(15)
+                .IsUnicode(false);
+        });
+
         modelBuilder.Entity<Asset>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Assets__3214EC071B1A8B14");
@@ -77,10 +105,10 @@ public partial class HostContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false);
 
-            entity.HasOne(d => d.Tenant).WithMany(p => p.Assets)
-                .HasForeignKey(d => d.TenantId)
+            entity.HasOne(d => d.Organization).WithMany(p => p.Assets)
+                .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Assets__TenantId__02FC7413");
+                .HasConstraintName("FK__Assets__OrganizationId__02FC7413");
         });
 
         modelBuilder.Entity<AssetAssignment>(entity =>
@@ -106,8 +134,8 @@ public partial class HostContext : DbContext
                 .HasForeignKey(d => d.RoomId)
                 .HasConstraintName("FK__AssetAssi__RoomI__09A971A2");
 
-            entity.HasOne(d => d.Tenant).WithMany(p => p.AssetAssignments)
-                .HasForeignKey(d => d.TenantId)
+            entity.HasOne(d => d.Organization).WithMany(p => p.AssetAssignments)
+                .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__AssetAssi__Tenan__07C12930");
         });
@@ -148,10 +176,10 @@ public partial class HostContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Bookings__RoomId__1DB06A4F");
 
-            entity.HasOne(d => d.Tenant).WithMany(p => p.Bookings)
-                .HasForeignKey(d => d.TenantId)
+            entity.HasOne(d => d.Organization).WithMany(p => p.Bookings)
+                .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Bookings__Tenant__1BC821DD");
+                .HasConstraintName("FK__Bookings__Organization__1BC821DD");
         });
 
         modelBuilder.Entity<Broker>(entity =>
@@ -169,10 +197,10 @@ public partial class HostContext : DbContext
                 .HasDefaultValue(0m)
                 .HasColumnType("decimal(18, 2)");
 
-            entity.HasOne(d => d.Tenant).WithMany(p => p.Brokers)
-                .HasForeignKey(d => d.TenantId)
+            entity.HasOne(d => d.Organization).WithMany(p => p.Brokers)
+                .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Brokers__TenantI__2739D489");
+                .HasConstraintName("FK__Brokers__OrganizationI__2739D489");
         });
 
         modelBuilder.Entity<Contract>(entity =>
@@ -220,8 +248,8 @@ public partial class HostContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Contracts__RoomI__2EDAF651");
 
-            entity.HasOne(d => d.Tenant).WithMany(p => p.Contracts)
-                .HasForeignKey(d => d.TenantId)
+            entity.HasOne(d => d.Organization).WithMany(p => p.Contracts)
+                .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Contracts__Tenan__2CF2ADDF");
         });
@@ -258,10 +286,10 @@ public partial class HostContext : DbContext
                 .HasForeignKey(d => d.ContractId)
                 .HasConstraintName("FK__Invoices__Contra__3864608B");
 
-            entity.HasOne(d => d.Tenant).WithMany(p => p.Invoices)
-                .HasForeignKey(d => d.TenantId)
+            entity.HasOne(d => d.Organization).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Invoices__Tenant__37703C52");
+                .HasConstraintName("FK__Invoices__Organization__37703C52");
         });
 
         modelBuilder.Entity<MaintenanceTicket>(entity =>
@@ -303,8 +331,8 @@ public partial class HostContext : DbContext
                 .HasForeignKey(d => d.TechnicianId)
                 .HasConstraintName("FK__Maintenan__Techn__45BE5BA9");
 
-            entity.HasOne(d => d.Tenant).WithMany(p => p.MaintenanceTickets)
-                .HasForeignKey(d => d.TenantId)
+            entity.HasOne(d => d.Organization).WithMany(p => p.MaintenanceTickets)
+                .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Maintenan__Tenan__41EDCAC5");
         });
@@ -337,8 +365,8 @@ public partial class HostContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false);
 
-            entity.HasOne(d => d.Tenant).WithMany(p => p.Properties)
-                .HasForeignKey(d => d.TenantId)
+            entity.HasOne(d => d.Organization).WithMany(p => p.Properties)
+                .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Propertie__Tenan__6A30C649");
         });
@@ -346,6 +374,8 @@ public partial class HostContext : DbContext
         modelBuilder.Entity<Resident>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Resident__3214EC07115F9503");
+
+            entity.HasIndex(e => e.AccountId, "IX_Residents_AccountId").IsUnique();
 
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -370,8 +400,13 @@ public partial class HostContext : DbContext
                 .HasMaxLength(255)
                 .IsUnicode(false);
 
-            entity.HasOne(d => d.Tenant).WithMany(p => p.Residents)
-                .HasForeignKey(d => d.TenantId)
+            entity.HasOne(d => d.Account).WithMany(p => p.Residents)
+                .HasForeignKey(d => d.AccountId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Residents_Accounts_AccountId");
+
+            entity.HasOne(d => d.Organization).WithMany(p => p.Residents)
+                .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Residents__Tenan__22751F6C");
         });
@@ -389,10 +424,10 @@ public partial class HostContext : DbContext
                 .IsUnicode(false);
             entity.Property(e => e.RoleName).HasMaxLength(50);
 
-            entity.HasOne(d => d.Tenant).WithMany(p => p.Roles)
-                .HasForeignKey(d => d.TenantId)
+            entity.HasOne(d => d.Organization).WithMany(p => p.Roles)
+                .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Roles__TenantId__5BE2A6F2");
+                .HasConstraintName("FK__Roles__OrganizationId__5BE2A6F2");
 
             entity.HasMany(d => d.Permissions).WithMany(p => p.Roles)
                 .UsingEntity<Dictionary<string, object>>(
@@ -499,19 +534,21 @@ public partial class HostContext : DbContext
                 .IsUnicode(false);
             entity.Property(e => e.Specialty).HasMaxLength(50);
 
-            entity.HasOne(d => d.Tenant).WithMany(p => p.Technicians)
-                .HasForeignKey(d => d.TenantId)
+            entity.HasOne(d => d.Organization).WithMany(p => p.Technicians)
+                .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Technicia__Tenan__3D2915A8");
         });
 
-        modelBuilder.Entity<Tenant>(entity =>
+        modelBuilder.Entity<Organization>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Tenants__3214EC070623D35C");
+            entity.HasKey(e => e.Id).HasName("PK__Organizations__3214EC070623D35C");
 
-            entity.HasIndex(e => e.PackageId, "IX_Tenants_PackageId");
+            entity.HasIndex(e => e.OwnerAccountId, "IX_Organizations_OwnerAccountId");
 
-            entity.HasIndex(e => e.OwnerEmail, "UQ__Tenants__FF0186BBAE6B6868").IsUnique();
+            entity.HasIndex(e => e.PackageId, "IX_Organizations_PackageId");
+
+            entity.HasIndex(e => e.OwnerEmail, "UQ__Organizations__FF0186BBAE6B6868").IsUnique();
 
             entity.Property(e => e.BusinessName).HasMaxLength(150);
             entity.Property(e => e.CreatedAt)
@@ -532,78 +569,81 @@ public partial class HostContext : DbContext
             entity.Property(e => e.TokenBalance).HasDefaultValue(0);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 
-            entity.HasOne(d => d.Package).WithMany(p => p.Tenants)
+            entity.HasOne(d => d.OwnerAccount).WithMany(p => p.OwnedOrganizations)
+                .HasForeignKey(d => d.OwnerAccountId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Organizations_Accounts_OwnerAccountId");
+
+            entity.HasOne(d => d.Package).WithMany(p => p.Organizations)
                 .HasForeignKey(d => d.PackageId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Tenants__Package__534D60F1");
+                .HasConstraintName("FK__Organizations__Package__534D60F1");
         });
 
-        modelBuilder.Entity<User>(entity =>
+        modelBuilder.Entity<StaffUser>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Users__3214EC078909D83A");
 
-            entity.HasIndex(e => e.TenantId, "IX_Users_TenantId");
+            entity.HasIndex(e => e.AccountId, "IX_StaffUsers_AccountId").IsUnique();
+
+            entity.HasIndex(e => e.OrganizationId, "IX_Users_OrganizationId");
 
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.Email)
-                .HasMaxLength(100)
-                .IsUnicode(false);
             entity.Property(e => e.FullName).HasMaxLength(100);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.PasswordHash)
-                .HasMaxLength(255)
-                .IsUnicode(false);
-            entity.Property(e => e.Phone)
-                .HasMaxLength(15)
-                .IsUnicode(false);
 
-            entity.HasOne(d => d.Tenant).WithMany(p => p.Users)
-                .HasForeignKey(d => d.TenantId)
+            entity.HasOne(d => d.Account).WithMany(p => p.StaffUsers)
+                .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Users__TenantId__5812160E");
+                .HasConstraintName("FK_StaffUsers_Accounts_AccountId");
 
-            entity.HasMany(d => d.Properties).WithMany(p => p.Users)
+            entity.HasOne(d => d.Organization).WithMany(p => p.StaffUsers)
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Users__OrganizationId__5812160E");
+
+            entity.HasMany(d => d.Properties).WithMany(p => p.StaffUsers)
                 .UsingEntity<Dictionary<string, object>>(
-                    "UserPropertyMapping",
+                    "StaffUserPropertyMapping",
                     r => r.HasOne<Property>().WithMany()
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.ClientSetNull)
                         .HasConstraintName("FK__UserPrope__Prope__6E01572D"),
-                    l => l.HasOne<User>().WithMany()
-                        .HasForeignKey("UserId")
+                    l => l.HasOne<StaffUser>().WithMany()
+                        .HasForeignKey("StaffUserId")
                         .OnDelete(DeleteBehavior.ClientSetNull)
                         .HasConstraintName("FK__UserPrope__UserI__6D0D32F4"),
                     j =>
                     {
-                        j.HasKey("UserId", "PropertyId").HasName("PK__UserProp__5084563FC247FEEC");
-                        j.ToTable("UserPropertyMapping");
+                        j.HasKey("StaffUserId", "PropertyId").HasName("PK__UserProp__5084563FC247FEEC");
+                        j.ToTable("StaffUserPropertyMapping");
                     });
 
-            entity.HasMany(d => d.Roles).WithMany(p => p.Users)
+            entity.HasMany(d => d.Roles).WithMany(p => p.StaffUsers)
                 .UsingEntity<Dictionary<string, object>>(
-                    "UserRole",
+                    "StaffUserRole",
                     r => r.HasOne<Role>().WithMany()
                         .HasForeignKey("RoleId")
-                        .HasConstraintName("FK__UserRoles__RoleI__66603565"),
-                    l => l.HasOne<User>().WithMany()
-                        .HasForeignKey("UserId")
-                        .HasConstraintName("FK__UserRoles__UserI__656C112C"),
+                        .HasConstraintName("FK__StaffUserRoles__RoleI__66603565"),
+                    l => l.HasOne<StaffUser>().WithMany()
+                        .HasForeignKey("StaffUserId")
+                        .HasConstraintName("FK__StaffUserRoles__UserI__656C112C"),
                     j =>
                     {
-                        j.HasKey("UserId", "RoleId").HasName("PK__UserRole__AF2760AD29238DE0");
-                        j.ToTable("UserRoles");
+                        j.HasKey("StaffUserId", "RoleId").HasName("PK__UserRole__AF2760AD29238DE0");
+                        j.ToTable("StaffUserRoles");
                     });
         });
 
-        modelBuilder.Entity<UserAccessToken>(entity =>
+        modelBuilder.Entity<AccountAccessToken>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK_UserAccessTokens");
+            entity.HasKey(e => e.Id).HasName("PK_AccountAccessTokens");
 
-            entity.HasIndex(e => e.TokenHash, "IX_UserAccessTokens_TokenHash");
+            entity.HasIndex(e => e.TokenHash, "IX_AccountAccessTokens_TokenHash");
 
-            entity.HasIndex(e => new { e.UserId, e.ExpiresAt }, "IX_UserAccessTokens_UserId_ExpiresAt");
+            entity.HasIndex(e => new { e.AccountId, e.ExpiresAt }, "IX_AccountAccessTokens_AccountId_ExpiresAt");
 
             entity.Property(e => e.TokenHash)
                 .HasMaxLength(512)
@@ -620,19 +660,19 @@ public partial class HostContext : DbContext
                 .HasMaxLength(45)
                 .IsUnicode(false);
 
-            entity.HasOne(d => d.User).WithMany(p => p.UserAccessTokens)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK_UserAccessTokens_Users_UserId");
+            entity.HasOne(d => d.Account).WithMany(p => p.AccountAccessTokens)
+                .HasForeignKey(d => d.AccountId)
+                .HasConstraintName("FK_AccountAccessTokens_Accounts_AccountId");
         });
 
-        modelBuilder.Entity<UserRefreshToken>(entity =>
+        modelBuilder.Entity<AccountRefreshToken>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK_UserRefreshTokens");
+            entity.HasKey(e => e.Id).HasName("PK_AccountRefreshTokens");
 
-            entity.HasIndex(e => e.TokenHash, "IX_UserRefreshTokens_TokenHash")
+            entity.HasIndex(e => e.TokenHash, "IX_AccountRefreshTokens_TokenHash")
                 .IsUnique();
 
-            entity.HasIndex(e => new { e.UserId, e.ExpiresAt }, "IX_UserRefreshTokens_UserId_ExpiresAt");
+            entity.HasIndex(e => new { e.AccountId, e.ExpiresAt }, "IX_AccountRefreshTokens_AccountId_ExpiresAt");
 
             entity.Property(e => e.TokenHash)
                 .HasMaxLength(512)
@@ -652,9 +692,9 @@ public partial class HostContext : DbContext
                 .HasMaxLength(45)
                 .IsUnicode(false);
 
-            entity.HasOne(d => d.User).WithMany(p => p.UserRefreshTokens)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK_UserRefreshTokens_Users_UserId");
+            entity.HasOne(d => d.Account).WithMany(p => p.AccountRefreshTokens)
+                .HasForeignKey(d => d.AccountId)
+                .HasConstraintName("FK_AccountRefreshTokens_Accounts_AccountId");
         });
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())

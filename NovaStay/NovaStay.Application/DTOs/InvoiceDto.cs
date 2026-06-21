@@ -3,7 +3,7 @@ namespace NovaStay.Application.DTOs;
 public sealed class InvoiceDto
 {
     public Guid Id { get; set; }
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
     public Guid? ContractId { get; set; }
     public Guid? BookingId { get; set; }
     public string InvoicePeriod { get; set; } = string.Empty;

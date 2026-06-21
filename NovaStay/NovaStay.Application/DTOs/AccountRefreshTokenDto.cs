@@ -1,8 +1,9 @@
-namespace NovaStay.Domain.Entities;
+namespace NovaStay.Application.DTOs;
 
-public sealed class UserRefreshTokenEntity : Entity
+public sealed class AccountRefreshTokenDto
 {
-    public Guid UserId { get; set; }
+    public Guid Id { get; set; }
+    public Guid AccountId { get; set; }
     public string TokenHash { get; set; } = string.Empty;
     public DateTime ExpiresAt { get; set; }
     public DateTime? RevokedAt { get; set; }
