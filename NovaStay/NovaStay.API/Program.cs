@@ -34,7 +34,20 @@ namespace NovaStay.API
 
             builder.Services.AddInfrastructure(builder.Configuration);
 
-
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "http://localhost:5173",
+                            "https://novastay.io.vn",
+                            "https://www.novastay.io.vn"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+            });
 
             builder.Services.AddAutoMapper(configuration =>
             {
@@ -64,12 +77,15 @@ namespace NovaStay.API
                     });
             }
 
+
+
+
             builder.Services.AddControllers();
 
             var app = builder.Build();
 
             app.UseHttpsRedirection();
-
+            app.UseCors("AllowFrontend");
             app.UseAuthentication();
             app.UseAuthorization();
 
