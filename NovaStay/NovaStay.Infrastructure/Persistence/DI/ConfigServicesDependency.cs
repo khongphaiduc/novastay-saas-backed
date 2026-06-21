@@ -31,7 +31,7 @@ namespace NovaStay.Infrastructure.Persistence.DI
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(configuration["RabbitMQ:HostName"]!, h =>
+                    cfg.Host(configuration["RabbitMQ:HostName"] ?? "157.66.219.130", h =>
                     {
                         h.Username(configuration["RabbitMQ:Username"]!);
                         h.Password(configuration["RabbitMQ:Password"]!);
