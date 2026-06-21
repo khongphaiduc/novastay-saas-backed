@@ -37,8 +37,6 @@ using DomainTechnician = NovaStay.Domain.Entities.TechnicianEntity;
 using DatabaseTechnician = NovaStay.Infrastructure.Models.Technician;
 using DomainAccount = NovaStay.Domain.Entities.AccountEntity;
 using DatabaseAccount = NovaStay.Infrastructure.Models.Account;
-using DomainAccountAccessToken = NovaStay.Domain.Entities.AccountAccessTokenEntity;
-using DatabaseAccountAccessToken = NovaStay.Infrastructure.Models.AccountAccessToken;
 using DomainAccountRefreshToken = NovaStay.Domain.Entities.AccountRefreshTokenEntity;
 using DatabaseAccountRefreshToken = NovaStay.Infrastructure.Models.AccountRefreshToken;
 using DomainStaffUser = NovaStay.Domain.Entities.StaffUserEntity;
@@ -211,14 +209,6 @@ internal sealed class AccountRepository : Repository<DomainAccount, DatabaseAcco
             .FirstOrDefaultAsync(entity => entity.Email == email, cancellationToken);
 
         return account is null ? null : _mapper.ToDomain(account);
-    }
-}
-
-internal sealed class AccountAccessTokenRepository : Repository<DomainAccountAccessToken, DatabaseAccountAccessToken>, IAccountAccessTokenRepository
-{
-    public AccountAccessTokenRepository(HostContext context, IDatabaseModelMapper<DomainAccountAccessToken, DatabaseAccountAccessToken> mapper)
-        : base(context, mapper)
-    {
     }
 }
 

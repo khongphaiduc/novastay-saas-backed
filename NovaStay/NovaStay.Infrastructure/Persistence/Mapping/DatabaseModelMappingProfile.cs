@@ -35,8 +35,6 @@ using DomainAccount = NovaStay.Domain.Entities.AccountEntity;
 using DatabaseAccount = NovaStay.Infrastructure.Models.Account;
 using DomainOrganization = NovaStay.Domain.Entities.OrganizationEntity;
 using DatabaseOrganization = NovaStay.Infrastructure.Models.Organization;
-using DomainAccountAccessToken = NovaStay.Domain.Entities.AccountAccessTokenEntity;
-using DatabaseAccountAccessToken = NovaStay.Infrastructure.Models.AccountAccessToken;
 using DomainAccountRefreshToken = NovaStay.Domain.Entities.AccountRefreshTokenEntity;
 using DatabaseAccountRefreshToken = NovaStay.Infrastructure.Models.AccountRefreshToken;
 using DomainStaffUser = NovaStay.Domain.Entities.StaffUserEntity;
@@ -66,7 +64,6 @@ public sealed class DatabaseModelMappingProfile : Profile
         CreateMap<DatabaseTechnician, DomainTechnician>().ReverseMap();
         CreateMap<DatabaseAccount, DomainAccount>().ReverseMap();
         CreateMap<DatabaseOrganization, DomainOrganization>().ReverseMap();
-        CreateMap<DatabaseAccountAccessToken, DomainAccountAccessToken>().ReverseMap();
         CreateMap<DatabaseAccountRefreshToken, DomainAccountRefreshToken>().ReverseMap();
         CreateMap<DatabaseStaffUser, DomainStaffUser>().ReverseMap();
     }

@@ -6,6 +6,7 @@ public sealed class OrganizationDto
     public Guid OwnerAccountId { get; set; }
     public Guid PackageId { get; set; }
     public string BusinessName { get; set; } = string.Empty;
+    public string BusinessArea { get; set; } = string.Empty;
     public string? TaxCode { get; set; }
     public string OwnerEmail { get; set; } = string.Empty;
     public string OwnerPhone { get; set; } = string.Empty;

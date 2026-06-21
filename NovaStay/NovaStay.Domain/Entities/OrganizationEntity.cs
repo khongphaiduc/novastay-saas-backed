@@ -7,6 +7,7 @@ public sealed class OrganizationEntity : Entity
     public Guid OwnerAccountId { get; set; }
     public Guid PackageId { get; set; }
     public EntityName BusinessName { get; set; }
+    public string BusinessArea { get; set; } = string.Empty;
     public string? TaxCode { get; set; }
     public EmailAddress OwnerEmail { get; set; }
     public PhoneNumber OwnerPhone { get; set; }

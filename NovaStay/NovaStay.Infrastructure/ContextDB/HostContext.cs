@@ -54,8 +54,6 @@ public partial class HostContext : DbContext
 
     public virtual DbSet<StaffUser> StaffUsers { get; set; }
 
-    public virtual DbSet<AccountAccessToken> AccountAccessTokens { get; set; }
-
     public virtual DbSet<AccountRefreshToken> AccountRefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -70,6 +68,7 @@ public partial class HostContext : DbContext
             entity.Property(e => e.AccountType)
                 .HasMaxLength(30)
                 .IsUnicode(false);
+            entity.Property(e => e.CustomerName).HasMaxLength(100);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -551,6 +550,7 @@ public partial class HostContext : DbContext
             entity.HasIndex(e => e.OwnerEmail, "UQ__Organizations__FF0186BBAE6B6868").IsUnique();
 
             entity.Property(e => e.BusinessName).HasMaxLength(150);
+            entity.Property(e => e.BusinessArea).HasMaxLength(100);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -635,34 +635,6 @@ public partial class HostContext : DbContext
                         j.HasKey("StaffUserId", "RoleId").HasName("PK__UserRole__AF2760AD29238DE0");
                         j.ToTable("StaffUserRoles");
                     });
-        });
-
-        modelBuilder.Entity<AccountAccessToken>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK_AccountAccessTokens");
-
-            entity.HasIndex(e => e.TokenHash, "IX_AccountAccessTokens_TokenHash");
-
-            entity.HasIndex(e => new { e.AccountId, e.ExpiresAt }, "IX_AccountAccessTokens_AccountId_ExpiresAt");
-
-            entity.Property(e => e.TokenHash)
-                .HasMaxLength(512)
-                .IsUnicode(false);
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.CreatedByIp)
-                .HasMaxLength(45)
-                .IsUnicode(false);
-            entity.Property(e => e.ExpiresAt).HasColumnType("datetime");
-            entity.Property(e => e.RevokedAt).HasColumnType("datetime");
-            entity.Property(e => e.RevokedByIp)
-                .HasMaxLength(45)
-                .IsUnicode(false);
-
-            entity.HasOne(d => d.Account).WithMany(p => p.AccountAccessTokens)
-                .HasForeignKey(d => d.AccountId)
-                .HasConstraintName("FK_AccountAccessTokens_Accounts_AccountId");
         });
 
         modelBuilder.Entity<AccountRefreshToken>(entity =>
