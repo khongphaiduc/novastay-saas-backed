@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NovaStay.Infrastructure.ContextDB;
 
@@ -11,9 +12,11 @@ using NovaStay.Infrastructure.ContextDB;
 namespace NovaStay.Infrastructure.Migrations
 {
     [DbContext(typeof(HostContext))]
-    partial class HostContextModelSnapshot : ModelSnapshot
+    [Migration("20260621103721_AddAccountAccessTokenVersion")]
+    partial class AddAccountAccessTokenVersion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -28,6 +31,11 @@ namespace NovaStay.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("(newsequentialid())");
+
+                    b.Property<int>("AccessTokenVersion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("AccountType")
                         .IsRequired()

@@ -27,7 +27,6 @@ public sealed class UnitOfWork : IUnitOfWork
         ITechnicianRepository technicians,
         IAccountRepository accounts,
         IOrganizationRepository organizations,
-        IAccountAccessTokenRepository accountAccessTokens,
         IAccountRefreshTokenRepository accountRefreshTokens,
         IStaffUserRepository staffUsers)
     {
@@ -50,7 +49,6 @@ public sealed class UnitOfWork : IUnitOfWork
         Technicians = technicians;
         Accounts = accounts;
         Organizations = organizations;
-        AccountAccessTokens = accountAccessTokens;
         AccountRefreshTokens = accountRefreshTokens;
         StaffUsers = staffUsers;
     }
@@ -90,8 +88,6 @@ public sealed class UnitOfWork : IUnitOfWork
     public IAccountRepository Accounts { get; }
 
     public IOrganizationRepository Organizations { get; }
-
-    public IAccountAccessTokenRepository AccountAccessTokens { get; }
 
     public IAccountRefreshTokenRepository AccountRefreshTokens { get; }
 

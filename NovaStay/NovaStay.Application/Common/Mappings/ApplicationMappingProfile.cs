@@ -40,7 +40,6 @@ public sealed class ApplicationMappingProfile : Profile
         CreateMap<TechnicianEntity, TechnicianDto>().ReverseMap();
         CreateMap<AccountEntity, AccountDto>().ReverseMap();
         CreateMap<OrganizationEntity, OrganizationDto>().ReverseMap();
-        CreateMap<AccountAccessTokenEntity, AccountAccessTokenDto>().ReverseMap();
         CreateMap<AccountRefreshTokenEntity, AccountRefreshTokenDto>().ReverseMap();
         CreateMap<StaffUserEntity, StaffUserDto>().ReverseMap();
     }

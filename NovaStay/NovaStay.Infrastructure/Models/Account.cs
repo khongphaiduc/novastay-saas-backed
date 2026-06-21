@@ -9,6 +9,8 @@ public partial class Account
 
     public string AccountType { get; set; } = null!;
 
+    public string CustomerName { get; set; } = null!;
+
     public string? Email { get; set; }
 
     public string Phone { get; set; } = null!;
@@ -20,8 +22,6 @@ public partial class Account
     public DateTime? LastLoginAt { get; set; }
 
     public DateTime? CreatedAt { get; set; }
-
-    public virtual ICollection<AccountAccessToken> AccountAccessTokens { get; set; } = new List<AccountAccessToken>();
 
     public virtual ICollection<AccountRefreshToken> AccountRefreshTokens { get; set; } = new List<AccountRefreshToken>();
 

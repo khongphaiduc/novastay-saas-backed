@@ -2,8 +2,7 @@ using System.Linq.Expressions;
 
 namespace NovaStay.Application.Common.Interfaces;
 
-public interface IRepository<TEntity>
-    where TEntity : class
+public interface IRepository<TEntity> where TEntity : class
 {
     IQueryable<TEntity> Query();
 
@@ -11,9 +10,7 @@ public interface IRepository<TEntity>
 
     Task<IReadOnlyList<TEntity>> ListAsync(CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<TEntity>> FindAsync(
-        Expression<Func<TEntity, bool>> predicate,
-        CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<TEntity>> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
 
     Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);
 

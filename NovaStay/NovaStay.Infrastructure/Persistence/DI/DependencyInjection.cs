@@ -1,5 +1,7 @@
 using NovaStay.Application.Common.Interfaces;
+using NovaStay.Application.Services;
 using NovaStay.Infrastructure.ContextDB;
+using NovaStay.Infrastructure.Persistence.Auth;
 using NovaStay.Infrastructure.Persistence.Mapping;
 using NovaStay.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -37,10 +39,11 @@ public static class DependencyInjection
         services.AddScoped<ITechnicianRepository, TechnicianRepository>();
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
-        services.AddScoped<IAccountAccessTokenRepository, AccountAccessTokenRepository>();
         services.AddScoped<IAccountRefreshTokenRepository, AccountRefreshTokenRepository>();
         services.AddScoped<IStaffUserRepository, StaffUserRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

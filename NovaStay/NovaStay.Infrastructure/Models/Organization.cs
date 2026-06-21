@@ -13,6 +13,8 @@ public partial class Organization
 
     public string BusinessName { get; set; } = null!;
 
+    public string BusinessArea { get; set; } = null!;
+
     public string? TaxCode { get; set; }
 
     public string OwnerEmail { get; set; } = null!;

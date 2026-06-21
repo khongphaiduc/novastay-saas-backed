@@ -20,7 +20,6 @@ public interface IUnitOfWork : IAsyncDisposable
     ITechnicianRepository Technicians { get; }
     IAccountRepository Accounts { get; }
     IOrganizationRepository Organizations { get; }
-    IAccountAccessTokenRepository AccountAccessTokens { get; }
     IAccountRefreshTokenRepository AccountRefreshTokens { get; }
     IStaffUserRepository StaffUsers { get; }
 

@@ -28,10 +28,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Config\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\NovaStay.Application\NovaStay.Application.csproj" />
     <ProjectReference Include="..\NovaStay.Domain\NovaStay.Domain.csproj" />
   </ItemGroup>
