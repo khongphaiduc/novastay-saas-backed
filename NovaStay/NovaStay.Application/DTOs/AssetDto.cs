@@ -3,7 +3,7 @@ namespace NovaStay.Application.DTOs;
 public sealed class AssetDto
 {
     public Guid Id { get; set; }
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
     public string AssetName { get; set; } = string.Empty;
     public string? Brand { get; set; }
     public string? Model { get; set; }

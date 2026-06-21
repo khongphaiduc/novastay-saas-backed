@@ -4,7 +4,7 @@ namespace NovaStay.Domain.Entities;
 
 public sealed class MaintenanceTicketEntity : Entity
 {
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
     public Guid RoomId { get; set; }
     public Guid ResidentId { get; set; }
     public Guid? AssetAssignmentId { get; set; }

@@ -7,7 +7,7 @@ public partial class Broker
 {
     public Guid Id { get; set; }
 
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
 
     public string FullName { get; set; } = null!;
 
@@ -19,5 +19,5 @@ public partial class Broker
 
     public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 
-    public virtual Tenant Tenant { get; set; } = null!;
+    public virtual Organization Organization { get; set; } = null!;
 }

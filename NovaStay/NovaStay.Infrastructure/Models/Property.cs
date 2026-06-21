@@ -7,7 +7,7 @@ public partial class Property
 {
     public Guid Id { get; set; }
 
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
 
     public string PropertyName { get; set; } = null!;
 
@@ -23,7 +23,7 @@ public partial class Property
 
     public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
 
-    public virtual Tenant Tenant { get; set; } = null!;
+    public virtual Organization Organization { get; set; } = null!;
 
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
+    public virtual ICollection<StaffUser> StaffUsers { get; set; } = new List<StaffUser>();
 }

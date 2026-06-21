@@ -1,6 +1,6 @@
+using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
-using Microsoft.AspNetCore.Mvc;
 
 namespace NovaStay.API.Controllers;
 
@@ -15,11 +15,13 @@ public class SampleDataController : ControllerBase
         _sampleDataService = sampleDataService;
     }
 
-    [HttpGet("tenants")]
-    public async Task<ActionResult<IReadOnlyList<TenantDto>>> GetTenants([FromQuery] int take = 20,CancellationToken cancellationToken = default)     
+    [HttpGet("organizations")]
+    public async Task<ActionResult<IReadOnlyList<OrganizationDto>>> GetOrganizations(
+        [FromQuery] int take = 20,
+        CancellationToken cancellationToken = default)
     {
-        var tenants = await _sampleDataService.GetTenantsAsync(take, cancellationToken);
-        // test
-        return Ok(tenants);
+        var organizations = await _sampleDataService.GetOrganizationsAsync(take, cancellationToken);
+
+        return Ok(organizations);
     }
 }

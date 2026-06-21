@@ -4,7 +4,7 @@ using NovaStay.Domain.Entities;
 using NovaStay.Domain.ValueObject;
 using NovaStay.Infrastructure.Persistence.Mapping;
 using Microsoft.Extensions.Logging.Abstractions;
-using DatabaseTenant = NovaStay.Infrastructure.Models.Tenant;
+using DatabaseOrganization = NovaStay.Infrastructure.Models.Organization;
 
 namespace NovaStay.UnitTests.Infrastructure;
 
@@ -27,9 +27,9 @@ public sealed class DatabaseModelMappingProfileTests
     }
 
     [Fact]
-    public void TenantDatabaseModel_Maps_To_TenantEntity()
+    public void OrganizationDatabaseModel_Maps_To_OrganizationEntity()
     {
-        var databaseModel = new DatabaseTenant
+        var databaseModel = new DatabaseOrganization
         {
             Id = Guid.NewGuid(),
             PackageId = Guid.NewGuid(),
@@ -41,7 +41,7 @@ public sealed class DatabaseModelMappingProfileTests
             CreatedAt = DateTime.UtcNow
         };
 
-        var entity = _mapper.Map<TenantEntity>(databaseModel);
+        var entity = _mapper.Map<OrganizationEntity>(databaseModel);
 
         Assert.Equal(databaseModel.Id, entity.Id);
         Assert.Equal(new EntityName(databaseModel.BusinessName), entity.BusinessName);
@@ -51,9 +51,9 @@ public sealed class DatabaseModelMappingProfileTests
     }
 
     [Fact]
-    public void TenantEntity_Maps_To_TenantDatabaseModel()
+    public void OrganizationEntity_Maps_To_OrganizationDatabaseModel()
     {
-        var entity = new TenantEntity
+        var entity = new OrganizationEntity
         {
             Id = Guid.NewGuid(),
             PackageId = Guid.NewGuid(),
@@ -65,7 +65,7 @@ public sealed class DatabaseModelMappingProfileTests
             CreatedAt = DateTime.UtcNow
         };
 
-        var databaseModel = _mapper.Map<DatabaseTenant>(entity);
+        var databaseModel = _mapper.Map<DatabaseOrganization>(entity);
 
         Assert.Equal(entity.Id, databaseModel.Id);
         Assert.Equal("Host Demo", databaseModel.BusinessName);

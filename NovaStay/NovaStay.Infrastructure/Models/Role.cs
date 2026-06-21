@@ -7,7 +7,7 @@ public partial class Role
 {
     public Guid Id { get; set; }
 
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
 
     public string RoleName { get; set; } = null!;
 
@@ -17,9 +17,9 @@ public partial class Role
 
     public DateTime? CreatedAt { get; set; }
 
-    public virtual Tenant Tenant { get; set; } = null!;
+    public virtual Organization Organization { get; set; } = null!;
 
     public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
 
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
+    public virtual ICollection<StaffUser> StaffUsers { get; set; } = new List<StaffUser>();
 }

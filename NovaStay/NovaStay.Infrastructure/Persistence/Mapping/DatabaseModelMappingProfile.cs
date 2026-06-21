@@ -31,14 +31,16 @@ using DomainSubscriptionPackage = NovaStay.Domain.Entities.SubscriptionPackageEn
 using DatabaseSubscriptionPackage = NovaStay.Infrastructure.Models.SubscriptionPackage;
 using DomainTechnician = NovaStay.Domain.Entities.TechnicianEntity;
 using DatabaseTechnician = NovaStay.Infrastructure.Models.Technician;
-using DomainTenant = NovaStay.Domain.Entities.TenantEntity;
-using DatabaseTenant = NovaStay.Infrastructure.Models.Tenant;
-using DomainUserAccessToken = NovaStay.Domain.Entities.UserAccessTokenEntity;
-using DatabaseUserAccessToken = NovaStay.Infrastructure.Models.UserAccessToken;
-using DomainUserRefreshToken = NovaStay.Domain.Entities.UserRefreshTokenEntity;
-using DatabaseUserRefreshToken = NovaStay.Infrastructure.Models.UserRefreshToken;
-using DomainUser = NovaStay.Domain.Entities.UserEntity;
-using DatabaseUser = NovaStay.Infrastructure.Models.User;
+using DomainAccount = NovaStay.Domain.Entities.AccountEntity;
+using DatabaseAccount = NovaStay.Infrastructure.Models.Account;
+using DomainOrganization = NovaStay.Domain.Entities.OrganizationEntity;
+using DatabaseOrganization = NovaStay.Infrastructure.Models.Organization;
+using DomainAccountAccessToken = NovaStay.Domain.Entities.AccountAccessTokenEntity;
+using DatabaseAccountAccessToken = NovaStay.Infrastructure.Models.AccountAccessToken;
+using DomainAccountRefreshToken = NovaStay.Domain.Entities.AccountRefreshTokenEntity;
+using DatabaseAccountRefreshToken = NovaStay.Infrastructure.Models.AccountRefreshToken;
+using DomainStaffUser = NovaStay.Domain.Entities.StaffUserEntity;
+using DatabaseStaffUser = NovaStay.Infrastructure.Models.StaffUser;
 
 namespace NovaStay.Infrastructure.Persistence.Mapping;
 
@@ -62,9 +64,10 @@ public sealed class DatabaseModelMappingProfile : Profile
         CreateMap<DatabaseRoomImage, DomainRoomImage>().ReverseMap();
         CreateMap<DatabaseSubscriptionPackage, DomainSubscriptionPackage>().ReverseMap();
         CreateMap<DatabaseTechnician, DomainTechnician>().ReverseMap();
-        CreateMap<DatabaseTenant, DomainTenant>().ReverseMap();
-        CreateMap<DatabaseUserAccessToken, DomainUserAccessToken>().ReverseMap();
-        CreateMap<DatabaseUserRefreshToken, DomainUserRefreshToken>().ReverseMap();
-        CreateMap<DatabaseUser, DomainUser>().ReverseMap();
+        CreateMap<DatabaseAccount, DomainAccount>().ReverseMap();
+        CreateMap<DatabaseOrganization, DomainOrganization>().ReverseMap();
+        CreateMap<DatabaseAccountAccessToken, DomainAccountAccessToken>().ReverseMap();
+        CreateMap<DatabaseAccountRefreshToken, DomainAccountRefreshToken>().ReverseMap();
+        CreateMap<DatabaseStaffUser, DomainStaffUser>().ReverseMap();
     }
 }

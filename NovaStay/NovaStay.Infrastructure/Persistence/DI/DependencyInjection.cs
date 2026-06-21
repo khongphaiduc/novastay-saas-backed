@@ -35,10 +35,11 @@ public static class DependencyInjection
         services.AddScoped<IRoomImageRepository, RoomImageRepository>();
         services.AddScoped<ISubscriptionPackageRepository, SubscriptionPackageRepository>();
         services.AddScoped<ITechnicianRepository, TechnicianRepository>();
-        services.AddScoped<ITenantRepository, TenantRepository>();
-        services.AddScoped<IUserAccessTokenRepository, UserAccessTokenRepository>();
-        services.AddScoped<IUserRefreshTokenRepository, UserRefreshTokenRepository>();
-        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IAccountRepository, AccountRepository>();
+        services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+        services.AddScoped<IAccountAccessTokenRepository, AccountAccessTokenRepository>();
+        services.AddScoped<IAccountRefreshTokenRepository, AccountRefreshTokenRepository>();
+        services.AddScoped<IStaffUserRepository, StaffUserRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;

@@ -1,8 +1,8 @@
 using NovaStay.Domain.Entities;
 namespace NovaStay.Application.Common.Interfaces;
-public interface ITenantRepository : IRepository<TenantEntity>
+public interface IOrganizationRepository : IRepository<OrganizationEntity>
 {
-    Task<TenantEntity?> GetByOwnerEmailAsync(
+    Task<OrganizationEntity?> GetByOwnerEmailAsync(
         string ownerEmail,
         CancellationToken cancellationToken = default);
 }

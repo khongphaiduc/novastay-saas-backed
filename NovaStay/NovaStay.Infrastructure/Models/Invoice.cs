@@ -7,7 +7,7 @@ public partial class Invoice
 {
     public Guid Id { get; set; }
 
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
 
     public Guid? ContractId { get; set; }
 
@@ -33,5 +33,5 @@ public partial class Invoice
 
     public virtual Contract? Contract { get; set; }
 
-    public virtual Tenant Tenant { get; set; } = null!;
+    public virtual Organization Organization { get; set; } = null!;
 }

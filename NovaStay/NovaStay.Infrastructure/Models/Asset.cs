@@ -7,7 +7,7 @@ public partial class Asset
 {
     public Guid Id { get; set; }
 
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
 
     public string AssetName { get; set; } = null!;
 
@@ -27,5 +27,5 @@ public partial class Asset
 
     public virtual ICollection<AssetAssignment> AssetAssignments { get; set; } = new List<AssetAssignment>();
 
-    public virtual Tenant Tenant { get; set; } = null!;
+    public virtual Organization Organization { get; set; } = null!;
 }

@@ -38,9 +38,10 @@ public sealed class ApplicationMappingProfile : Profile
         CreateMap<RoomImageEntity, RoomImageDto>().ReverseMap();
         CreateMap<SubscriptionPackageEntity, SubscriptionPackageDto>().ReverseMap();
         CreateMap<TechnicianEntity, TechnicianDto>().ReverseMap();
-        CreateMap<TenantEntity, TenantDto>().ReverseMap();
-        CreateMap<UserAccessTokenEntity, UserAccessTokenDto>().ReverseMap();
-        CreateMap<UserRefreshTokenEntity, UserRefreshTokenDto>().ReverseMap();
-        CreateMap<UserEntity, UserDto>().ReverseMap();
+        CreateMap<AccountEntity, AccountDto>().ReverseMap();
+        CreateMap<OrganizationEntity, OrganizationDto>().ReverseMap();
+        CreateMap<AccountAccessTokenEntity, AccountAccessTokenDto>().ReverseMap();
+        CreateMap<AccountRefreshTokenEntity, AccountRefreshTokenDto>().ReverseMap();
+        CreateMap<StaffUserEntity, StaffUserDto>().ReverseMap();
     }
 }

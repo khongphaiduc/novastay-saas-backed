@@ -25,10 +25,11 @@ public sealed class UnitOfWork : IUnitOfWork
         IRoomImageRepository roomImages,
         ISubscriptionPackageRepository subscriptionPackages,
         ITechnicianRepository technicians,
-        ITenantRepository tenants,
-        IUserAccessTokenRepository userAccessTokens,
-        IUserRefreshTokenRepository userRefreshTokens,
-        IUserRepository users)
+        IAccountRepository accounts,
+        IOrganizationRepository organizations,
+        IAccountAccessTokenRepository accountAccessTokens,
+        IAccountRefreshTokenRepository accountRefreshTokens,
+        IStaffUserRepository staffUsers)
     {
         _context = context;
         Assets = assets;
@@ -47,10 +48,11 @@ public sealed class UnitOfWork : IUnitOfWork
         RoomImages = roomImages;
         SubscriptionPackages = subscriptionPackages;
         Technicians = technicians;
-        Tenants = tenants;
-        UserAccessTokens = userAccessTokens;
-        UserRefreshTokens = userRefreshTokens;
-        Users = users;
+        Accounts = accounts;
+        Organizations = organizations;
+        AccountAccessTokens = accountAccessTokens;
+        AccountRefreshTokens = accountRefreshTokens;
+        StaffUsers = staffUsers;
     }
 
     public IAssetRepository Assets { get; }
@@ -85,13 +87,15 @@ public sealed class UnitOfWork : IUnitOfWork
 
     public ITechnicianRepository Technicians { get; }
 
-    public ITenantRepository Tenants { get; }
+    public IAccountRepository Accounts { get; }
 
-    public IUserAccessTokenRepository UserAccessTokens { get; }
+    public IOrganizationRepository Organizations { get; }
 
-    public IUserRefreshTokenRepository UserRefreshTokens { get; }
+    public IAccountAccessTokenRepository AccountAccessTokens { get; }
 
-    public IUserRepository Users { get; }
+    public IAccountRefreshTokenRepository AccountRefreshTokens { get; }
+
+    public IStaffUserRepository StaffUsers { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

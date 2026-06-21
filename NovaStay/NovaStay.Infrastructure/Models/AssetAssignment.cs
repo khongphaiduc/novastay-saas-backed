@@ -7,7 +7,7 @@ public partial class AssetAssignment
 {
     public Guid Id { get; set; }
 
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
 
     public Guid AssetId { get; set; }
 
@@ -25,5 +25,5 @@ public partial class AssetAssignment
 
     public virtual Room? Room { get; set; }
 
-    public virtual Tenant Tenant { get; set; } = null!;
+    public virtual Organization Organization { get; set; } = null!;
 }

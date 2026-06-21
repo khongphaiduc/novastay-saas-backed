@@ -22,9 +22,9 @@ public class ApplicationMappingProfileTests
     }
 
     [Fact]
-    public void TenantDto_Maps_To_Tenant()
+    public void OrganizationDto_Maps_To_Organization()
     {
-        var dto = new TenantDto
+        var dto = new OrganizationDto
         {
             Id = Guid.NewGuid(),
             PackageId = Guid.NewGuid(),
@@ -35,13 +35,13 @@ public class ApplicationMappingProfileTests
             TokenBalance = 100
         };
 
-        var tenant = _mapper.Map<TenantEntity>(dto);
+        var Organization = _mapper.Map<OrganizationEntity>(dto);
 
-        Assert.Equal(dto.Id, tenant.Id);
-        Assert.Equal(new EntityName(dto.BusinessName), tenant.BusinessName);
-        Assert.Equal(new EmailAddress(dto.OwnerEmail), tenant.OwnerEmail);
-        Assert.Equal(new PhoneNumber(dto.OwnerPhone), tenant.OwnerPhone);
-        Assert.Equal(new Status(dto.SubscriptionStatus), tenant.SubscriptionStatus);
+        Assert.Equal(dto.Id, Organization.Id);
+        Assert.Equal(new EntityName(dto.BusinessName), Organization.BusinessName);
+        Assert.Equal(new EmailAddress(dto.OwnerEmail), Organization.OwnerEmail);
+        Assert.Equal(new PhoneNumber(dto.OwnerPhone), Organization.OwnerPhone);
+        Assert.Equal(new Status(dto.SubscriptionStatus), Organization.SubscriptionStatus);
     }
 
     [Fact]
