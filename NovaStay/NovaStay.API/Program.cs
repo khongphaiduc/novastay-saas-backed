@@ -16,6 +16,18 @@ namespace NovaStay.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            var infrastructureConfigPath = Path.GetFullPath(Path.Combine(
+                builder.Environment.ContentRootPath,
+                "..",
+                "NovaStay.Infrastructure",
+                "Config",
+                "appsettings.json"));
+
+            builder.Configuration.AddJsonFile(
+                infrastructureConfigPath,
+                optional: true,
+                reloadOnChange: true);
+
             var envPath = Path.GetFullPath(Path.Combine(
                 builder.Environment.ContentRootPath,
                 "..",

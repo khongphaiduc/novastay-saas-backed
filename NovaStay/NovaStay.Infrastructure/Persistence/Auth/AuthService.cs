@@ -1,9 +1,10 @@
-using System.Security.Cryptography;
+﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
 using NovaStay.Infrastructure.ContextDB;
 using NovaStay.Infrastructure.Models;
+using System.Security.Cryptography;
 
 namespace NovaStay.Infrastructure.Persistence.Auth;
 
@@ -13,11 +14,13 @@ internal sealed class AuthService : IAuthService
     private const string InvalidLoginMessage = "Invalid email or password.";
     private readonly HostContext _context;
     private readonly IJwtTokenService _jwtTokenService;
+    private readonly IPublishEndpoint _rabbitMQ;
 
-    public AuthService(HostContext context, IJwtTokenService jwtTokenService)
+    public AuthService(HostContext context, IJwtTokenService jwtTokenService, IPublishEndpoint publishEndpoint)
     {
         _context = context;
         _jwtTokenService = jwtTokenService;
+        _rabbitMQ = publishEndpoint;
     }
 
     public async Task<RegisterOrganizationAccountResponse> RegisterOrganizationOwnerAsync(
@@ -107,6 +110,18 @@ internal sealed class AuthService : IAuthService
         await _context.AccountRefreshTokens.AddAsync(refreshTokenEntity, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        await _rabbitMQ.Publish(new NofiticationRegisterBusiness
+        {
+            BusinessName = organization.BusinessName,
+            BusinessEmail = organization.OwnerEmail,
+            BusinessPhone = organization.OwnerPhone,
+            BusinessCity = request.BusinessArea,
+            BusinessZipCode = "Chưa cập nhật",
+            BusinessCountry = "Việt Nam",
+            AccountName = account.CustomerName,
+            Password = request.Password
+        }, cancellationToken);
 
         return new RegisterOrganizationAccountResponse
         {

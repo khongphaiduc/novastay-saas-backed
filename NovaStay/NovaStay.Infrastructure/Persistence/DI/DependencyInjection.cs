@@ -7,6 +7,7 @@ using NovaStay.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NovaStay.Infrastructure.ServicesImple;
 
 namespace NovaStay.Infrastructure.Persistence.DI;
 
@@ -44,7 +45,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
-
+        services.AddScoped<INotifications, Email>();
         return services;
     }
 }
