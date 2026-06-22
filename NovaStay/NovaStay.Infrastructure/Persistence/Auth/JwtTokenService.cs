@@ -57,9 +57,9 @@ internal sealed class JwtTokenService : IJwtTokenService
         string? email,
         DateTime expiresAt)
     {
-        var secret = GetJwtString("SecretKey");
-        var issuer = GetJwtString("Issuer");
-        var audience = GetJwtString("Audience");
+        var secret = GetJwtString("SecretKey" ?? "2HONDAICODONSuperSecretKeyForJWTTokenGeneration");
+        var issuer = GetJwtString("Issuer"?? "NovaStay");
+        var audience = GetJwtString("Audience"?? "NovaStayUsers");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
