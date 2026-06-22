@@ -272,9 +272,34 @@ internal sealed class AccountRepository : Repository<DomainAccount, DatabaseAcco
 
 internal sealed class AccountRefreshTokenRepository : Repository<DomainAccountRefreshToken, DatabaseAccountRefreshToken>, IAccountRefreshTokenRepository
 {
+    private readonly HostContext _context;
+
     public AccountRefreshTokenRepository(HostContext context, IDatabaseModelMapper<DomainAccountRefreshToken, DatabaseAccountRefreshToken> mapper)
         : base(context, mapper)
     {
+        _context = context;
+    }
+
+    public async Task<bool> RevokeByTokenHashAsync(
+        string tokenHash,
+        DateTime revokedAt,
+        string? revokedByIp,
+        CancellationToken cancellationToken = default)
+    {
+        var refreshToken = await _context.AccountRefreshTokens
+            .FirstOrDefaultAsync(
+                token => token.TokenHash == tokenHash && token.RevokedAt == null,
+                cancellationToken);
+
+        if (refreshToken is null)
+        {
+            return false;
+        }
+
+        refreshToken.RevokedAt = revokedAt;
+        refreshToken.RevokedByIp = revokedByIp;
+
+        return true;
     }
 }
 

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
@@ -9,10 +10,12 @@ namespace NovaStay.API.Controllers;
 public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ILogoutService _logoutService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, ILogoutService logoutService)
     {
         _authService = authService;
+        _logoutService = logoutService;
     }
 
     [HttpPost("register-organization")]
@@ -49,5 +52,13 @@ public sealed class AuthController : ControllerBase
         {
             return Unauthorized(new { message = exception.Message });
         }
+    }
+
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken cancellationToken = default)
+    {
+        await _logoutService.LogoutAsync(request, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        return NoContent();
     }
 }
