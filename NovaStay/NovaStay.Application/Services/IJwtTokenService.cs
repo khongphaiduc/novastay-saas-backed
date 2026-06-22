@@ -12,4 +12,6 @@ public interface IJwtTokenService
         string phone,
         string? email,
         DateTime issuedAt);
+
+    string HashRefreshToken(string refreshToken);
 }

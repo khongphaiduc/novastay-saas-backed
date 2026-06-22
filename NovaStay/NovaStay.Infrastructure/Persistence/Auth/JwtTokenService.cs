@@ -109,6 +109,11 @@ internal sealed class JwtTokenService : IJwtTokenService
         return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
     }
 
+    public string HashRefreshToken(string refreshToken)
+    {
+        return HashToken(refreshToken);
+    }
+
     private static string HashToken(string token)
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
