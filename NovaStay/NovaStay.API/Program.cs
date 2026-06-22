@@ -16,31 +16,54 @@ namespace NovaStay.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            var infrastructureConfigPath = Path.GetFullPath(Path.Combine(
-                builder.Environment.ContentRootPath,
-                "..",
-                "NovaStay.Infrastructure",
-                "Config",
-                "appsettings.json"));
-
-            builder.Configuration.AddJsonFile(
-                infrastructureConfigPath,
-                optional: true,
-                reloadOnChange: true);
-
-            var envPath = Path.GetFullPath(Path.Combine(
-                builder.Environment.ContentRootPath,
-                "..",
-                "NovaStay.Infrastructure",
-                "Config",
-                ".env"));
-
-            if (File.Exists(envPath))
+            var infrastructureConfigPaths = new[]
             {
-                Env.Load(envPath);
-                builder.Configuration.AddEnvironmentVariables();
+                Path.GetFullPath(Path.Combine(
+                    builder.Environment.ContentRootPath,
+                    "..",
+                    "NovaStay.Infrastructure",
+                    "Config",
+                    "appsettings.json")),
+                Path.GetFullPath(Path.Combine(
+                    builder.Environment.ContentRootPath,
+                    "NovaStay.Infrastructure",
+                    "Config",
+                    "appsettings.json"))
+            };
 
+            foreach (var infrastructureConfigPath in infrastructureConfigPaths)
+            {
+                builder.Configuration.AddJsonFile(
+                    infrastructureConfigPath,
+                    optional: true,
+                    reloadOnChange: builder.Environment.IsDevelopment());
             }
+
+            var envPaths = new[]
+            {
+                Path.GetFullPath(Path.Combine(
+                    builder.Environment.ContentRootPath,
+                    "..",
+                    "NovaStay.Infrastructure",
+                    "Config",
+                    ".env")),
+                Path.GetFullPath(Path.Combine(
+                    builder.Environment.ContentRootPath,
+                    "NovaStay.Infrastructure",
+                    "Config",
+                    ".env"))
+            };
+
+            foreach (var envPath in envPaths)
+            {
+                if (File.Exists(envPath))
+                {
+                    Env.Load(envPath);
+                    break;
+                }
+            }
+
+            builder.Configuration.AddEnvironmentVariables();
 
             builder.Services.ConfigurePersistenceServices(builder.Configuration); // dependency service of project 
 
@@ -69,7 +92,7 @@ namespace NovaStay.API
 
             builder.Services.AddScoped<ISampleDataService, SampleDataService>();
 
-            var jwtSecret = builder.Configuration["Jwt:SecretKey" ?? "2HONDAICODONSuperSecretKeyForJWTTokenGeneration"];
+            var jwtSecret = builder.Configuration["JWT:SecretKey"];
             if (!string.IsNullOrWhiteSpace(jwtSecret))
             {
                 builder.Services
@@ -82,8 +105,8 @@ namespace NovaStay.API
                             ValidateAudience = true,
                             ValidateLifetime = true,
                             ValidateIssuerSigningKey = true,
-                            ValidIssuer = builder.Configuration["Jwt:Issuer"?? "NovaStay"],
-                            ValidAudience = builder.Configuration["Jwt:Audience"?? "NovaStayUsers"],
+                            ValidIssuer = builder.Configuration["JWT:Issuer"],
+                            ValidAudience = builder.Configuration["JWT:Audience"],
                             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
                         };
                     });

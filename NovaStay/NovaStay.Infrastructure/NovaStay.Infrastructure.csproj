@@ -32,4 +32,12 @@
     <ProjectReference Include="..\NovaStay.Domain\NovaStay.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Config\appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <TargetPath>NovaStay.Infrastructure\Config\appsettings.json</TargetPath>
+    </None>
+  </ItemGroup>
+
 </Project>
