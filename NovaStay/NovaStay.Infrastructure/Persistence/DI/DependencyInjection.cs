@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IChangePasswordService, ChangePasswordService>();
         services.AddScoped<IOrganizationResidentService, OrganizationResidentService>();
         services.AddScoped<IResidentService, ResidentService>();
         services.AddScoped<ILogoutService, LogoutService>();

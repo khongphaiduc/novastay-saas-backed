@@ -319,6 +319,25 @@ internal sealed class AccountRefreshTokenRepository : Repository<DomainAccountRe
 
         return true;
     }
+
+    public async Task<int> RevokeActiveByAccountIdAsync(
+        Guid accountId,
+        DateTime revokedAt,
+        string? revokedByIp,
+        CancellationToken cancellationToken = default)
+    {
+        var refreshTokens = await _context.AccountRefreshTokens
+            .Where(token => token.AccountId == accountId && token.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var refreshToken in refreshTokens)
+        {
+            refreshToken.RevokedAt = revokedAt;
+            refreshToken.RevokedByIp = revokedByIp;
+        }
+
+        return refreshTokens.Count;
+    }
 }
 
 internal sealed class OrganizationRepository : Repository<DomainOrganization, DatabaseOrganization>, IOrganizationRepository
