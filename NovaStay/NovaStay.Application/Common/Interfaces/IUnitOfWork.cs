@@ -12,6 +12,7 @@ public interface IUnitOfWork : IAsyncDisposable
     IPermissionRepository Permissions { get; }
     IPropertyRepository Properties { get; }
     IResidentRepository Residents { get; }
+    IResidentMembershipRepository ResidentMemberships { get; }
     IRoleRepository Roles { get; }
     IRoomRepository Rooms { get; }
     IRoomAvailabilityRepository RoomAvailabilities { get; }

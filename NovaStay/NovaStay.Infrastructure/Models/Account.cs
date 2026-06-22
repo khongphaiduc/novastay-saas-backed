@@ -15,7 +15,11 @@ public partial class Account
 
     public string Phone { get; set; } = null!;
 
-    public string PasswordHash { get; set; } = null!;
+    public string? PasswordHash { get; set; }
+
+    public bool? MustSetPassword { get; set; }
+
+    public DateTime? PasswordSetAt { get; set; }
 
     public bool? IsActive { get; set; }
 
@@ -28,6 +32,8 @@ public partial class Account
     public virtual ICollection<Organization> OwnedOrganizations { get; set; } = new List<Organization>();
 
     public virtual ICollection<Resident> Residents { get; set; } = new List<Resident>();
+
+    public virtual ICollection<ResidentMembership> ResidentMemberships { get; set; } = new List<ResidentMembership>();
 
     public virtual ICollection<StaffUser> StaffUsers { get; set; } = new List<StaffUser>();
 }

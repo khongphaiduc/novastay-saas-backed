@@ -1,4 +1,5 @@
 using NovaStay.Application.Common.Interfaces;
+using NovaStay.Application.DTOs;
 using NovaStay.Infrastructure.ContextDB;
 using NovaStay.Infrastructure.Persistence.Mapping;
 using DomainOrganization = NovaStay.Domain.Entities.OrganizationEntity;
@@ -23,6 +24,8 @@ using DomainProperty = NovaStay.Domain.Entities.PropertyEntity;
 using DatabaseProperty = NovaStay.Infrastructure.Models.Property;
 using DomainResident = NovaStay.Domain.Entities.ResidentEntity;
 using DatabaseResident = NovaStay.Infrastructure.Models.Resident;
+using DomainResidentMembership = NovaStay.Domain.Entities.ResidentMembershipEntity;
+using DatabaseResidentMembership = NovaStay.Infrastructure.Models.ResidentMembership;
 using DomainRole = NovaStay.Domain.Entities.RoleEntity;
 using DatabaseRole = NovaStay.Infrastructure.Models.Role;
 using DomainRoom = NovaStay.Domain.Entities.RoomEntity;
@@ -122,6 +125,61 @@ internal sealed class ResidentRepository : Repository<DomainResident, DatabaseRe
     public ResidentRepository(HostContext context, IDatabaseModelMapper<DomainResident, DatabaseResident> mapper)
         : base(context, mapper)
     {
+    }
+}
+
+internal sealed class ResidentMembershipRepository : Repository<DomainResidentMembership, DatabaseResidentMembership>, IResidentMembershipRepository
+{
+    private readonly HostContext _context;
+
+    public ResidentMembershipRepository(HostContext context, IDatabaseModelMapper<DomainResidentMembership, DatabaseResidentMembership> mapper)
+        : base(context, mapper)
+    {
+        _context = context;
+    }
+
+    public async Task<IReadOnlyList<OrganizationResidentDto>> GetResidentsByOrganizationAsync(
+        Guid organizationId,
+        string? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedStatus = string.IsNullOrWhiteSpace(status)
+            ? null
+            : status.Trim();
+
+        var query = _context.ResidentMemberships
+            .AsNoTracking()
+            .Where(membership => membership.OrganizationId == organizationId);
+
+        if (normalizedStatus is not null)
+        {
+            query = query.Where(membership => membership.Status == normalizedStatus);
+        }
+
+        return await query
+            .OrderBy(membership => membership.Status)
+            .ThenBy(membership => membership.Resident.FullName)
+            .Select(membership => new OrganizationResidentDto
+            {
+                MembershipId = membership.Id,
+                OrganizationId = membership.OrganizationId,
+                ResidentId = membership.ResidentId,
+                AccountId = membership.AccountId,
+                MembershipCode = membership.MembershipCode,
+                MembershipStatus = membership.Status,
+                InvitedAt = membership.InvitedAt,
+                RespondedAt = membership.RespondedAt,
+                ActivatedAt = membership.ActivatedAt,
+                JoinedAt = membership.JoinedAt,
+                FullName = membership.Resident.FullName,
+                Phone = membership.Resident.Phone,
+                Email = membership.Resident.Email,
+                IdentityCardNumber = membership.Resident.IdentityCardNumber,
+                ProfileImageUrl = membership.Resident.ProfileImageUrl,
+                AccountIsActive = membership.Account.IsActive,
+                MustSetPassword = membership.Account.MustSetPassword
+            })
+            .ToListAsync(cancellationToken);
     }
 }
 

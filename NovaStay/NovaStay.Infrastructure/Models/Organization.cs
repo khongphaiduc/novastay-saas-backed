@@ -49,7 +49,7 @@ public partial class Organization
 
     public virtual ICollection<Property> Properties { get; set; } = new List<Property>();
 
-    public virtual ICollection<Resident> Residents { get; set; } = new List<Resident>();
+    public virtual ICollection<ResidentMembership> ResidentMemberships { get; set; } = new List<ResidentMembership>();
 
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
 

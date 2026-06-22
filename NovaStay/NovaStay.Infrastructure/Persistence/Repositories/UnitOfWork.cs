@@ -19,6 +19,7 @@ public sealed class UnitOfWork : IUnitOfWork
         IPermissionRepository permissions,
         IPropertyRepository properties,
         IResidentRepository residents,
+        IResidentMembershipRepository residentMemberships,
         IRoleRepository roles,
         IRoomRepository rooms,
         IRoomAvailabilityRepository roomAvailabilities,
@@ -41,6 +42,7 @@ public sealed class UnitOfWork : IUnitOfWork
         Permissions = permissions;
         Properties = properties;
         Residents = residents;
+        ResidentMemberships = residentMemberships;
         Roles = roles;
         Rooms = rooms;
         RoomAvailabilities = roomAvailabilities;
@@ -72,6 +74,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IPropertyRepository Properties { get; }
 
     public IResidentRepository Residents { get; }
+
+    public IResidentMembershipRepository ResidentMemberships { get; }
 
     public IRoleRepository Roles { get; }
 

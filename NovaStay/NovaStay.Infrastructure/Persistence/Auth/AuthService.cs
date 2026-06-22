@@ -66,6 +66,8 @@ internal sealed class AuthService : IAuthService
             Email = normalizedEmail,
             Phone = normalizedPhone,
             PasswordHash = HashPassword(request.Password),
+            MustSetPassword = false,
+            PasswordSetAt = now,
             IsActive = true,
             CreatedAt = now
         };
@@ -149,7 +151,10 @@ internal sealed class AuthService : IAuthService
                     && entity.AccountType == BusinessOwnerAccountType,
                 cancellationToken);
 
-        if (account is null || account.IsActive == false || !VerifyPassword(request.Password, account.PasswordHash))
+        if (account is null
+            || account.IsActive == false
+            || string.IsNullOrWhiteSpace(account.PasswordHash)
+            || !VerifyPassword(request.Password, account.PasswordHash))
         {
             throw new UnauthorizedAccessException(InvalidLoginMessage);
         }

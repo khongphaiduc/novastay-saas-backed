@@ -32,6 +32,7 @@ public sealed class ApplicationMappingProfile : Profile
         CreateMap<PermissionEntity, PermissionDto>().ReverseMap();
         CreateMap<PropertyEntity, PropertyDto>().ReverseMap();
         CreateMap<ResidentEntity, ResidentDto>().ReverseMap();
+        CreateMap<ResidentMembershipEntity, ResidentMembershipDto>().ReverseMap();
         CreateMap<RoleEntity, RoleDto>().ReverseMap();
         CreateMap<RoomEntity, RoomDto>().ReverseMap();
         CreateMap<RoomAvailabilityEntity, RoomAvailabilityDto>().ReverseMap();

@@ -19,6 +19,8 @@ using DomainProperty = NovaStay.Domain.Entities.PropertyEntity;
 using DatabaseProperty = NovaStay.Infrastructure.Models.Property;
 using DomainResident = NovaStay.Domain.Entities.ResidentEntity;
 using DatabaseResident = NovaStay.Infrastructure.Models.Resident;
+using DomainResidentMembership = NovaStay.Domain.Entities.ResidentMembershipEntity;
+using DatabaseResidentMembership = NovaStay.Infrastructure.Models.ResidentMembership;
 using DomainRole = NovaStay.Domain.Entities.RoleEntity;
 using DatabaseRole = NovaStay.Infrastructure.Models.Role;
 using DomainRoom = NovaStay.Domain.Entities.RoomEntity;
@@ -56,6 +58,7 @@ public sealed class DatabaseModelMappingProfile : Profile
         CreateMap<DatabasePermission, DomainPermission>().ReverseMap();
         CreateMap<DatabaseProperty, DomainProperty>().ReverseMap();
         CreateMap<DatabaseResident, DomainResident>().ReverseMap();
+        CreateMap<DatabaseResidentMembership, DomainResidentMembership>().ReverseMap();
         CreateMap<DatabaseRole, DomainRole>().ReverseMap();
         CreateMap<DatabaseRoom, DomainRoom>().ReverseMap();
         CreateMap<DatabaseRoomAvailability, DomainRoomAvailability>().ReverseMap();

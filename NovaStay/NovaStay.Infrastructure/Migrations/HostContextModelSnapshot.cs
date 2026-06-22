@@ -58,11 +58,18 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime");
 
+                    b.Property<bool?>("MustSetPassword")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("PasswordHash")
-                        .IsRequired()
                         .HasMaxLength(255)
                         .IsUnicode(false)
                         .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime?>("PasswordSetAt")
+                        .HasColumnType("datetime");
 
                     b.Property<string>("Phone")
                         .IsRequired()
@@ -748,9 +755,6 @@ namespace NovaStay.Infrastructure.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(20)");
 
-                    b.Property<Guid>("OrganizationId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasMaxLength(15)
@@ -765,12 +769,79 @@ namespace NovaStay.Infrastructure.Migrations
                     b.HasKey("Id")
                         .HasName("PK__Resident__3214EC07115F9503");
 
-                    b.HasIndex("OrganizationId");
-
                     b.HasIndex(new[] { "AccountId" }, "IX_Residents_AccountId")
                         .IsUnique();
 
                     b.ToTable("Residents");
+                });
+
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.ResidentMembership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("(newsequentialid())");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ActivatedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<DateTime?>("InvitedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<DateTime?>("JoinedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<string>("MembershipCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ResidentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasDefaultValue("Pending");
+
+                    b.HasKey("Id")
+                        .HasName("PK_ResidentMemberships");
+
+                    b.HasIndex(new[] { "AccountId" }, "IX_ResidentMemberships_AccountId");
+
+                    b.HasIndex(new[] { "OrganizationId" }, "IX_ResidentMemberships_OrganizationId");
+
+                    b.HasIndex(new[] { "ResidentId" }, "IX_ResidentMemberships_ResidentId");
+
+                    b.HasIndex(new[] { "AccountId", "OrganizationId" }, "UX_ResidentMemberships_AccountId_OrganizationId")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "MembershipCode" }, "UX_ResidentMemberships_MembershipCode")
+                        .IsUnique();
+
+                    b.ToTable("ResidentMemberships");
                 });
 
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Role", b =>
@@ -1349,15 +1420,34 @@ namespace NovaStay.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_Residents_Accounts_AccountId");
 
+                    b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.ResidentMembership", b =>
+                {
+                    b.HasOne("NovaStay.Infrastructure.Models.Account", "Account")
+                        .WithMany("ResidentMemberships")
+                        .HasForeignKey("AccountId")
+                        .IsRequired()
+                        .HasConstraintName("FK_ResidentMemberships_Accounts_AccountId");
+
                     b.HasOne("NovaStay.Infrastructure.Models.Organization", "Organization")
-                        .WithMany("Residents")
+                        .WithMany("ResidentMemberships")
                         .HasForeignKey("OrganizationId")
                         .IsRequired()
-                        .HasConstraintName("FK__Residents__Tenan__22751F6C");
+                        .HasConstraintName("FK_ResidentMemberships_Organizations_OrganizationId");
+
+                    b.HasOne("NovaStay.Infrastructure.Models.Resident", "Resident")
+                        .WithMany("ResidentMemberships")
+                        .HasForeignKey("ResidentId")
+                        .IsRequired()
+                        .HasConstraintName("FK_ResidentMemberships_Residents_ResidentId");
 
                     b.Navigation("Account");
 
                     b.Navigation("Organization");
+
+                    b.Navigation("Resident");
                 });
 
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Role", b =>
@@ -1490,6 +1580,8 @@ namespace NovaStay.Infrastructure.Migrations
 
                     b.Navigation("OwnedOrganizations");
 
+                    b.Navigation("ResidentMemberships");
+
                     b.Navigation("Residents");
 
                     b.Navigation("StaffUsers");
@@ -1540,7 +1632,7 @@ namespace NovaStay.Infrastructure.Migrations
 
                     b.Navigation("Properties");
 
-                    b.Navigation("Residents");
+                    b.Navigation("ResidentMemberships");
 
                     b.Navigation("Roles");
 
@@ -1563,6 +1655,8 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Navigation("Contracts");
 
                     b.Navigation("MaintenanceTickets");
+
+                    b.Navigation("ResidentMemberships");
                 });
 
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Room", b =>
