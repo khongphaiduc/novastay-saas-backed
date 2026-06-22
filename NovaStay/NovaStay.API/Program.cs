@@ -69,7 +69,7 @@ namespace NovaStay.API
 
             builder.Services.AddScoped<ISampleDataService, SampleDataService>();
 
-            var jwtSecret = builder.Configuration["Jwt:SecretKey"];
+            var jwtSecret = builder.Configuration["Jwt:SecretKey" ?? "2HONDAICODONSuperSecretKeyForJWTTokenGeneration"];
             if (!string.IsNullOrWhiteSpace(jwtSecret))
             {
                 builder.Services
@@ -82,8 +82,8 @@ namespace NovaStay.API
                             ValidateAudience = true,
                             ValidateLifetime = true,
                             ValidateIssuerSigningKey = true,
-                            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                            ValidAudience = builder.Configuration["Jwt:Audience"],
+                            ValidIssuer = builder.Configuration["Jwt:Issuer"?? "NovaStay"],
+                            ValidAudience = builder.Configuration["Jwt:Audience"?? "NovaStayUsers"],
                             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
                         };
                     });
