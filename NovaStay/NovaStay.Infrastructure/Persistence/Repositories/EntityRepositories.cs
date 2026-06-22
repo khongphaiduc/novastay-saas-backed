@@ -122,9 +122,27 @@ internal sealed class PropertyRepository : Repository<DomainProperty, DatabasePr
 
 internal sealed class ResidentRepository : Repository<DomainResident, DatabaseResident>, IResidentRepository
 {
+    private readonly HostContext _context;
+    private readonly IDatabaseModelMapper<DomainResident, DatabaseResident> _mapper;
+
     public ResidentRepository(HostContext context, IDatabaseModelMapper<DomainResident, DatabaseResident> mapper)
         : base(context, mapper)
     {
+        _context = context;
+        _mapper = mapper;
+    }
+
+    public async Task<IReadOnlyList<DomainResident>> SearchByPhoneAsync(
+        string phone,
+        CancellationToken cancellationToken = default)
+    {
+        var residents = await _context.Residents
+            .AsNoTracking()
+            .Where(resident => resident.Phone.Contains(phone))
+            .OrderBy(resident => resident.FullName)
+            .ToListAsync(cancellationToken);
+
+        return residents.Select(_mapper.ToDomain).ToList();
     }
 }
 
