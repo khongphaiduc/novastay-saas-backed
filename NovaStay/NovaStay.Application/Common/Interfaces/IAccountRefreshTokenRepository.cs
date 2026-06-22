@@ -7,4 +7,10 @@ public interface IAccountRefreshTokenRepository : IRepository<AccountRefreshToke
         DateTime revokedAt,
         string? revokedByIp,
         CancellationToken cancellationToken = default);
+
+    Task<int> RevokeActiveByAccountIdAsync(
+        Guid accountId,
+        DateTime revokedAt,
+        string? revokedByIp,
+        CancellationToken cancellationToken = default);
 }
