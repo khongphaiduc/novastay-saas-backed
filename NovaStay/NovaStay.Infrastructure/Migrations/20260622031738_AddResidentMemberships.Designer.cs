@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NovaStay.Infrastructure.ContextDB;
 
@@ -11,9 +12,11 @@ using NovaStay.Infrastructure.ContextDB;
 namespace NovaStay.Infrastructure.Migrations
 {
     [DbContext(typeof(HostContext))]
-    partial class HostContextModelSnapshot : ModelSnapshot
+    [Migration("20260622031738_AddResidentMemberships")]
+    partial class AddResidentMemberships
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -58,18 +61,11 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime");
 
-                    b.Property<bool?>("MustSetPassword")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
                     b.Property<string>("PasswordHash")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .IsUnicode(false)
                         .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime?>("PasswordSetAt")
-                        .HasColumnType("datetime");
 
                     b.Property<string>("Phone")
                         .IsRequired()
@@ -785,15 +781,7 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ActivatedAt")
-                        .HasColumnType("datetime");
-
                     b.Property<DateTime?>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())");
-
-                    b.Property<DateTime?>("InvitedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("(getdate())");
@@ -803,20 +791,11 @@ namespace NovaStay.Infrastructure.Migrations
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("(getdate())");
 
-                    b.Property<string>("MembershipCode")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(20)");
-
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ResidentId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("RespondedAt")
-                        .HasColumnType("datetime");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -824,7 +803,7 @@ namespace NovaStay.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .IsUnicode(false)
                         .HasColumnType("varchar(20)")
-                        .HasDefaultValue("Pending");
+                        .HasDefaultValue("Active");
 
                     b.HasKey("Id")
                         .HasName("PK_ResidentMemberships");
@@ -836,9 +815,6 @@ namespace NovaStay.Infrastructure.Migrations
                     b.HasIndex(new[] { "ResidentId" }, "IX_ResidentMemberships_ResidentId");
 
                     b.HasIndex(new[] { "AccountId", "OrganizationId" }, "UX_ResidentMemberships_AccountId_OrganizationId")
-                        .IsUnique();
-
-                    b.HasIndex(new[] { "MembershipCode" }, "UX_ResidentMemberships_MembershipCode")
                         .IsUnique();
 
                     b.ToTable("ResidentMemberships");

@@ -9,8 +9,6 @@ public partial class Resident
 
     public Guid AccountId { get; set; }
 
-    public Guid OrganizationId { get; set; }
-
     public string FullName { get; set; } = null!;
 
     public string Phone { get; set; } = null!;
@@ -33,5 +31,5 @@ public partial class Resident
 
     public virtual ICollection<MaintenanceTicket> MaintenanceTickets { get; set; } = new List<MaintenanceTicket>();
 
-    public virtual Organization Organization { get; set; } = null!;
+    public virtual ICollection<ResidentMembership> ResidentMemberships { get; set; } = new List<ResidentMembership>();
 }

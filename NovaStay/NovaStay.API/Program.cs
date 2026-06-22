@@ -69,7 +69,7 @@ namespace NovaStay.API
 
             builder.Services.AddScoped<ISampleDataService, SampleDataService>();
 
-            var jwtSecret = builder.Configuration["Jwt:Secret"];
+            var jwtSecret = builder.Configuration["Jwt:SecretKey"];
             if (!string.IsNullOrWhiteSpace(jwtSecret))
             {
                 builder.Services

@@ -36,6 +36,8 @@ public partial class HostContext : DbContext
 
     public virtual DbSet<Resident> Residents { get; set; }
 
+    public virtual DbSet<ResidentMembership> ResidentMemberships { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Room> Rooms { get; set; }
@@ -80,6 +82,8 @@ public partial class HostContext : DbContext
             entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
                 .IsUnicode(false);
+            entity.Property(e => e.MustSetPassword).HasDefaultValue(false);
+            entity.Property(e => e.PasswordSetAt).HasColumnType("datetime");
             entity.Property(e => e.Phone)
                 .HasMaxLength(15)
                 .IsUnicode(false);
@@ -403,11 +407,57 @@ public partial class HostContext : DbContext
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Residents_Accounts_AccountId");
+        });
 
-            entity.HasOne(d => d.Organization).WithMany(p => p.Residents)
+        modelBuilder.Entity<ResidentMembership>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_ResidentMemberships");
+
+            entity.HasIndex(e => e.AccountId, "IX_ResidentMemberships_AccountId");
+
+            entity.HasIndex(e => e.OrganizationId, "IX_ResidentMemberships_OrganizationId");
+
+            entity.HasIndex(e => e.ResidentId, "IX_ResidentMemberships_ResidentId");
+
+            entity.HasIndex(e => e.MembershipCode, "UX_ResidentMemberships_MembershipCode")
+                .IsUnique();
+
+            entity.HasIndex(e => new { e.AccountId, e.OrganizationId }, "UX_ResidentMemberships_AccountId_OrganizationId")
+                .IsUnique();
+
+            entity.Property(e => e.ActivatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.InvitedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.RespondedAt).HasColumnType("datetime");
+            entity.Property(e => e.JoinedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.MembershipCode)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Pending");
+
+            entity.HasOne(d => d.Account).WithMany(p => p.ResidentMemberships)
+                .HasForeignKey(d => d.AccountId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ResidentMemberships_Accounts_AccountId");
+
+            entity.HasOne(d => d.Organization).WithMany(p => p.ResidentMemberships)
                 .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Residents__Tenan__22751F6C");
+                .HasConstraintName("FK_ResidentMemberships_Organizations_OrganizationId");
+
+            entity.HasOne(d => d.Resident).WithMany(p => p.ResidentMemberships)
+                .HasForeignKey(d => d.ResidentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ResidentMemberships_Residents_ResidentId");
         });
 
         modelBuilder.Entity<Role>(entity =>
