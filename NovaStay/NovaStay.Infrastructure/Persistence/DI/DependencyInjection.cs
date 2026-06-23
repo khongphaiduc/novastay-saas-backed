@@ -49,6 +49,11 @@ public static class DependencyInjection
         services.AddScoped<IOrganizationResidentService, OrganizationResidentService>();
         services.AddScoped<ILogoutService, LogoutService>();
         services.AddScoped<INotifications, Email>();
+
+        // Room Management
+        services.AddSingleton<IMinioStorageService, MinioStorageService>();
+        services.AddScoped<IRoomService, RoomService>();
+
         return services;
     }
 }
