@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NovaStay.Infrastructure.ContextDB;
 
@@ -11,9 +12,11 @@ using NovaStay.Infrastructure.ContextDB;
 namespace NovaStay.Infrastructure.Migrations
 {
     [DbContext(typeof(HostContext))]
-    partial class HostContextModelSnapshot : ModelSnapshot
+    [Migration("20260623031046_AddResidentSexAndAddress")]
+    partial class AddResidentSexAndAddress
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -898,9 +901,6 @@ namespace NovaStay.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("(newsequentialid())");
 
-                    b.Property<string>("AmenitiesJson")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<decimal>("BasePrice")
                         .HasColumnType("decimal(18, 2)");
 
@@ -911,11 +911,6 @@ namespace NovaStay.Infrastructure.Migrations
 
                     b.Property<int>("Floor")
                         .HasColumnType("int");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
 
                     b.Property<int?>("MaxOccupants")
                         .ValueGeneratedOnAdd()

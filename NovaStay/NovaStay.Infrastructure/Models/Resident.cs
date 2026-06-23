@@ -11,9 +11,13 @@ public partial class Resident
 
     public string FullName { get; set; } = null!;
 
+    public string Sex { get; set; } = null!;
+
     public string Phone { get; set; } = null!;
 
     public string? Email { get; set; }
+
+    public string? Address { get; set; }
 
     public string? IdentityCardNumber { get; set; }
 
