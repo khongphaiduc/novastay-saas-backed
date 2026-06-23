@@ -132,6 +132,19 @@ internal sealed class ResidentRepository : Repository<DomainResident, DatabaseRe
         _mapper = mapper;
     }
 
+    public async Task<DomainResident?> GetByIdentityCardNumberAsync(
+        string identityCardNumber,
+        CancellationToken cancellationToken = default)
+    {
+        var resident = await _context.Residents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                entity => entity.IdentityCardNumber == identityCardNumber,
+                cancellationToken);
+
+        return resident is null ? null : _mapper.ToDomain(resident);
+    }
+
     public async Task<IReadOnlyList<DomainResident>> SearchByPhoneAsync(
         string phone,
         CancellationToken cancellationToken = default)
