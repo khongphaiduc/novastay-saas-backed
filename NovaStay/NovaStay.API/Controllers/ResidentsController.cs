@@ -5,7 +5,7 @@ using NovaStay.Application.Services;
 
 namespace NovaStay.API.Controllers;
 
-//[Authorize(Roles = "BusinessOwner")]
+[Authorize(Roles = "BusinessOwner")]
 [ApiController]
 [Route("api/residents")]
 public sealed class ResidentsController : ControllerBase

@@ -1,4 +1,5 @@
 using NovaStay.Application.Common.Interfaces;
+using NovaStay.Application.Common;
 using NovaStay.Application.DTOs;
 using NovaStay.Infrastructure.ContextDB;
 using NovaStay.Infrastructure.Persistence.Mapping;
@@ -190,11 +191,52 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
     {
         var membership = await _context.ResidentMemberships
             .AsNoTracking()
-            .Where(entity => entity.AccountId == accountId && entity.Status == "Active")
+            .Where(entity => entity.AccountId == accountId
+                && (entity.Status == ResidentMembershipStatuses.Active
+                    || entity.Status == ResidentMembershipStatuses.LegacyActive))
             .OrderByDescending(entity => entity.ActivatedAt ?? entity.JoinedAt ?? entity.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
         return membership is null ? null : _mapper.ToDomain(membership);
+    }
+
+    public async Task<DomainResidentMembership?> GetByResidentAndOrganizationAsync(
+        Guid residentId,
+        Guid organizationId,
+        CancellationToken cancellationToken = default)
+    {
+        var membership = await _context.ResidentMemberships
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                entity => entity.ResidentId == residentId && entity.OrganizationId == organizationId,
+                cancellationToken);
+
+        return membership is null ? null : _mapper.ToDomain(membership);
+    }
+
+    public async Task<DomainResidentMembership?> GetByIdForAccountAsync(
+        Guid membershipId,
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        var membership = await _context.ResidentMemberships
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                entity => entity.Id == membershipId && entity.AccountId == accountId,
+                cancellationToken);
+
+        return membership is null ? null : _mapper.ToDomain(membership);
+    }
+
+    public Task<bool> ExistsByMembershipCodeAsync(
+        string membershipCode,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.ResidentMemberships
+            .AsNoTracking()
+            .AnyAsync(
+                entity => entity.MembershipCode == membershipCode,
+                cancellationToken);
     }
 
     public async Task<IReadOnlyList<OrganizationResidentDto>> GetResidentsByOrganizationAsync(
@@ -209,6 +251,11 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
         var query = _context.ResidentMemberships
             .AsNoTracking()
             .Where(membership => membership.OrganizationId == organizationId);
+
+        if(normalizedStatus == null)
+        {
+            normalizedStatus = "ACTIVE";
+        }
 
         if (normalizedStatus is not null)
         {
@@ -237,6 +284,47 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
                 ProfileImageUrl = membership.Resident.ProfileImageUrl,
                 AccountIsActive = membership.Account.IsActive,
                 MustSetPassword = membership.Account.MustSetPassword
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<OrganizationResidentInvitationDto>> GetInvitationsByOrganizationAsync(
+        Guid organizationId,
+        string? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedStatus = string.IsNullOrWhiteSpace(status)
+            ? null
+            : status.Trim();
+
+        var query = _context.ResidentMemberships
+            .AsNoTracking()
+            .Where(membership => membership.OrganizationId == organizationId);
+
+        if (normalizedStatus is not null)
+        {
+            query = query.Where(membership => membership.Status == normalizedStatus);
+        }
+
+        return await query
+            .OrderByDescending(membership => membership.InvitedAt ?? membership.CreatedAt)
+            .ThenBy(membership => membership.Resident.FullName)
+            .Select(membership => new OrganizationResidentInvitationDto
+            {
+                MembershipId = membership.Id,
+                OrganizationId = membership.OrganizationId,
+                ResidentId = membership.ResidentId,
+                AccountId = membership.AccountId,
+                MembershipCode = membership.MembershipCode,
+                Status = membership.Status,
+                InvitedAt = membership.InvitedAt,
+                RespondedAt = membership.RespondedAt,
+                JoinedAt = membership.JoinedAt,
+                ActivatedAt = membership.ActivatedAt,
+                ResidentName = membership.Resident.FullName,
+                ResidentPhone = membership.Resident.Phone,
+                ResidentEmail = "",
+                IdentityCardNumber = ""
             })
             .ToListAsync(cancellationToken);
     }
