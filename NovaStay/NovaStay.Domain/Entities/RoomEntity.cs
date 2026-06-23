@@ -10,6 +10,8 @@ public sealed class RoomEntity : Entity
     public Money BasePrice { get; set; }
     public Status Status { get; set; }
     public int? MaxOccupants { get; set; }
+    public string? AmenitiesJson { get; set; }
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
     public DateTime? CreatedAt { get; set; }
+    public bool IsDeleted { get; set; } = false;
 }
