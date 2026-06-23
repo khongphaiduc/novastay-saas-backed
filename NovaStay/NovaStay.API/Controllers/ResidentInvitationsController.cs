@@ -8,18 +8,18 @@ namespace NovaStay.API.Controllers;
 
 [Authorize(Roles = "Resident")]
 [ApiController]
-[Route("api/residents/me/accommodations")]
-public sealed class ResidentAccommodationsController : ControllerBase
+[Route("api/resident-invitations")]
+public sealed class ResidentInvitationsController : ControllerBase
 {
-    private readonly IResidentService _residentService;
+    private readonly IResidentInvitationService _residentInvitationService;
 
-    public ResidentAccommodationsController(IResidentService residentService)
+    public ResidentInvitationsController(IResidentInvitationService residentInvitationService)
     {
-        _residentService = residentService;
+        _residentInvitationService = residentInvitationService;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<ResidentAccommodationDto>>> GetActiveAccommodations(
+    [HttpGet("pending")]
+    public async Task<ActionResult<IReadOnlyList<ResidentInvitationDto>>> GetPendingInvitations(
         CancellationToken cancellationToken = default)
     {
         var accountIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -28,11 +28,10 @@ public sealed class ResidentAccommodationsController : ControllerBase
             return Unauthorized(new { message = "Invalid access token." });
         }
 
-        var accommodations = await _residentService.GetActiveAccommodationsAsync(
+        var invitations = await _residentInvitationService.GetPendingInvitationsAsync(
             accountId,
             cancellationToken);
 
-        return Ok(accommodations);
+        return Ok(invitations);
     }
-
 }
