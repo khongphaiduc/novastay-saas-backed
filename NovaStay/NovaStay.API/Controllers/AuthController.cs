@@ -13,15 +13,18 @@ public sealed class AuthController : ControllerBase
     private readonly IAuthService _authService;
     private readonly IChangePasswordService _changePasswordService;
     private readonly ILogoutService _logoutService;
+    private readonly IResidentAuthService _residentAuthService;
 
     public AuthController(
         IAuthService authService,
         IChangePasswordService changePasswordService,
-        ILogoutService logoutService)
+        ILogoutService logoutService,
+        IResidentAuthService residentAuthService)
     {
         _authService = authService;
         _changePasswordService = changePasswordService;
         _logoutService = logoutService;
+        _residentAuthService = residentAuthService;
     }
 
     [HttpPost("register-organization")]
@@ -48,6 +51,26 @@ public sealed class AuthController : ControllerBase
         try
         {
             var response = await _authService.LoginBusinessOwnerAsync(
+                request,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                cancellationToken);
+
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return Unauthorized(new { message = exception.Message });
+        }
+    }
+
+    [HttpPost("resident/login")]
+    public async Task<ActionResult<LoginResidentAccountResponse>> LoginResident(
+        [FromBody] LoginResidentAccountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _residentAuthService.LoginAsync(
                 request,
                 HttpContext.Connection.RemoteIpAddress?.ToString(),
                 cancellationToken);

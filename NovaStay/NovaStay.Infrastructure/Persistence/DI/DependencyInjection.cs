@@ -49,6 +49,7 @@ public static class DependencyInjection
         services.AddScoped<IChangePasswordService, ChangePasswordService>();
         services.AddScoped<IOrganizationResidentService, OrganizationResidentService>();
         services.AddScoped<IResidentService, ResidentService>();
+        services.AddScoped<IResidentAuthService, ResidentAuthService>();
         services.AddScoped<ILogoutService, LogoutService>();
         services.AddScoped<INotifications, Email>();
         return services;
