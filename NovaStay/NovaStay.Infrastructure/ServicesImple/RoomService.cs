@@ -30,6 +30,9 @@ public sealed class RoomService : IRoomService
         string? status = null,
         CancellationToken cancellationToken = default)
     {
+        if (propertyId == Guid.Empty)
+            throw new ArgumentException("propertyId là bắt buộc.");
+
         return await _unitOfWork.Rooms.GetRoomsWithImagesAsync(propertyId, search, status, cancellationToken);
     }
 
@@ -101,6 +104,13 @@ public sealed class RoomService : IRoomService
         UploadRoomImageRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (request.ImageStream == Stream.Null || request.FileSize == 0)
+            throw new ArgumentException("Vui lòng chọn file ảnh.");
+
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+        if (!allowedTypes.Contains(request.ContentType.ToLower()))
+            throw new ArgumentException("Chỉ chấp nhận ảnh JPEG, PNG hoặc WebP.");
+
         var room = await _unitOfWork.Rooms.GetByIdAsync(roomId, cancellationToken)
             ?? throw new KeyNotFoundException($"Room {roomId} không tìm thấy.");
 
