@@ -1,0 +1,187 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using NovaStay.Application.DTOs;
+using NovaStay.Application.Services;
+
+namespace NovaStay.API.Controllers;
+
+[Authorize]
+[ApiController]
+[Route("api/rooms")]
+public sealed class RoomsController : ControllerBase
+{
+    private readonly IRoomService _roomService;
+
+    public RoomsController(IRoomService roomService)
+    {
+        _roomService = roomService;
+    }
+
+    /// <summary>
+    /// TASK-011: Lấy danh sách phòng
+    /// TASK-012: Tìm kiếm phòng theo tên/mã phòng (query param: search)
+    /// TASK-013: Lọc phòng theo trạng thái (query param: status)
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<RoomDto>>> GetRooms(
+        [FromQuery] Guid propertyId,
+        [FromQuery] string? search = null,
+        [FromQuery] string? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (propertyId == Guid.Empty)
+            return BadRequest(new { message = "propertyId là bắt buộc." });
+
+        var rooms = await _roomService.GetRoomsAsync(propertyId, search, status, cancellationToken);
+        return Ok(rooms);
+    }
+
+    /// <summary>
+    /// TASK-014: Thêm phòng mới
+    /// </summary>
+    [HttpPost]
+    public async Task<ActionResult<RoomDto>> CreateRoom(
+        [FromBody] CreateRoomRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var room = await _roomService.CreateRoomAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetRooms), new { propertyId = room.PropertyId }, room);
+    }
+
+    /// <summary>
+    /// TASK-015: Cập nhật thông tin phòng
+    /// </summary>
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<RoomDto>> UpdateRoom(
+        Guid id,
+        [FromBody] UpdateRoomRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var room = await _roomService.UpdateRoomAsync(id, request, cancellationToken);
+            return Ok(room);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// TASK-016: Xóa phòng
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteRoom(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _roomService.DeleteRoomAsync(id, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// TASK-017: Upload ảnh phòng (multipart/form-data)
+    /// </summary>
+    [HttpPost("{id:guid}/images")]
+    [RequestSizeLimit(10 * 1024 * 1024)] // 10MB
+    public async Task<ActionResult<RoomImageDto>> UploadImage(
+        Guid id,
+        IFormFile image,
+        [FromForm] bool isCover = false,
+        CancellationToken cancellationToken = default)
+    {
+        if (image is null || image.Length == 0)
+            return BadRequest(new { message = "Vui lòng chọn file ảnh." });
+
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+        if (!allowedTypes.Contains(image.ContentType.ToLower()))
+            return BadRequest(new { message = "Chỉ chấp nhận ảnh JPEG, PNG hoặc WebP." });
+
+        try
+        {
+            using var stream = image.OpenReadStream();
+            var request = new UploadRoomImageRequest
+            {
+                ImageStream = stream,
+                FileName = Path.GetFileName(image.FileName),
+                ContentType = image.ContentType,
+                IsCover = isCover
+            };
+
+            var imageDto = await _roomService.UploadRoomImageAsync(id, request, cancellationToken);
+            return Ok(imageDto);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// TASK-018: Cập nhật giá thuê phòng
+    /// </summary>
+    [HttpPatch("{id:guid}/price")]
+    public async Task<ActionResult<RoomDto>> UpdatePrice(
+        Guid id,
+        [FromBody] UpdateBasePriceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var room = await _roomService.UpdateBasePriceAsync(id, request, cancellationToken);
+            return Ok(room);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// TASK-019: Cập nhật sức chứa phòng
+    /// </summary>
+    [HttpPatch("{id:guid}/occupants")]
+    public async Task<ActionResult<RoomDto>> UpdateOccupants(
+        Guid id,
+        [FromBody] UpdateMaxOccupantsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var room = await _roomService.UpdateMaxOccupantsAsync(id, request, cancellationToken);
+            return Ok(room);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// TASK-020: Cập nhật tiện ích phòng
+    /// </summary>
+    [HttpPatch("{id:guid}/amenities")]
+    public async Task<ActionResult<RoomDto>> UpdateAmenities(
+        Guid id,
+        [FromBody] UpdateAmenitiesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var room = await _roomService.UpdateAmenitiesAsync(id, request, cancellationToken);
+            return Ok(room);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+}
