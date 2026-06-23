@@ -2,6 +2,14 @@ pipeline {
     agent any
 
     stages {
+        stage('Run Unit Tests') {
+            steps {
+                dir('NovaStay') {
+                    sh 'dotnet test NovaStay.UnitTests/NovaStay.UnitTests.csproj --configuration Release'
+                }
+            }
+        }
+
         stage('Build and Push Image') {
             steps {
                 withDockerRegistry(credentialsId: 'docker', url: 'https://index.docker.io/v1/') {
