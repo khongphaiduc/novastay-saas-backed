@@ -16,6 +16,13 @@ COPY NovaStay.UnitTests/NovaStay.UnitTests.csproj NovaStay.UnitTests/
 RUN dotnet restore NovaStay.sln
 
 COPY . .
+
+FROM build AS test
+RUN dotnet test NovaStay.UnitTests/NovaStay.UnitTests.csproj \
+    --configuration Release \
+    --no-restore
+
+FROM build AS publish
 RUN dotnet publish NovaStay.API/NovaStay.API.csproj \
     --configuration Release \
     --no-restore \
@@ -23,5 +30,5 @@ RUN dotnet publish NovaStay.API/NovaStay.API.csproj \
 
 FROM runtime AS final
 WORKDIR /app
-COPY --from=build /app/publish .
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "NovaStay.API.dll"]

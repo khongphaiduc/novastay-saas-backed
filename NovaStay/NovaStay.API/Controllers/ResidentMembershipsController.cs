@@ -21,6 +21,7 @@ public sealed class ResidentMembershipsController : ControllerBase
     [HttpPost("{membershipId:guid}/accept")]
     public async Task<ActionResult<ResidentMembershipResponse>> AcceptInvitation(
         Guid membershipId,
+        [FromBody] ResidentInvitationDecisionRequest? request = null,
         CancellationToken cancellationToken = default)
     {
         var accountIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -34,6 +35,7 @@ public sealed class ResidentMembershipsController : ControllerBase
             var response = await _organizationResidentService.AcceptInvitationAsync(
                 accountId,
                 membershipId,
+                request?.IsAccepted ?? true,
                 cancellationToken);
 
             return Ok(response);

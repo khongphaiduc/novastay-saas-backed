@@ -2,12 +2,20 @@ pipeline {
     agent any
 
     stages {
+        stage('Run Unit Tests') {
+            steps {
+                dir('NovaStay') {
+                    sh 'docker build --target test -t novastay-tests .'
+                }
+            }
+        }
+
         stage('Build and Push Image') {
             steps {
                 withDockerRegistry(credentialsId: 'docker', url: 'https://index.docker.io/v1/') {
                     dir('NovaStay') {
-                        sh 'docker build -t ptrungduc1011/benovastay:v1 .' 
-                        sh 'docker push ptrungduc1011/benovastay:v1'                     
+                        sh 'docker build -t ptrungduc1011/benovastay:v1 .'
+                        sh 'docker push ptrungduc1011/benovastay:v1'
                     }
                 }
             }
