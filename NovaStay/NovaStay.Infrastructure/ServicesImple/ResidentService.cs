@@ -131,6 +131,20 @@ public sealed class ResidentService : IResidentService
         return ResidentTemp;
     }
 
+    public async Task<IReadOnlyList<ResidentAccommodationDto>> GetActiveAccommodationsAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        if (accountId == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Invalid access token.");
+        }
+
+        return await _unitOfWork.ResidentMemberships.GetActiveAccommodationsByAccountIdAsync(
+            accountId,
+            cancellationToken);
+    }
+
     private static string NormalizeRequired(string? value, string message)
     {
         if (string.IsNullOrWhiteSpace(value))

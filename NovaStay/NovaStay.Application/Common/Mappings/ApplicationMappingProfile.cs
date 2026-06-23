@@ -34,7 +34,9 @@ public sealed class ApplicationMappingProfile : Profile
         CreateMap<ResidentEntity, ResidentDto>().ReverseMap();
         CreateMap<ResidentMembershipEntity, ResidentMembershipDto>().ReverseMap();
         CreateMap<RoleEntity, RoleDto>().ReverseMap();
-        CreateMap<RoomEntity, RoomDto>().ReverseMap();
+        CreateMap<RoomEntity, RoomDto>()
+            .ForMember(destination => destination.Images, options => options.Ignore())
+            .ReverseMap();
         CreateMap<RoomAvailabilityEntity, RoomAvailabilityDto>().ReverseMap();
         CreateMap<RoomImageEntity, RoomImageDto>().ReverseMap();
         CreateMap<SubscriptionPackageEntity, SubscriptionPackageDto>().ReverseMap();
