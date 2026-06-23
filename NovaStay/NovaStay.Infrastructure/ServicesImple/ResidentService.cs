@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using NovaStay.Application.Common.Interfaces;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
@@ -111,7 +111,24 @@ public sealed class ResidentService : IResidentService
             phone.Trim(),
             cancellationToken);
 
-        return _mapper.Map<IReadOnlyList<ResidentDto>>(residents);
+
+        // fix exposed information 
+        var ResidentTemp = residents.Select(r => new ResidentDto
+        {
+            Id = r.Id,          
+            FullName = r.FullName.Value,
+            Phone = r.Phone,
+            ProfileImageUrl = "Mày xem cái gì ở đây",
+            Address = "Mày xem cái gì ở đây",
+            Email = "Mày xem cái gì ở đây",
+            IdBackImageUrl = "Mày xem cái gì ở đây",
+            IdentityCardNumber = "Mày xem cái gì ở đây",
+            IdFrontImageUrl = "Không xem được đâu cưng",
+            CreatedAt = DateTime.Now,
+            Sex = "Mày xem cái gì ở đây"
+        }).ToList();
+
+        return ResidentTemp;
     }
 
     private static string NormalizeRequired(string? value, string message)

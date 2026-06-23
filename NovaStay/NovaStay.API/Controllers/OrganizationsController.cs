@@ -34,4 +34,48 @@ public sealed class OrganizationsController : ControllerBase
 
         return Ok(residents);
     }
+
+    [HttpGet("{organizationId:guid}/residents/invitations")]
+    public async Task<ActionResult<IReadOnlyList<OrganizationResidentInvitationDto>>> GetResidentInvitations(
+        Guid organizationId,
+        [FromQuery] string? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        var invitations = await _organizationResidentService.GetResidentInvitationsAsync(
+            organizationId,
+            status,
+            cancellationToken);
+
+        if (invitations is null)
+        {
+            return NotFound(new { message = "Organization not found." });
+        }
+
+        return Ok(invitations);
+    }
+
+    [HttpPost("{organizationId:guid}/residents/invitations")]
+    public async Task<ActionResult<ResidentMembershipResponse>> InviteResident(
+        Guid organizationId,
+        [FromBody] InviteResidentToOrganizationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _organizationResidentService.InviteResidentAsync(
+                organizationId,
+                request,
+                cancellationToken);
+
+            return Created($"/api/resident-memberships/{response.MembershipId}", response);
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return NotFound(new { message = exception.Message });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+    }
 }

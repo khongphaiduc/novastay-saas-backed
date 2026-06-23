@@ -9,7 +9,26 @@ public interface IResidentMembershipRepository : IRepository<ResidentMembershipE
         Guid accountId,
         CancellationToken cancellationToken = default);
 
+    Task<ResidentMembershipEntity?> GetByResidentAndOrganizationAsync(
+        Guid residentId,
+        Guid organizationId,
+        CancellationToken cancellationToken = default);
+
+    Task<ResidentMembershipEntity?> GetByIdForAccountAsync(
+        Guid membershipId,
+        Guid accountId,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> ExistsByMembershipCodeAsync(
+        string membershipCode,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<OrganizationResidentDto>> GetResidentsByOrganizationAsync(
+        Guid organizationId,
+        string? status = null,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<OrganizationResidentInvitationDto>> GetInvitationsByOrganizationAsync(
         Guid organizationId,
         string? status = null,
         CancellationToken cancellationToken = default);
