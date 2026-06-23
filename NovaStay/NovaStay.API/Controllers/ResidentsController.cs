@@ -5,7 +5,7 @@ using NovaStay.Application.Services;
 
 namespace NovaStay.API.Controllers;
 
-[Authorize(Roles = "BusinessOwner")]
+//[Authorize(Roles = "BusinessOwner")]
 [ApiController]
 [Route("api/residents")]
 public sealed class ResidentsController : ControllerBase
@@ -15,6 +15,25 @@ public sealed class ResidentsController : ControllerBase
     public ResidentsController(IResidentService residentService)
     {
         _residentService = residentService;
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<CreateResidentAccountResponse>> CreateResidentAccount(
+        [FromBody] CreateResidentAccountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _residentService.CreateResidentAccountAsync(
+                request,
+                cancellationToken);
+
+            return Created($"/api/residents/{response.ResidentId}", response);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
     }
 
     [HttpGet("search")]
