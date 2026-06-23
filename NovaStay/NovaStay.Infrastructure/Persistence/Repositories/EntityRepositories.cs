@@ -132,6 +132,19 @@ internal sealed class ResidentRepository : Repository<DomainResident, DatabaseRe
         _mapper = mapper;
     }
 
+    public async Task<DomainResident?> GetByAccountIdAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        var resident = await _context.Residents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                entity => entity.AccountId == accountId,
+                cancellationToken);
+
+        return resident is null ? null : _mapper.ToDomain(resident);
+    }
+
     public async Task<DomainResident?> GetByIdentityCardNumberAsync(
         string identityCardNumber,
         CancellationToken cancellationToken = default)
@@ -162,11 +175,26 @@ internal sealed class ResidentRepository : Repository<DomainResident, DatabaseRe
 internal sealed class ResidentMembershipRepository : Repository<DomainResidentMembership, DatabaseResidentMembership>, IResidentMembershipRepository
 {
     private readonly HostContext _context;
+    private readonly IDatabaseModelMapper<DomainResidentMembership, DatabaseResidentMembership> _mapper;
 
     public ResidentMembershipRepository(HostContext context, IDatabaseModelMapper<DomainResidentMembership, DatabaseResidentMembership> mapper)
         : base(context, mapper)
     {
         _context = context;
+        _mapper = mapper;
+    }
+
+    public async Task<DomainResidentMembership?> GetActiveByAccountIdAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        var membership = await _context.ResidentMemberships
+            .AsNoTracking()
+            .Where(entity => entity.AccountId == accountId && entity.Status == "Active")
+            .OrderByDescending(entity => entity.ActivatedAt ?? entity.JoinedAt ?? entity.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return membership is null ? null : _mapper.ToDomain(membership);
     }
 
     public async Task<IReadOnlyList<OrganizationResidentDto>> GetResidentsByOrganizationAsync(

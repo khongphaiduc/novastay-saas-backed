@@ -5,6 +5,10 @@ namespace NovaStay.Application.Common.Interfaces;
 
 public interface IResidentMembershipRepository : IRepository<ResidentMembershipEntity>
 {
+    Task<ResidentMembershipEntity?> GetActiveByAccountIdAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<OrganizationResidentDto>> GetResidentsByOrganizationAsync(
         Guid organizationId,
         string? status = null,

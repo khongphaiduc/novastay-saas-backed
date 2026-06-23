@@ -2,6 +2,10 @@ using NovaStay.Domain.Entities;
 namespace NovaStay.Application.Common.Interfaces;
 public interface IResidentRepository : IRepository<ResidentEntity>
 {
+    Task<ResidentEntity?> GetByAccountIdAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default);
+
     Task<ResidentEntity?> GetByIdentityCardNumberAsync(
         string identityCardNumber,
         CancellationToken cancellationToken = default);
