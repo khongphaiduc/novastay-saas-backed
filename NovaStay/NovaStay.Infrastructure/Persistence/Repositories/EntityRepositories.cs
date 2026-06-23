@@ -1,4 +1,5 @@
 using NovaStay.Application.Common.Interfaces;
+using NovaStay.Application.Common;
 using NovaStay.Application.DTOs;
 using NovaStay.Infrastructure.ContextDB;
 using NovaStay.Infrastructure.Persistence.Mapping;
@@ -122,20 +123,120 @@ internal sealed class PropertyRepository : Repository<DomainProperty, DatabasePr
 
 internal sealed class ResidentRepository : Repository<DomainResident, DatabaseResident>, IResidentRepository
 {
+    private readonly HostContext _context;
+    private readonly IDatabaseModelMapper<DomainResident, DatabaseResident> _mapper;
+
     public ResidentRepository(HostContext context, IDatabaseModelMapper<DomainResident, DatabaseResident> mapper)
         : base(context, mapper)
     {
+        _context = context;
+        _mapper = mapper;
+    }
+
+    public async Task<DomainResident?> GetByAccountIdAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        var resident = await _context.Residents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                entity => entity.AccountId == accountId,
+                cancellationToken);
+
+        return resident is null ? null : _mapper.ToDomain(resident);
+    }
+
+    public async Task<DomainResident?> GetByIdentityCardNumberAsync(
+        string identityCardNumber,
+        CancellationToken cancellationToken = default)
+    {
+        var resident = await _context.Residents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                entity => entity.IdentityCardNumber == identityCardNumber,
+                cancellationToken);
+
+        return resident is null ? null : _mapper.ToDomain(resident);
+    }
+
+    public async Task<IReadOnlyList<DomainResident>> SearchByPhoneAsync(
+        string phone,
+        CancellationToken cancellationToken = default)
+    {
+        var residents = await _context.Residents
+            .AsNoTracking()
+            .Where(resident => resident.Phone.Contains(phone))
+            .OrderBy(resident => resident.FullName)
+            .ToListAsync(cancellationToken);
+
+        return residents.Select(_mapper.ToDomain).ToList();
     }
 }
 
 internal sealed class ResidentMembershipRepository : Repository<DomainResidentMembership, DatabaseResidentMembership>, IResidentMembershipRepository
 {
     private readonly HostContext _context;
+    private readonly IDatabaseModelMapper<DomainResidentMembership, DatabaseResidentMembership> _mapper;
 
     public ResidentMembershipRepository(HostContext context, IDatabaseModelMapper<DomainResidentMembership, DatabaseResidentMembership> mapper)
         : base(context, mapper)
     {
         _context = context;
+        _mapper = mapper;
+    }
+
+    public async Task<DomainResidentMembership?> GetActiveByAccountIdAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        var membership = await _context.ResidentMemberships
+            .AsNoTracking()
+            .Where(entity => entity.AccountId == accountId
+                && (entity.Status == ResidentMembershipStatuses.Active
+                    || entity.Status == ResidentMembershipStatuses.LegacyActive))
+            .OrderByDescending(entity => entity.ActivatedAt ?? entity.JoinedAt ?? entity.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return membership is null ? null : _mapper.ToDomain(membership);
+    }
+
+    public async Task<DomainResidentMembership?> GetByResidentAndOrganizationAsync(
+        Guid residentId,
+        Guid organizationId,
+        CancellationToken cancellationToken = default)
+    {
+        var membership = await _context.ResidentMemberships
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                entity => entity.ResidentId == residentId && entity.OrganizationId == organizationId,
+                cancellationToken);
+
+        return membership is null ? null : _mapper.ToDomain(membership);
+    }
+
+    public async Task<DomainResidentMembership?> GetByIdForAccountAsync(
+        Guid membershipId,
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        var membership = await _context.ResidentMemberships
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                entity => entity.Id == membershipId && entity.AccountId == accountId,
+                cancellationToken);
+
+        return membership is null ? null : _mapper.ToDomain(membership);
+    }
+
+    public Task<bool> ExistsByMembershipCodeAsync(
+        string membershipCode,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.ResidentMemberships
+            .AsNoTracking()
+            .AnyAsync(
+                entity => entity.MembershipCode == membershipCode,
+                cancellationToken);
     }
 
     public async Task<IReadOnlyList<OrganizationResidentDto>> GetResidentsByOrganizationAsync(
@@ -150,6 +251,11 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
         var query = _context.ResidentMemberships
             .AsNoTracking()
             .Where(membership => membership.OrganizationId == organizationId);
+
+        if(normalizedStatus == null)
+        {
+            normalizedStatus = "ACTIVE";
+        }
 
         if (normalizedStatus is not null)
         {
@@ -181,8 +287,49 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
             })
             .ToListAsync(cancellationToken);
     }
-} 
-  
+
+    public async Task<IReadOnlyList<OrganizationResidentInvitationDto>> GetInvitationsByOrganizationAsync(
+        Guid organizationId,
+        string? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedStatus = string.IsNullOrWhiteSpace(status)
+            ? null
+            : status.Trim();
+
+        var query = _context.ResidentMemberships
+            .AsNoTracking()
+            .Where(membership => membership.OrganizationId == organizationId);
+
+        if (normalizedStatus is not null)
+        {
+            query = query.Where(membership => membership.Status == normalizedStatus);
+        }
+
+        return await query
+            .OrderByDescending(membership => membership.InvitedAt ?? membership.CreatedAt)
+            .ThenBy(membership => membership.Resident.FullName)
+            .Select(membership => new OrganizationResidentInvitationDto
+            {
+                MembershipId = membership.Id,
+                OrganizationId = membership.OrganizationId,
+                ResidentId = membership.ResidentId,
+                AccountId = membership.AccountId,
+                MembershipCode = membership.MembershipCode,
+                Status = membership.Status,
+                InvitedAt = membership.InvitedAt,
+                RespondedAt = membership.RespondedAt,
+                JoinedAt = membership.JoinedAt,
+                ActivatedAt = membership.ActivatedAt,
+                ResidentName = membership.Resident.FullName,
+                ResidentPhone = membership.Resident.Phone,
+                ResidentEmail = "",
+                IdentityCardNumber = ""
+            })
+            .ToListAsync(cancellationToken);
+    }
+}
+
 internal sealed class RoleRepository : Repository<DomainRole, DatabaseRole>, IRoleRepository
 {
     public RoleRepository(HostContext context, IDatabaseModelMapper<DomainRole, DatabaseRole> mapper)
@@ -392,6 +539,25 @@ internal sealed class AccountRefreshTokenRepository : Repository<DomainAccountRe
         refreshToken.RevokedByIp = revokedByIp;
 
         return true;
+    }
+
+    public async Task<int> RevokeActiveByAccountIdAsync(
+        Guid accountId,
+        DateTime revokedAt,
+        string? revokedByIp,
+        CancellationToken cancellationToken = default)
+    {
+        var refreshTokens = await _context.AccountRefreshTokens
+            .Where(token => token.AccountId == accountId && token.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var refreshToken in refreshTokens)
+        {
+            refreshToken.RevokedAt = revokedAt;
+            refreshToken.RevokedByIp = revokedByIp;
+        }
+
+        return refreshTokens.Count;
     }
 }
 

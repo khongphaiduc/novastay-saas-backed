@@ -380,6 +380,7 @@ public partial class HostContext : DbContext
 
             entity.HasIndex(e => e.AccountId, "IX_Residents_AccountId").IsUnique();
 
+            entity.Property(e => e.Address).HasMaxLength(255);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -402,6 +403,7 @@ public partial class HostContext : DbContext
             entity.Property(e => e.ProfileImageUrl)
                 .HasMaxLength(255)
                 .IsUnicode(false);
+            entity.Property(e => e.Sex).HasMaxLength(20);
 
             entity.HasOne(d => d.Account).WithMany(p => p.Residents)
                 .HasForeignKey(d => d.AccountId)
