@@ -57,6 +57,7 @@ public static class DependencyInjection
         // Room Management
         services.AddSingleton<IMinioStorageService, MinioStorageService>();
         services.AddScoped<IRoomService, RoomService>();
+        services.AddScoped<IPropertyService, PropertyService>();
 
         return services;
     }
