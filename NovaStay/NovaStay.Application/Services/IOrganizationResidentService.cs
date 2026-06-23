@@ -22,5 +22,6 @@ public interface IOrganizationResidentService
     Task<ResidentMembershipResponse> AcceptInvitationAsync(
         Guid accountId,
         Guid membershipId,
+        bool isAccepted = true,
         CancellationToken cancellationToken = default);
 }

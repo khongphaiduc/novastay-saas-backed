@@ -112,6 +112,7 @@ public sealed class OrganizationResidentService : IOrganizationResidentService
     public async Task<ResidentMembershipResponse> AcceptInvitationAsync(
         Guid accountId,
         Guid membershipId,
+        bool isAccepted = true,
         CancellationToken cancellationToken = default)
     {
         if (accountId == Guid.Empty)
@@ -128,21 +129,34 @@ public sealed class OrganizationResidentService : IOrganizationResidentService
             throw new KeyNotFoundException("Resident membership invitation not found.");
         }
 
-        if (IsActiveStatus(membership.Status.Value))
+        if (isAccepted && IsActiveStatus(membership.Status.Value))
+        {
+            return ToResponse(membership);
+        }
+
+        if (!isAccepted && membership.Status.Value == ResidentMembershipStatuses.Rejected)
         {
             return ToResponse(membership);
         }
 
         if (membership.Status.Value != ResidentMembershipStatuses.Pending)
         {
-            throw new InvalidOperationException("Only pending invitations can be accepted.");
+            throw new InvalidOperationException("Only pending invitations can be accepted or rejected.");
         }
 
         var now = DateTime.UtcNow;
-        membership.Status = ResidentMembershipStatuses.Active;
         membership.RespondedAt = now;
-        membership.JoinedAt ??= now;
-        membership.ActivatedAt = now;
+
+        if (isAccepted)
+        {
+            membership.Status = ResidentMembershipStatuses.Active;
+            membership.JoinedAt ??= now;
+            membership.ActivatedAt = now;
+        }
+        else
+        {
+            membership.Status = ResidentMembershipStatuses.Rejected;
+        }
 
         _unitOfWork.ResidentMemberships.Update(membership);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
