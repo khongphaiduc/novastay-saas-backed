@@ -32,4 +32,12 @@ public interface IResidentMembershipRepository : IRepository<ResidentMembershipE
         Guid organizationId,
         string? status = null,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ResidentInvitationDto>> GetPendingInvitationsByAccountIdAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ResidentAccommodationDto>> GetActiveAccommodationsByAccountIdAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default);
 }
