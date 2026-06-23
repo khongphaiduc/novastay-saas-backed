@@ -52,6 +52,11 @@ public static class DependencyInjection
         services.AddScoped<IResidentAuthService, ResidentAuthService>();
         services.AddScoped<ILogoutService, LogoutService>();
         services.AddScoped<INotifications, Email>();
+
+        // Room Management
+        services.AddSingleton<IMinioStorageService, MinioStorageService>();
+        services.AddScoped<IRoomService, RoomService>();
+
         return services;
     }
 }

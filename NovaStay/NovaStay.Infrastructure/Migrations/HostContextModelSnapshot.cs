@@ -898,6 +898,9 @@ namespace NovaStay.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("(newsequentialid())");
 
+                    b.Property<string>("AmenitiesJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("BasePrice")
                         .HasColumnType("decimal(18, 2)");
 
@@ -908,6 +911,11 @@ namespace NovaStay.Infrastructure.Migrations
 
                     b.Property<int>("Floor")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<int?>("MaxOccupants")
                         .ValueGeneratedOnAdd()
