@@ -45,5 +45,6 @@ public sealed class UploadRoomImageRequest
     public Stream ImageStream { get; set; } = Stream.Null;
     public string FileName { get; set; } = string.Empty;
     public string ContentType { get; set; } = "image/jpeg";
+    public long FileSize { get; set; }
     public bool IsCover { get; set; } = false;
 }

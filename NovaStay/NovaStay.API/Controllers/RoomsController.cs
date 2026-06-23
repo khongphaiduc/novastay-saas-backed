@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
+using NovaStay.API.Extensions;
 
 namespace NovaStay.API.Controllers;
 
@@ -29,11 +30,15 @@ public sealed class RoomsController : ControllerBase
         [FromQuery] string? status = null,
         CancellationToken cancellationToken = default)
     {
-        if (propertyId == Guid.Empty)
-            return BadRequest(new { message = "propertyId là bắt buộc." });
-
-        var rooms = await _roomService.GetRoomsAsync(propertyId, search, status, cancellationToken);
-        return Ok(rooms);
+        try
+        {
+            var rooms = await _roomService.GetRoomsAsync(propertyId, search, status, cancellationToken);
+            return Ok(rooms);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     /// <summary>
@@ -94,30 +99,19 @@ public sealed class RoomsController : ControllerBase
     [RequestSizeLimit(10 * 1024 * 1024)] // 10MB
     public async Task<ActionResult<RoomImageDto>> UploadImage(
         Guid id,
-        IFormFile image,
+        IFormFile? image,
         [FromForm] bool isCover = false,
         CancellationToken cancellationToken = default)
     {
-        if (image is null || image.Length == 0)
-            return BadRequest(new { message = "Vui lòng chọn file ảnh." });
-
-        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
-        if (!allowedTypes.Contains(image.ContentType.ToLower()))
-            return BadRequest(new { message = "Chỉ chấp nhận ảnh JPEG, PNG hoặc WebP." });
-
         try
         {
-            using var stream = image.OpenReadStream();
-            var request = new UploadRoomImageRequest
-            {
-                ImageStream = stream,
-                FileName = Path.GetFileName(image.FileName),
-                ContentType = image.ContentType,
-                IsCover = isCover
-            };
-
+            var request = image.ToUploadRequest(isCover);
             var imageDto = await _roomService.UploadRoomImageAsync(id, request, cancellationToken);
             return Ok(imageDto);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {
