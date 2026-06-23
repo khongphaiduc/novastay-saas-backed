@@ -5,13 +5,7 @@ pipeline {
         stage('Run Unit Tests') {
             steps {
                 dir('NovaStay') {
-                    sh '''
-                        docker run --rm \
-                          -v "$PWD":/src \
-                          -w /src \
-                          mcr.microsoft.com/dotnet/sdk:8.0 \
-                          dotnet test NovaStay.UnitTests/NovaStay.UnitTests.csproj --configuration Release
-                    '''
+                    sh 'docker build --target test -t novastay-tests .'
                 }
             }
         }
