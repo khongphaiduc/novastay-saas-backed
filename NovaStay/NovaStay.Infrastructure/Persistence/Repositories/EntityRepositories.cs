@@ -181,21 +181,113 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
             })
             .ToListAsync(cancellationToken);
     }
-}
-
+} 
+  
 internal sealed class RoleRepository : Repository<DomainRole, DatabaseRole>, IRoleRepository
 {
     public RoleRepository(HostContext context, IDatabaseModelMapper<DomainRole, DatabaseRole> mapper)
         : base(context, mapper)
     {
     }
-}
+} 
 
 internal sealed class RoomRepository : Repository<DomainRoom, DatabaseRoom>, IRoomRepository
 {
+    private readonly HostContext _context;
+
     public RoomRepository(HostContext context, IDatabaseModelMapper<DomainRoom, DatabaseRoom> mapper)
         : base(context, mapper)
     {
+        _context = context;
+    }
+
+    public async Task<IReadOnlyList<RoomDto>> GetRoomsWithImagesAsync(
+        Guid propertyId,
+        string? search = null,
+        string? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Rooms
+            .AsNoTracking()
+            .Where(r => r.PropertyId == propertyId && !r.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var lower = search.Trim().ToLower();
+            query = query.Where(r => r.RoomNumber.ToLower().Contains(lower));
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(r => r.Status == status.Trim());
+        }
+
+        return await query
+            .OrderBy(r => r.Floor)
+            .ThenBy(r => r.RoomNumber)
+            .Select(r => new RoomDto
+            {
+                Id = r.Id,
+                PropertyId = r.PropertyId,
+                RoomNumber = r.RoomNumber,
+                Floor = r.Floor,
+                BasePrice = r.BasePrice,
+                Status = r.Status,
+                MaxOccupants = r.MaxOccupants,
+                AmenitiesJson = r.AmenitiesJson,
+                RowVersion = r.RowVersion,
+                CreatedAt = r.CreatedAt,
+                IsDeleted = r.IsDeleted,
+                Images = r.RoomImages
+                    .OrderByDescending(i => i.IsCover)
+                    .ThenBy(i => i.UploadedAt)
+                    .Select(i => new RoomImageDto
+                    {
+                        Id = i.Id,
+                        RoomId = i.RoomId,
+                        ImageUrl = i.ImageUrl,
+                        IsCover = i.IsCover,
+                        UploadedAt = i.UploadedAt
+                    })
+                    .ToList()
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<RoomDto?> GetRoomWithImagesAsync(
+        Guid roomId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Rooms
+            .AsNoTracking()
+            .Where(r => r.Id == roomId && !r.IsDeleted)
+            .Select(r => new RoomDto
+            {
+                Id = r.Id,
+                PropertyId = r.PropertyId,
+                RoomNumber = r.RoomNumber,
+                Floor = r.Floor,
+                BasePrice = r.BasePrice,
+                Status = r.Status,
+                MaxOccupants = r.MaxOccupants,
+                AmenitiesJson = r.AmenitiesJson,
+                RowVersion = r.RowVersion,
+                CreatedAt = r.CreatedAt,
+                IsDeleted = r.IsDeleted,
+                Images = r.RoomImages
+                    .OrderByDescending(i => i.IsCover)
+                    .ThenBy(i => i.UploadedAt)
+                    .Select(i => new RoomImageDto
+                    {
+                        Id = i.Id,
+                        RoomId = i.RoomId,
+                        ImageUrl = i.ImageUrl,
+                        IsCover = i.IsCover,
+                        UploadedAt = i.UploadedAt
+                    })
+                    .ToList()
+            })
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }
 
