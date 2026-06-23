@@ -48,6 +48,7 @@ internal class Repository<TDomain, TDatabase> : IRepository<TDomain>
         return databaseModel is null ? null : _mapper.ToDomain(databaseModel);
     }
 
+    
     public async Task<IReadOnlyList<TDomain>> ListAsync(
         CancellationToken cancellationToken = default)
     {
