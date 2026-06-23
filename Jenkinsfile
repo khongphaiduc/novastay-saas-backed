@@ -5,7 +5,13 @@ pipeline {
         stage('Run Unit Tests') {
             steps {
                 dir('NovaStay') {
-                    sh 'dotnet test NovaStay.UnitTests/NovaStay.UnitTests.csproj --configuration Release'
+                    sh '''
+                        docker run --rm \
+                          -v "$PWD":/src \
+                          -w /src \
+                          mcr.microsoft.com/dotnet/sdk:8.0 \
+                          dotnet test NovaStay.UnitTests/NovaStay.UnitTests.csproj --configuration Release
+                    '''
                 }
             }
         }
@@ -14,8 +20,8 @@ pipeline {
             steps {
                 withDockerRegistry(credentialsId: 'docker', url: 'https://index.docker.io/v1/') {
                     dir('NovaStay') {
-                        sh 'docker build -t ptrungduc1011/benovastay:v1 .' 
-                        sh 'docker push ptrungduc1011/benovastay:v1'                     
+                        sh 'docker build -t ptrungduc1011/benovastay:v1 .'
+                        sh 'docker push ptrungduc1011/benovastay:v1'
                     }
                 }
             }
