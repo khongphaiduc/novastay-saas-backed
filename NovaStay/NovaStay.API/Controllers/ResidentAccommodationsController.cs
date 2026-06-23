@@ -34,4 +34,5 @@ public sealed class ResidentAccommodationsController : ControllerBase
 
         return Ok(accommodations);
     }
+
 }

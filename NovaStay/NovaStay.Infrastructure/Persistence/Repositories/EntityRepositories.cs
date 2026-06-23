@@ -357,6 +357,37 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
             })
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<ResidentInvitationDto>> GetPendingInvitationsByAccountIdAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.ResidentMemberships
+            .AsNoTracking()
+            .Where(membership => membership.AccountId == accountId
+                && membership.Status == ResidentMembershipStatuses.Pending)
+            .OrderByDescending(membership => membership.InvitedAt ?? membership.CreatedAt)
+            .ThenBy(membership => membership.Organization.BusinessName)
+            .Select(membership => new ResidentInvitationDto
+            {
+                MembershipId = membership.Id,
+                AccountId = membership.AccountId,
+                ResidentId = membership.ResidentId,
+                OrganizationId = membership.OrganizationId,
+                MembershipCode = membership.MembershipCode,
+                Status = membership.Status,
+                InvitedAt = membership.InvitedAt,
+                RespondedAt = membership.RespondedAt,
+                JoinedAt = membership.JoinedAt,
+                ActivatedAt = membership.ActivatedAt,
+                CreatedAt = membership.CreatedAt,
+                BusinessName = membership.Organization.BusinessName,
+                BusinessArea = membership.Organization.BusinessArea,
+                OwnerPhone = membership.Organization.OwnerPhone,
+                OwnerEmail = membership.Organization.OwnerEmail
+            })
+            .ToListAsync(cancellationToken);
+    }
 }
 
 internal sealed class RoleRepository : Repository<DomainRole, DatabaseRole>, IRoleRepository
