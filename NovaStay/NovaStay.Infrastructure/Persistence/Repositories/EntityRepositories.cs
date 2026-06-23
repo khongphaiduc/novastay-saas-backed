@@ -328,6 +328,35 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
             })
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<ResidentAccommodationDto>> GetActiveAccommodationsByAccountIdAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.ResidentMemberships
+            .AsNoTracking()
+            .Where(membership => membership.AccountId == accountId
+                && (membership.Status == ResidentMembershipStatuses.Active
+                    || membership.Status == ResidentMembershipStatuses.LegacyActive))
+            .OrderByDescending(membership => membership.ActivatedAt ?? membership.JoinedAt ?? membership.CreatedAt)
+            .ThenBy(membership => membership.Organization.BusinessName)
+            .Select(membership => new ResidentAccommodationDto
+            {
+                MembershipId = membership.Id,
+                AccountId = membership.AccountId,
+                ResidentId = membership.ResidentId,
+                OrganizationId = membership.OrganizationId,
+                MembershipCode = membership.MembershipCode,
+                MembershipStatus = membership.Status,
+                JoinedAt = membership.JoinedAt,
+                ActivatedAt = membership.ActivatedAt,
+                BusinessName = membership.Organization.BusinessName,
+                BusinessArea = membership.Organization.BusinessArea,
+                OwnerPhone = membership.Organization.OwnerPhone,
+                OwnerEmail = membership.Organization.OwnerEmail
+            })
+            .ToListAsync(cancellationToken);
+    }
 }
 
 internal sealed class RoleRepository : Repository<DomainRole, DatabaseRole>, IRoleRepository

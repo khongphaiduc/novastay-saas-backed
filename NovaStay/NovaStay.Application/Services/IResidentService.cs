@@ -11,4 +11,8 @@ public interface IResidentService
     Task<IReadOnlyList<ResidentDto>> SearchByPhoneAsync(
         string? phone,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ResidentAccommodationDto>> GetActiveAccommodationsAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default);
 }
