@@ -514,6 +514,10 @@ public partial class HostContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false);
+            entity.Property(e => e.AmenitiesJson)
+                .HasColumnType("nvarchar(max)")
+                .IsRequired(false);
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
 
             entity.HasOne(d => d.Property).WithMany(p => p.Rooms)
                 .HasForeignKey(d => d.PropertyId)
