@@ -9,6 +9,8 @@ internal sealed class FakeAuthService : IAuthService
     public LoginBusinessAccountResponse LoginBusinessResponse { get; set; } = new();
     public Exception? RegisterException { get; set; }
     public Exception? LoginBusinessException { get; set; }
+    public Exception? ResetPasswordException { get; set; }
+    public ResetPasswordRequest? ResetPasswordRequest { get; private set; }
 
     public Task<RegisterOrganizationAccountResponse> RegisterOrganizationOwnerAsync(
         RegisterOrganizationAccountRequest request,
@@ -34,6 +36,20 @@ internal sealed class FakeAuthService : IAuthService
         }
 
         return Task.FromResult(LoginBusinessResponse);
+    }
+
+    public Task ResetPasswordAsync(
+        ResetPasswordRequest request,
+        string? ipAddress,
+        CancellationToken cancellationToken = default)
+    {
+        ResetPasswordRequest = request;
+        if (ResetPasswordException is not null)
+        {
+            throw ResetPasswordException;
+        }
+
+        return Task.CompletedTask;
     }
 }
 

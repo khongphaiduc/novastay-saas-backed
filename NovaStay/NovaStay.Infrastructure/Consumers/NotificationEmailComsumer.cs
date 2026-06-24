@@ -166,7 +166,7 @@ namespace NovaStay.Infrastructure.Consumers
 </html>";
 
 
-            bool result = await _notification.SendRegisterAccount(new RequestSendMessage
+            bool result = await _notification.SendEmail(new RequestSendMessage
             {
                 Body = content,
                 Subject = "NovaStay New Business Registration",

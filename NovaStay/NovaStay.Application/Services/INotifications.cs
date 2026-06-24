@@ -10,6 +10,6 @@ namespace NovaStay.Application.Services
     public interface INotifications
     {
         public string TypeService { get; }
-        Task<bool> SendRegisterAccount(RequestSendMessage request);
+        Task<bool> SendEmail(RequestSendMessage request);
     }
 }
