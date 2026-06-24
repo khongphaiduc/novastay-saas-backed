@@ -43,6 +43,7 @@ public sealed class RoomService : IRoomService
     {
         var room = new RoomEntity
         {
+            Id = Guid.NewGuid(),
             PropertyId = request.PropertyId,
             RoomNumber = new Code(request.RoomNumber),
             Floor = request.Floor,
@@ -138,6 +139,7 @@ public sealed class RoomService : IRoomService
 
         var roomImage = new RoomImageEntity
         {
+            Id = Guid.NewGuid(),
             RoomId = roomId,
             ImageUrl = imageUrl,
             IsCover = request.IsCover,
