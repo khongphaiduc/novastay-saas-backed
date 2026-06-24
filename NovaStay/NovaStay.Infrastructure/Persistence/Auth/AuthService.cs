@@ -12,6 +12,8 @@ internal sealed class AuthService : IAuthService
 {
     private const string BusinessOwnerAccountType = "BusinessOwner";
     private const string InvalidLoginMessage = "Invalid email or password.";
+    private const int TemporaryPasswordLength = 12;
+    private const string TemporaryPasswordCharacters = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
     private readonly HostContext _context;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IPublishEndpoint _rabbitMQ;
@@ -223,12 +225,79 @@ internal sealed class AuthService : IAuthService
         };
     }
 
+    public async Task ResetPasswordAsync(ResetPasswordRequest request, string? ipAddress, CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = NormalizeResetPasswordEmail(request.Email);
+        var account = await _context.Accounts
+            .FirstOrDefaultAsync(
+                entity => entity.Email == normalizedEmail,
+                cancellationToken);
+
+        if (account is null)
+        {
+            throw new KeyNotFoundException("Account email was not found.");
+        }
+
+        if (account.IsActive == false)
+        {
+            throw new InvalidOperationException("Account is inactive.");
+        }
+
+        var now = DateTime.UtcNow;
+        var temporaryPassword = GenerateTemporaryPassword();
+        account.PasswordHash = HashPassword(temporaryPassword);
+        account.MustSetPassword = true;
+        account.PasswordSetAt = now;
+
+        var activeRefreshTokens = await _context.AccountRefreshTokens
+            .Where(token => token.AccountId == account.Id && token.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var refreshToken in activeRefreshTokens)
+        {
+            refreshToken.RevokedAt = now;
+            refreshToken.RevokedByIp = ipAddress;
+        }
+
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        await _rabbitMQ.Publish(new NofiticationResetPassword
+        {
+            Email = normalizedEmail,
+            NewPassword = temporaryPassword
+        }, cancellationToken);
+    }
+
     private async Task<SubscriptionPackage?> GetDefaultPackageAsync(CancellationToken cancellationToken)
     {
         return await _context.SubscriptionPackages
             .OrderByDescending(package => package.PackageKey == "TRIAL")
             .ThenBy(package => package.PriceMonthly)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private static string NormalizeResetPasswordEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new InvalidOperationException("Email is required.");
+        }
+
+        return email.Trim().ToLowerInvariant();
+    }
+
+    private static string GenerateTemporaryPassword()
+    {
+        Span<char> password = stackalloc char[TemporaryPasswordLength];
+        for (var index = 0; index < password.Length; index++)
+        {
+            var characterIndex = RandomNumberGenerator.GetInt32(TemporaryPasswordCharacters.Length);
+            password[index] = TemporaryPasswordCharacters[characterIndex];
+        }
+
+        return new string(password);
     }
 
     private static string HashPassword(string password)

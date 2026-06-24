@@ -63,6 +63,45 @@ public sealed class AuthControllerTests
     }
 
     [Fact]
+    public async Task ResetPassword_ReturnsNoContent_WhenServiceSucceeds()
+    {
+        var auth = new FakeAuthService();
+        var controller = CreateController(auth);
+        var request = new ResetPasswordRequest { Email = "owner@example.com" };
+
+        var result = await controller.ResetPassword(request);
+
+        Assert.IsType<NoContentResult>(result);
+        Assert.Same(request, auth.ResetPasswordRequest);
+    }
+
+    [Fact]
+    public async Task ResetPassword_ReturnsNotFound_WhenEmailDoesNotExist()
+    {
+        var controller = CreateController(new FakeAuthService
+        {
+            ResetPasswordException = new KeyNotFoundException("missing")
+        });
+
+        var result = await controller.ResetPassword(new ResetPasswordRequest { Email = "missing@example.com" });
+
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task ResetPassword_ReturnsBadRequest_WhenRequestIsInvalid()
+    {
+        var controller = CreateController(new FakeAuthService
+        {
+            ResetPasswordException = new InvalidOperationException("invalid")
+        });
+
+        var result = await controller.ResetPassword(new ResetPasswordRequest());
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
     public async Task LoginResident_ReturnsOk_WhenCredentialsAreValid()
     {
         var residentAuth = new FakeResidentAuthService

@@ -14,7 +14,7 @@ namespace NovaStay.Infrastructure.ServicesImple
     {
         public string TypeService => "Email";
 
-        public async Task<bool> SendRegisterAccount(RequestSendMessage request)
+        public async Task<bool> SendEmail(RequestSendMessage request)
         {
             try
             {

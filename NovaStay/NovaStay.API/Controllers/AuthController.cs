@@ -62,6 +62,28 @@ public sealed class AuthController : ControllerBase
             return Unauthorized(new { message = exception.Message });
         }
     }
+    [AllowAnonymous]
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _authService.ResetPasswordAsync(
+                request,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                cancellationToken);
+
+            return NoContent();
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return NotFound(new { message = exception.Message });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+    }
 
     [HttpPost("resident/login")]
     public async Task<ActionResult<LoginResidentAccountResponse>> LoginResident(
