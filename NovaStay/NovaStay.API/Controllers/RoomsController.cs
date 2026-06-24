@@ -178,4 +178,24 @@ public sealed class RoomsController : ControllerBase
             return NotFound(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Xóa ảnh phòng
+    /// </summary>
+    [HttpDelete("{id:guid}/images/{imageId:guid}")]
+    public async Task<IActionResult> DeleteImage(
+        Guid id,
+        Guid imageId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _roomService.DeleteRoomImageAsync(id, imageId, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
 }

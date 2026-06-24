@@ -50,4 +50,10 @@ public interface IRoomService
         Guid roomId,
         UpdateAmenitiesRequest request,
         CancellationToken cancellationToken = default);
+
+    Task DeleteRoomImageAsync(
+        Guid roomId,
+        Guid imageId,
+        CancellationToken cancellationToken = default);
 }
+
