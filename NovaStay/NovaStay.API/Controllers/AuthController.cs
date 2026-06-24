@@ -62,6 +62,8 @@ public sealed class AuthController : ControllerBase
             return Unauthorized(new { message = exception.Message });
         }
     }
+
+    // tetst
     [AllowAnonymous]
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken = default)
