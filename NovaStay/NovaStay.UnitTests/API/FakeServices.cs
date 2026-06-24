@@ -337,6 +337,21 @@ internal sealed class FakeRoomService : IRoomService
 
         return Task.FromResult(UpdateAmenitiesResponse);
     }
+
+    public KeyNotFoundException? DeleteImageException { get; set; }
+
+    public Task DeleteRoomImageAsync(
+        Guid roomId,
+        Guid imageId,
+        CancellationToken cancellationToken = default)
+    {
+        if (DeleteImageException is not null)
+        {
+            throw DeleteImageException;
+        }
+
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeSampleDataService : ISampleDataService

@@ -123,5 +123,30 @@ namespace NovaStay.UnitTests.Infrastructure.ServicesImple
             _mockUnitOfWork.Verify(u => u.RoomImages.AddAsync(It.IsAny<RoomImageEntity>(), It.IsAny<CancellationToken>()), Times.Once);
             _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        [Fact]
+        public async Task DeleteRoomImageAsync_ShouldRemoveImageAndSave()
+        {
+            // Arrange
+            var roomId = Guid.NewGuid();
+            var imageId = Guid.NewGuid();
+            var existingImage = new RoomImageEntity { Id = imageId, RoomId = roomId };
+
+            _mockUnitOfWork.Setup(u => u.RoomImages.FindAsync(
+                It.IsAny<System.Linq.Expressions.Expression<System.Func<RoomImageEntity, bool>>>(),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new System.Collections.Generic.List<RoomImageEntity> { existingImage });
+
+            _mockUnitOfWork.Setup(u => u.RoomImages.Remove(It.IsAny<RoomImageEntity>()));
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1);
+
+            // Act
+            await _roomService.DeleteRoomImageAsync(roomId, imageId);
+
+            // Assert
+            _mockUnitOfWork.Verify(u => u.RoomImages.Remove(existingImage), Times.Once);
+            _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
     }
 }

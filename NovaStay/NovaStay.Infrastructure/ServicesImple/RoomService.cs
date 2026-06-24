@@ -205,4 +205,20 @@ public sealed class RoomService : IRoomService
         var result = await _unitOfWork.Rooms.GetRoomWithImagesAsync(roomId, cancellationToken);
         return result ?? _mapper.Map<RoomDto>(room);
     }
+
+    public async Task DeleteRoomImageAsync(
+        Guid roomId,
+        Guid imageId,
+        CancellationToken cancellationToken = default)
+    {
+        var images = await _unitOfWork.RoomImages.FindAsync(
+            img => img.Id == imageId && img.RoomId == roomId, cancellationToken);
+        var image = images.FirstOrDefault();
+
+        if (image == null)
+            throw new KeyNotFoundException($"Image {imageId} không tìm thấy trong Room {roomId}.");
+
+        _unitOfWork.RoomImages.Remove(image);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
 }
