@@ -51,17 +51,195 @@ namespace NovaStay.Infrastructure.Persistence.Repositories;
 
 internal sealed class AssetRepository : Repository<DomainAsset, DatabaseAsset>, IAssetRepository
 {
+    private readonly HostContext _context;
+
     public AssetRepository(HostContext context, IDatabaseModelMapper<DomainAsset, DatabaseAsset> mapper)
         : base(context, mapper)
     {
+        _context = context;
+    }
+
+    /// <summary>TASK-055: Lấy danh sách tài sản kèm assignment mới nhất, có thể lọc theo search/category/status</summary>
+    public async Task<IReadOnlyList<AssetDto>> GetAssetsWithCurrentStatusAsync(
+        Guid organizationId,
+        string? search = null,
+        string? category = null,
+        string? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        // Subquery lấy ID assignment mới nhất của mỗi tài sản
+        var latestAssignmentIds = _context.AssetAssignments
+            .GroupBy(a => a.AssetId)
+            .Select(g => g.OrderByDescending(a => a.AssignedAt).First().Id);
+
+        var query = from asset in _context.Assets
+                    where asset.OrganizationId == organizationId && !asset.IsDeleted
+                    join aa in _context.AssetAssignments.Where(a => latestAssignmentIds.Contains(a.Id))
+                        on asset.Id equals aa.AssetId into assignments
+                    from latestAss in assignments.DefaultIfEmpty()
+                    join room in _context.Rooms
+                        on latestAss.RoomId equals room.Id into rooms
+                    from assignedRoom in rooms.DefaultIfEmpty()
+                    select new AssetDto
+                    {
+                        Id = asset.Id,
+                        OrganizationId = asset.OrganizationId,
+                        AssetName = asset.AssetName,
+                        Category = asset.Category,
+                        Brand = asset.Brand,
+                        Model = asset.Model,
+                        AssetCode = asset.AssetCode,
+                        PurchaseDate = asset.PurchaseDate,
+                        WarrantyExpiryDate = asset.WarrantyExpiryDate,
+                        BaseValue = asset.BaseValue,
+                        CreatedAt = asset.CreatedAt,
+                        IsDeleted = asset.IsDeleted,
+                        CurrentAssignmentId = latestAss != null ? latestAss.Id : (Guid?)null,
+                        CurrentRoomId = latestAss != null ? latestAss.RoomId : null,
+                        CurrentRoomNumber = assignedRoom != null ? assignedRoom.RoomNumber : null,
+                        CurrentStatus = latestAss != null ? latestAss.Status : "Good",
+                        CurrentNote = latestAss != null ? latestAss.Note : null,
+                        LastAssignedAt = latestAss != null ? latestAss.AssignedAt : null
+                    };
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(a =>
+                a.AssetName.Contains(search) ||
+                (a.AssetCode != null && a.AssetCode.Contains(search)) ||
+                (a.Brand != null && a.Brand.Contains(search)));
+
+        if (!string.IsNullOrWhiteSpace(category))
+            query = query.Where(a => a.Category == category);
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(a => a.CurrentStatus == status);
+
+        return await query
+            .OrderBy(a => a.AssetName)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>Task phát sinh: Lấy tài sản trong phòng</summary>
+    public async Task<IReadOnlyList<AssetDto>> GetAssetsByRoomAsync(
+        Guid roomId,
+        CancellationToken cancellationToken = default)
+    {
+        var latestAssignmentIds = _context.AssetAssignments
+            .GroupBy(a => a.AssetId)
+            .Select(g => g.OrderByDescending(a => a.AssignedAt).First().Id);
+
+        var query = from asset in _context.Assets
+                    where !asset.IsDeleted
+                    join aa in _context.AssetAssignments
+                        .Where(a => latestAssignmentIds.Contains(a.Id) && a.RoomId == roomId)
+                        on asset.Id equals aa.AssetId
+                    join room in _context.Rooms on aa.RoomId equals room.Id into rooms
+                    from assignedRoom in rooms.DefaultIfEmpty()
+                    select new AssetDto
+                    {
+                        Id = asset.Id,
+                        OrganizationId = asset.OrganizationId,
+                        AssetName = asset.AssetName,
+                        Category = asset.Category,
+                        Brand = asset.Brand,
+                        Model = asset.Model,
+                        AssetCode = asset.AssetCode,
+                        PurchaseDate = asset.PurchaseDate,
+                        WarrantyExpiryDate = asset.WarrantyExpiryDate,
+                        BaseValue = asset.BaseValue,
+                        CreatedAt = asset.CreatedAt,
+                        IsDeleted = asset.IsDeleted,
+                        CurrentAssignmentId = aa.Id,
+                        CurrentRoomId = aa.RoomId,
+                        CurrentRoomNumber = assignedRoom != null ? assignedRoom.RoomNumber : null,
+                        CurrentStatus = aa.Status,
+                        CurrentNote = aa.Note,
+                        LastAssignedAt = aa.AssignedAt
+                    };
+
+        return await query.OrderBy(a => a.AssetName).ToListAsync(cancellationToken);
+    }
+
+    /// <summary>Task phát sinh: Thống kê tài sản theo Organization</summary>
+    public async Task<AssetStatisticsDto> GetStatisticsAsync(
+        Guid organizationId,
+        CancellationToken cancellationToken = default)
+    {
+        var latestAssignmentIds = _context.AssetAssignments
+            .GroupBy(a => a.AssetId)
+            .Select(g => g.OrderByDescending(a => a.AssignedAt).First().Id);
+
+        var stats = await (
+            from asset in _context.Assets
+            where asset.OrganizationId == organizationId && !asset.IsDeleted
+            join aa in _context.AssetAssignments.Where(a => latestAssignmentIds.Contains(a.Id))
+                on asset.Id equals aa.AssetId into assignments
+            from latestAss in assignments.DefaultIfEmpty()
+            select new { latestAss }
+        ).ToListAsync(cancellationToken);
+
+        return new AssetStatisticsDto
+        {
+            TotalAssets = stats.Count,
+            InStorage = stats.Count(x => x.latestAss == null || x.latestAss.RoomId == null),
+            InUse = stats.Count(x => x.latestAss != null && x.latestAss.RoomId != null
+                && (x.latestAss.Status == "Good" || x.latestAss.Status == "Working")),
+            Damaged = stats.Count(x => x.latestAss != null && x.latestAss.Status == "Damaged"),
+            InMaintenance = stats.Count(x => x.latestAss != null && x.latestAss.Status == "Maintenance")
+        };
     }
 }
 
 internal sealed class AssetAssignmentRepository : Repository<DomainAssetAssignment, DatabaseAssetAssignment>, IAssetAssignmentRepository
 {
+    private readonly HostContext _context;
+    private readonly IDatabaseModelMapper<DomainAssetAssignment, DatabaseAssetAssignment> _assetAssMapper;
+
     public AssetAssignmentRepository(HostContext context, IDatabaseModelMapper<DomainAssetAssignment, DatabaseAssetAssignment> mapper)
         : base(context, mapper)
     {
+        _context = context;
+        _assetAssMapper = mapper;
+    }
+
+    /// <summary>TASK-062: Lịch sử luân chuyển của một tài sản, kèm số phòng</summary>
+    public async Task<IReadOnlyList<AssetHistoryDto>> GetHistoryByAssetAsync(
+        Guid assetId,
+        CancellationToken cancellationToken = default)
+    {
+        var history = await (
+            from aa in _context.AssetAssignments
+            where aa.AssetId == assetId
+            join room in _context.Rooms on aa.RoomId equals room.Id into rooms
+            from assignedRoom in rooms.DefaultIfEmpty()
+            orderby aa.AssignedAt descending
+            select new AssetHistoryDto
+            {
+                Id = aa.Id,
+                AssetId = aa.AssetId,
+                RoomId = aa.RoomId,
+                RoomNumber = assignedRoom != null ? assignedRoom.RoomNumber : null,
+                Status = aa.Status,
+                Note = aa.Note,
+                AssignedAt = aa.AssignedAt
+            }
+        ).ToListAsync(cancellationToken);
+
+        return history;
+    }
+
+    /// <summary>Lấy bản ghi assignment mới nhất của tài sản</summary>
+    public async Task<DomainAssetAssignment?> GetLatestByAssetAsync(
+        Guid assetId,
+        CancellationToken cancellationToken = default)
+    {
+        var latest = await _context.AssetAssignments
+            .AsNoTracking()
+            .Where(aa => aa.AssetId == assetId)
+            .OrderByDescending(aa => aa.AssignedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return latest is null ? null : _assetAssMapper.ToDomain(latest);
     }
 }
 
