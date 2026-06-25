@@ -11,6 +11,8 @@ public partial class Asset
 
     public string AssetName { get; set; } = null!;
 
+    public string? Category { get; set; }
+
     public string? Brand { get; set; }
 
     public string? Model { get; set; }
@@ -24,6 +26,8 @@ public partial class Asset
     public decimal? BaseValue { get; set; }
 
     public DateTime? CreatedAt { get; set; }
+
+    public bool IsDeleted { get; set; } = false;
 
     public virtual ICollection<AssetAssignment> AssetAssignments { get; set; } = new List<AssetAssignment>();
 
