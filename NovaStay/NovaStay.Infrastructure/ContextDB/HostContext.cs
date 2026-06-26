@@ -32,7 +32,7 @@ public partial class HostContext : DbContext
 
     public virtual DbSet<Permission> Permissions { get; set; }
 
-    public virtual DbSet<OrganizationService> OrganizationServices { get; set; }
+    public virtual DbSet<PropertyService> PropertyServices { get; set; }
 
     public virtual DbSet<Property> Properties { get; set; }
 
@@ -361,13 +361,13 @@ public partial class HostContext : DbContext
             entity.Property(e => e.PermissionName).HasMaxLength(100);
         });
 
-        modelBuilder.Entity<OrganizationService>(entity =>
+        modelBuilder.Entity<PropertyService>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK_OrganizationServices");
+            entity.HasKey(e => e.Id).HasName("PK_PropertyServices");
 
-            entity.HasIndex(e => new { e.OrganizationId, e.IsActive }, "IX_OrganizationServices_OrganizationId_IsActive");
+            entity.HasIndex(e => new { e.PropertyId, e.IsActive }, "IX_PropertyServices_PropertyId_IsActive");
 
-            entity.HasIndex(e => new { e.OrganizationId, e.ServiceName }, "UX_OrganizationServices_OrganizationId_ServiceName")
+            entity.HasIndex(e => new { e.PropertyId, e.ServiceName }, "UX_PropertyServices_PropertyId_ServiceName")
                 .IsUnique();
 
             entity.Property(e => e.BillingCycle)
@@ -386,10 +386,10 @@ public partial class HostContext : DbContext
             entity.Property(e => e.Unit).HasMaxLength(50);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 
-            entity.HasOne(d => d.Organization).WithMany(p => p.OrganizationServices)
-                .HasForeignKey(d => d.OrganizationId)
+            entity.HasOne(d => d.Property).WithMany(p => p.PropertyServices)
+                .HasForeignKey(d => d.PropertyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_OrganizationServices_Organizations_OrganizationId");
+                .HasConstraintName("FK_PropertyServices_Properties_PropertyId");
         });
 
         modelBuilder.Entity<Property>(entity =>
@@ -568,11 +568,11 @@ public partial class HostContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK_RoomServices");
 
-            entity.HasIndex(e => e.OrganizationServiceId, "IX_RoomServices_OrganizationServiceId");
+            entity.HasIndex(e => e.PropertyServiceId, "IX_RoomServices_PropertyServiceId");
 
             entity.HasIndex(e => e.RoomId, "IX_RoomServices_RoomId");
 
-            entity.HasIndex(e => new { e.RoomId, e.OrganizationServiceId }, "UX_RoomServices_RoomId_OrganizationServiceId")
+            entity.HasIndex(e => new { e.RoomId, e.PropertyServiceId }, "UX_RoomServices_RoomId_PropertyServiceId")
                 .IsUnique();
 
             entity.Property(e => e.AssignedAt)
@@ -583,10 +583,10 @@ public partial class HostContext : DbContext
             entity.Property(e => e.PriceOverride).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.RemovedAt).HasColumnType("datetime");
 
-            entity.HasOne(d => d.OrganizationService).WithMany(p => p.RoomServices)
-                .HasForeignKey(d => d.OrganizationServiceId)
+            entity.HasOne(d => d.PropertyService).WithMany(p => p.RoomServices)
+                .HasForeignKey(d => d.PropertyServiceId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_RoomServices_OrganizationServices_OrganizationServiceId");
+                .HasConstraintName("FK_RoomServices_PropertyServices_PropertyServiceId");
 
             entity.HasOne(d => d.Room).WithMany(p => p.RoomServices)
                 .HasForeignKey(d => d.RoomId)
