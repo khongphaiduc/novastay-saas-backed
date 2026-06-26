@@ -101,6 +101,7 @@ public partial class HostContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false);
             entity.Property(e => e.AssetName).HasMaxLength(100);
+            entity.Property(e => e.Category).HasMaxLength(50);
             entity.Property(e => e.BaseValue)
                 .HasDefaultValue(0m)
                 .HasColumnType("decimal(18, 2)");
@@ -108,6 +109,7 @@ public partial class HostContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
             entity.Property(e => e.Model)
                 .HasMaxLength(50)
                 .IsUnicode(false);

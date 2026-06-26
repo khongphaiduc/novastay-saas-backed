@@ -22,7 +22,14 @@ public sealed class ApplicationMappingProfile : Profile
         CreateMap<string, Status>().ConvertUsing(value => new Status(value));
         CreateMap<Status, string>().ConvertUsing(value => value.Value);
 
-        CreateMap<AssetEntity, AssetDto>().ReverseMap();
+        CreateMap<AssetEntity, AssetDto>()
+            .ForMember(d => d.CurrentAssignmentId, opt => opt.Ignore())
+            .ForMember(d => d.CurrentRoomId, opt => opt.Ignore())
+            .ForMember(d => d.CurrentRoomNumber, opt => opt.Ignore())
+            .ForMember(d => d.CurrentStatus, opt => opt.Ignore())
+            .ForMember(d => d.CurrentNote, opt => opt.Ignore())
+            .ForMember(d => d.LastAssignedAt, opt => opt.Ignore())
+            .ReverseMap();
         CreateMap<AssetAssignmentEntity, AssetAssignmentDto>().ReverseMap();
         CreateMap<BookingEntity, BookingDto>().ReverseMap();
         CreateMap<BrokerEntity, BrokerDto>().ReverseMap();
