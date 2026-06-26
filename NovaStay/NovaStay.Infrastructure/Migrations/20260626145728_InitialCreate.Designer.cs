@@ -12,8 +12,8 @@ using NovaStay.Infrastructure.ContextDB;
 namespace NovaStay.Infrastructure.Migrations
 {
     [DbContext(typeof(HostContext))]
-    [Migration("20260623031046_AddResidentSexAndAddress")]
-    partial class AddResidentSexAndAddress
+    [Migration("20260626145728_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -170,10 +170,19 @@ namespace NovaStay.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("Category")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<DateTime?>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("(getdate())");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Model")
                         .HasMaxLength(50)
@@ -646,6 +655,66 @@ namespace NovaStay.Infrastructure.Migrations
                     b.ToTable("Organizations");
                 });
 
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.OrganizationService", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("(newsequentialid())");
+
+                    b.Property<string>("BillingCycle")
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<decimal>("DefaultPrice")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ServiceCode")
+                        .HasMaxLength(50)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ServiceName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime");
+
+                    b.HasKey("Id")
+                        .HasName("PK_OrganizationServices");
+
+                    b.HasIndex(new[] { "OrganizationId", "IsActive" }, "IX_OrganizationServices_OrganizationId_IsActive");
+
+                    b.HasIndex(new[] { "OrganizationId", "ServiceName" }, "UX_OrganizationServices_OrganizationId_ServiceName")
+                        .IsUnique();
+
+                    b.ToTable("OrganizationServices");
+                });
+
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Permission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -901,6 +970,9 @@ namespace NovaStay.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("(newsequentialid())");
 
+                    b.Property<string>("AmenitiesJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("BasePrice")
                         .HasColumnType("decimal(18, 2)");
 
@@ -911,6 +983,11 @@ namespace NovaStay.Infrastructure.Migrations
 
                     b.Property<int>("Floor")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<int?>("MaxOccupants")
                         .ValueGeneratedOnAdd()
@@ -1007,6 +1084,52 @@ namespace NovaStay.Infrastructure.Migrations
                     b.HasIndex(new[] { "RoomId" }, "IX_RoomImages_RoomId");
 
                     b.ToTable("RoomImages");
+                });
+
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.RoomService", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("(newsequentialid())");
+
+                    b.Property<DateTime?>("AssignedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<Guid>("OrganizationServiceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("PriceOverride")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<DateTime?>("RemovedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id")
+                        .HasName("PK_RoomServices");
+
+                    b.HasIndex(new[] { "OrganizationServiceId" }, "IX_RoomServices_OrganizationServiceId");
+
+                    b.HasIndex(new[] { "RoomId" }, "IX_RoomServices_RoomId");
+
+                    b.HasIndex(new[] { "RoomId", "OrganizationServiceId" }, "UX_RoomServices_RoomId_OrganizationServiceId")
+                        .IsUnique();
+
+                    b.ToTable("RoomServices");
                 });
 
             modelBuilder.Entity("NovaStay.Infrastructure.Models.StaffUser", b =>
@@ -1413,6 +1536,17 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Navigation("Package");
                 });
 
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.OrganizationService", b =>
+                {
+                    b.HasOne("NovaStay.Infrastructure.Models.Organization", "Organization")
+                        .WithMany("OrganizationServices")
+                        .HasForeignKey("OrganizationId")
+                        .IsRequired()
+                        .HasConstraintName("FK_OrganizationServices_Organizations_OrganizationId");
+
+                    b.Navigation("Organization");
+                });
+
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Property", b =>
                 {
                     b.HasOne("NovaStay.Infrastructure.Models.Organization", "Organization")
@@ -1503,6 +1637,25 @@ namespace NovaStay.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK__RoomImage__RoomI__778AC167");
+
+                    b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.RoomService", b =>
+                {
+                    b.HasOne("NovaStay.Infrastructure.Models.OrganizationService", "OrganizationService")
+                        .WithMany("RoomServices")
+                        .HasForeignKey("OrganizationServiceId")
+                        .IsRequired()
+                        .HasConstraintName("FK_RoomServices_OrganizationServices_OrganizationServiceId");
+
+                    b.HasOne("NovaStay.Infrastructure.Models.Room", "Room")
+                        .WithMany("RoomServices")
+                        .HasForeignKey("RoomId")
+                        .IsRequired()
+                        .HasConstraintName("FK_RoomServices_Rooms_RoomId");
+
+                    b.Navigation("OrganizationService");
 
                     b.Navigation("Room");
                 });
@@ -1642,6 +1795,8 @@ namespace NovaStay.Infrastructure.Migrations
 
                     b.Navigation("MaintenanceTickets");
 
+                    b.Navigation("OrganizationServices");
+
                     b.Navigation("Properties");
 
                     b.Navigation("ResidentMemberships");
@@ -1651,6 +1806,11 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Navigation("StaffUsers");
 
                     b.Navigation("Technicians");
+                });
+
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.OrganizationService", b =>
+                {
+                    b.Navigation("RoomServices");
                 });
 
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Property", b =>
@@ -1684,6 +1844,8 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Navigation("RoomAvailabilities");
 
                     b.Navigation("RoomImages");
+
+                    b.Navigation("RoomServices");
                 });
 
             modelBuilder.Entity("NovaStay.Infrastructure.Models.SubscriptionPackage", b =>
