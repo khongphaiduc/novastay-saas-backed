@@ -8,7 +8,7 @@ public partial class RoomService
 
     public Guid RoomId { get; set; }
 
-    public Guid OrganizationServiceId { get; set; }
+    public Guid PropertyServiceId { get; set; }
 
     public decimal? PriceOverride { get; set; }
 
@@ -20,7 +20,7 @@ public partial class RoomService
 
     public string? Note { get; set; }
 
-    public virtual OrganizationService OrganizationService { get; set; } = null!;
+    public virtual PropertyService PropertyService { get; set; } = null!;
 
     public virtual Room Room { get; set; } = null!;
 }

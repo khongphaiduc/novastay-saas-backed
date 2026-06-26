@@ -47,8 +47,6 @@ public partial class Organization
 
     public virtual SubscriptionPackage Package { get; set; } = null!;
 
-    public virtual ICollection<OrganizationService> OrganizationServices { get; set; } = new List<OrganizationService>();
-
     public virtual ICollection<Property> Properties { get; set; } = new List<Property>();
 
     public virtual ICollection<ResidentMembership> ResidentMemberships { get; set; } = new List<ResidentMembership>();
