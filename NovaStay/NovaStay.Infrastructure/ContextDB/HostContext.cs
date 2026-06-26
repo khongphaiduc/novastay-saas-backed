@@ -32,6 +32,8 @@ public partial class HostContext : DbContext
 
     public virtual DbSet<Permission> Permissions { get; set; }
 
+    public virtual DbSet<OrganizationService> OrganizationServices { get; set; }
+
     public virtual DbSet<Property> Properties { get; set; }
 
     public virtual DbSet<Resident> Residents { get; set; }
@@ -45,6 +47,8 @@ public partial class HostContext : DbContext
     public virtual DbSet<RoomAvailability> RoomAvailabilities { get; set; }
 
     public virtual DbSet<RoomImage> RoomImages { get; set; }
+
+    public virtual DbSet<RoomService> RoomServices { get; set; }
 
     public virtual DbSet<SubscriptionPackage> SubscriptionPackages { get; set; }
 
@@ -355,6 +359,37 @@ public partial class HostContext : DbContext
             entity.Property(e => e.PermissionName).HasMaxLength(100);
         });
 
+        modelBuilder.Entity<OrganizationService>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_OrganizationServices");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.IsActive }, "IX_OrganizationServices_OrganizationId_IsActive");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.ServiceName }, "UX_OrganizationServices_OrganizationId_ServiceName")
+                .IsUnique();
+
+            entity.Property(e => e.BillingCycle)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.DefaultPrice).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.ServiceCode)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.ServiceName).HasMaxLength(150);
+            entity.Property(e => e.Unit).HasMaxLength(50);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Organization).WithMany(p => p.OrganizationServices)
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_OrganizationServices_Organizations_OrganizationId");
+        });
+
         modelBuilder.Entity<Property>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Properti__3214EC07FE441D45");
@@ -525,6 +560,36 @@ public partial class HostContext : DbContext
                 .HasForeignKey(d => d.PropertyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Rooms__PropertyI__72C60C4A");
+        });
+
+        modelBuilder.Entity<RoomService>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_RoomServices");
+
+            entity.HasIndex(e => e.OrganizationServiceId, "IX_RoomServices_OrganizationServiceId");
+
+            entity.HasIndex(e => e.RoomId, "IX_RoomServices_RoomId");
+
+            entity.HasIndex(e => new { e.RoomId, e.OrganizationServiceId }, "UX_RoomServices_RoomId_OrganizationServiceId")
+                .IsUnique();
+
+            entity.Property(e => e.AssignedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Note).HasMaxLength(255);
+            entity.Property(e => e.PriceOverride).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.RemovedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.OrganizationService).WithMany(p => p.RoomServices)
+                .HasForeignKey(d => d.OrganizationServiceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_RoomServices_OrganizationServices_OrganizationServiceId");
+
+            entity.HasOne(d => d.Room).WithMany(p => p.RoomServices)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_RoomServices_Rooms_RoomId");
         });
 
         modelBuilder.Entity<RoomAvailability>(entity =>
