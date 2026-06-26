@@ -59,6 +59,9 @@ public static class DependencyInjection
         services.AddScoped<IRoomService, RoomService>();
         services.AddScoped<IPropertyService, PropertyService>();
 
+        // Asset Management
+        services.AddScoped<IAssetService, AssetService>();
+
         return services;
     }
 }

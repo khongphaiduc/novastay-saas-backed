@@ -6,6 +6,7 @@ public sealed class AssetEntity : Entity
 {
     public Guid OrganizationId { get; set; }
     public EntityName AssetName { get; set; }
+    public string? Category { get; set; }
     public string? Brand { get; set; }
     public string? Model { get; set; }
     public string? AssetCode { get; set; }
@@ -13,4 +14,5 @@ public sealed class AssetEntity : Entity
     public DateOnly? WarrantyExpiryDate { get; set; }
     public decimal? BaseValue { get; set; }
     public DateTime? CreatedAt { get; set; }
+    public bool IsDeleted { get; set; } = false;
 }
