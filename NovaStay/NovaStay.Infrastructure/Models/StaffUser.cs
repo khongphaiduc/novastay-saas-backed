@@ -19,6 +19,12 @@ public partial class StaffUser
 
     public virtual Account Account { get; set; } = null!;
 
+    public virtual ICollection<Expense> ApprovedExpenses { get; set; } = new List<Expense>();
+
+    public virtual ICollection<Expense> CreatedExpenses { get; set; } = new List<Expense>();
+
+    public virtual ICollection<PaymentReceipt> CollectedPaymentReceipts { get; set; } = new List<PaymentReceipt>();
+
     public virtual Organization Organization { get; set; } = null!;
 
     public virtual ICollection<Property> Properties { get; set; } = new List<Property>();
