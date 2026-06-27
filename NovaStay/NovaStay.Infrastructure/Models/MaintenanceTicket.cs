@@ -33,6 +33,8 @@ public partial class MaintenanceTicket
 
     public virtual AssetAssignment? AssetAssignment { get; set; }
 
+    public virtual ICollection<Expense> Expenses { get; set; } = new List<Expense>();
+
     public virtual Resident Resident { get; set; } = null!;
 
     public virtual Room Room { get; set; } = null!;

@@ -28,9 +28,19 @@ public partial class HostContext : DbContext
 
     public virtual DbSet<Invoice> Invoices { get; set; }
 
+    public virtual DbSet<InvoiceLine> InvoiceLines { get; set; }
+
     public virtual DbSet<MaintenanceTicket> MaintenanceTickets { get; set; }
 
+    public virtual DbSet<Expense> Expenses { get; set; }
+
+    public virtual DbSet<ExpenseCategory> ExpenseCategories { get; set; }
+
     public virtual DbSet<Permission> Permissions { get; set; }
+
+    public virtual DbSet<PaymentAllocation> PaymentAllocations { get; set; }
+
+    public virtual DbSet<PaymentReceipt> PaymentReceipts { get; set; }
 
     public virtual DbSet<PropertyService> PropertyServices { get; set; }
 
@@ -267,14 +277,35 @@ public partial class HostContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__Invoices__3214EC07023BFFC1");
 
+            entity.HasIndex(e => new { e.OrganizationId, e.InvoiceNumber }, "UX_Invoices_OrganizationId_InvoiceNumber")
+                .IsUnique()
+                .HasFilter("[InvoiceNumber] IS NOT NULL");
+
+            entity.HasIndex(e => new { e.PropertyId, e.RoomId, e.InvoicePeriod }, "IX_Invoices_PropertyId_RoomId_Period");
+
+            entity.HasIndex(e => new { e.ResidentId, e.Status }, "IX_Invoices_ResidentId_Status");
+
             entity.HasIndex(e => new { e.Status, e.InvoicePeriod }, "IX_Invoices_Status_Period");
 
+            entity.Property(e => e.AdjustmentAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.AmountPaid).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.InvoiceNumber)
+                .HasMaxLength(30)
+                .IsUnicode(false);
             entity.Property(e => e.InvoicePeriod)
                 .HasMaxLength(7)
                 .IsUnicode(false);
+            entity.Property(e => e.InvoiceType)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.IssuedAt).HasColumnType("datetime");
+            entity.Property(e => e.LateFeeAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.Property(e => e.OutstandingAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.PaidAt).HasColumnType("datetime");
             entity.Property(e => e.QrCodeUrl)
                 .HasMaxLength(500)
@@ -285,7 +316,9 @@ public partial class HostContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasDefaultValue("Unpaid");
+            entity.Property(e => e.Subtotal).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.TotalAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Booking).WithMany(p => p.Invoices)
                 .HasForeignKey(d => d.BookingId)
@@ -299,6 +332,141 @@ public partial class HostContext : DbContext
                 .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Invoices__Organization__37703C52");
+
+            entity.HasOne(d => d.Property).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.PropertyId)
+                .HasConstraintName("FK_Invoices_Properties_PropertyId");
+
+            entity.HasOne(d => d.Resident).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.ResidentId)
+                .HasConstraintName("FK_Invoices_Residents_ResidentId");
+
+            entity.HasOne(d => d.Room).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.RoomId)
+                .HasConstraintName("FK_Invoices_Rooms_RoomId");
+        });
+
+        modelBuilder.Entity<InvoiceLine>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_InvoiceLines");
+
+            entity.HasIndex(e => new { e.InvoiceId, e.DisplayOrder }, "IX_InvoiceLines_InvoiceId_DisplayOrder");
+
+            entity.Property(e => e.BillingEndDate).HasColumnType("date");
+            entity.Property(e => e.BillingStartDate).HasColumnType("date");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Description).HasMaxLength(255);
+            entity.Property(e => e.IsDebit).HasDefaultValue(true);
+            entity.Property(e => e.LineAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.LineType)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.Quantity)
+                .HasDefaultValue(1m)
+                .HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.SourceType)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 2)");
+
+            entity.HasOne(d => d.Invoice).WithMany(p => p.InvoiceLines)
+                .HasForeignKey(d => d.InvoiceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_InvoiceLines_Invoices_InvoiceId");
+        });
+
+        modelBuilder.Entity<Expense>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_Expenses");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.ExpenseNumber }, "UX_Expenses_OrganizationId_ExpenseNumber")
+                .IsUnique();
+
+            entity.HasIndex(e => new { e.OrganizationId, e.SpentAt }, "IX_Expenses_OrganizationId_SpentAt");
+
+            entity.HasIndex(e => new { e.PropertyId, e.ExpenseCategoryId, e.SpentAt }, "IX_Expenses_PropertyId_ExpenseCategoryId_SpentAt");
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.ExpenseNumber)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.ExpenseType)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.PaymentMethod)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.PayeeName).HasMaxLength(150);
+            entity.Property(e => e.ReferenceCode)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.SpentAt).HasColumnType("datetime");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.ApprovedByStaffUser).WithMany(p => p.ApprovedExpenses)
+                .HasForeignKey(d => d.ApprovedByStaffUserId)
+                .HasConstraintName("FK_Expenses_StaffUsers_ApprovedByStaffUserId");
+
+            entity.HasOne(d => d.CreatedByStaffUser).WithMany(p => p.CreatedExpenses)
+                .HasForeignKey(d => d.CreatedByStaffUserId)
+                .HasConstraintName("FK_Expenses_StaffUsers_CreatedByStaffUserId");
+
+            entity.HasOne(d => d.ExpenseCategory).WithMany(p => p.Expenses)
+                .HasForeignKey(d => d.ExpenseCategoryId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Expenses_ExpenseCategories_ExpenseCategoryId");
+
+            entity.HasOne(d => d.Organization).WithMany(p => p.Expenses)
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Expenses_Organizations_OrganizationId");
+
+            entity.HasOne(d => d.Property).WithMany(p => p.Expenses)
+                .HasForeignKey(d => d.PropertyId)
+                .HasConstraintName("FK_Expenses_Properties_PropertyId");
+
+            entity.HasOne(d => d.RelatedBroker).WithMany(p => p.Expenses)
+                .HasForeignKey(d => d.RelatedBrokerId)
+                .HasConstraintName("FK_Expenses_Brokers_RelatedBrokerId");
+
+            entity.HasOne(d => d.RelatedMaintenanceTicket).WithMany(p => p.Expenses)
+                .HasForeignKey(d => d.RelatedMaintenanceTicketId)
+                .HasConstraintName("FK_Expenses_MaintenanceTickets_RelatedMaintenanceTicketId");
+
+            entity.HasOne(d => d.Room).WithMany(p => p.Expenses)
+                .HasForeignKey(d => d.RoomId)
+                .HasConstraintName("FK_Expenses_Rooms_RoomId");
+        });
+
+        modelBuilder.Entity<ExpenseCategory>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_ExpenseCategories");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.CategoryCode }, "UX_ExpenseCategories_OrganizationId_CategoryCode")
+                .IsUnique();
+
+            entity.Property(e => e.CategoryCode)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.CategoryName).HasMaxLength(100);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne(d => d.Organization).WithMany(p => p.ExpenseCategories)
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ExpenseCategories_Organizations_OrganizationId");
         });
 
         modelBuilder.Entity<MaintenanceTicket>(entity =>
@@ -359,6 +527,81 @@ public partial class HostContext : DbContext
                 .HasMaxLength(100)
                 .IsUnicode(false);
             entity.Property(e => e.PermissionName).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<PaymentAllocation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_PaymentAllocations");
+
+            entity.HasIndex(e => e.InvoiceId, "IX_PaymentAllocations_InvoiceId");
+
+            entity.HasIndex(e => new { e.PaymentReceiptId, e.InvoiceId }, "UX_PaymentAllocations_PaymentReceiptId_InvoiceId")
+                .IsUnique();
+
+            entity.Property(e => e.AllocatedAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Invoice).WithMany(p => p.PaymentAllocations)
+                .HasForeignKey(d => d.InvoiceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PaymentAllocations_Invoices_InvoiceId");
+
+            entity.HasOne(d => d.PaymentReceipt).WithMany(p => p.PaymentAllocations)
+                .HasForeignKey(d => d.PaymentReceiptId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PaymentAllocations_PaymentReceipts_PaymentReceiptId");
+        });
+
+        modelBuilder.Entity<PaymentReceipt>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_PaymentReceipts");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.ReceiptNumber }, "UX_PaymentReceipts_OrganizationId_ReceiptNumber")
+                .IsUnique();
+
+            entity.HasIndex(e => new { e.OrganizationId, e.PaidAt }, "IX_PaymentReceipts_OrganizationId_PaidAt");
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.PaidAt).HasColumnType("datetime");
+            entity.Property(e => e.PayerName).HasMaxLength(100);
+            entity.Property(e => e.PaymentMethod)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.Property(e => e.ReceiptNumber)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.ReceiptType)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.ReferenceCode)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.CollectedByStaffUser).WithMany(p => p.CollectedPaymentReceipts)
+                .HasForeignKey(d => d.CollectedByStaffUserId)
+                .HasConstraintName("FK_PaymentReceipts_StaffUsers_CollectedByStaffUserId");
+
+            entity.HasOne(d => d.Organization).WithMany(p => p.PaymentReceipts)
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PaymentReceipts_Organizations_OrganizationId");
+
+            entity.HasOne(d => d.Property).WithMany(p => p.PaymentReceipts)
+                .HasForeignKey(d => d.PropertyId)
+                .HasConstraintName("FK_PaymentReceipts_Properties_PropertyId");
+
+            entity.HasOne(d => d.Resident).WithMany(p => p.PaymentReceipts)
+                .HasForeignKey(d => d.ResidentId)
+                .HasConstraintName("FK_PaymentReceipts_Residents_ResidentId");
         });
 
         modelBuilder.Entity<PropertyService>(entity =>

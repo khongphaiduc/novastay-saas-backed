@@ -39,6 +39,10 @@ public partial class Organization
 
     public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 
+    public virtual ICollection<ExpenseCategory> ExpenseCategories { get; set; } = new List<ExpenseCategory>();
+
+    public virtual ICollection<Expense> Expenses { get; set; } = new List<Expense>();
+
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
     public virtual ICollection<MaintenanceTicket> MaintenanceTickets { get; set; } = new List<MaintenanceTicket>();
@@ -46,6 +50,8 @@ public partial class Organization
     public virtual Account OwnerAccount { get; set; } = null!;
 
     public virtual SubscriptionPackage Package { get; set; } = null!;
+
+    public virtual ICollection<PaymentReceipt> PaymentReceipts { get; set; } = new List<PaymentReceipt>();
 
     public virtual ICollection<Property> Properties { get; set; } = new List<Property>();
 
