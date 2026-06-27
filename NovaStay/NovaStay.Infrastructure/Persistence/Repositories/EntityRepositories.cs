@@ -299,6 +299,167 @@ internal sealed class PropertyRepository : Repository<DomainProperty, DatabasePr
     }
 }
 
+internal sealed class PropertyServiceRepository : IPropertyServiceRepository
+{
+    private readonly HostContext _context;
+
+    public PropertyServiceRepository(HostContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<IReadOnlyList<PropertyServiceDto>?> GetPropertyServicesAsync(
+        Guid organizationId,
+        Guid propertyId,
+        string? search = null,
+        CancellationToken cancellationToken = default)
+    {
+        var propertyExists = await _context.Properties
+            .AsNoTracking()
+            .AnyAsync(
+                entity => entity.Id == propertyId && entity.OrganizationId == organizationId,
+                cancellationToken);
+
+        if (!propertyExists)
+        {
+            return null;
+        }
+
+        var query = _context.PropertyServices
+            .AsNoTracking()
+            .Where(service => service.PropertyId == propertyId);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(service => service.ServiceName.Contains(search));
+        }
+
+        return await query
+            .OrderBy(service => service.ServiceName)
+            .Select(service => new PropertyServiceDto
+            {
+                Id = service.Id,
+                PropertyId = service.PropertyId,
+                ServiceName = service.ServiceName,
+                ServiceCode = service.ServiceCode,
+                Description = service.Description,
+                DefaultPrice = service.DefaultPrice,
+                Unit = service.Unit,
+                BillingCycle = service.BillingCycle,
+                IsActive = service.IsActive,
+                CreatedAt = service.CreatedAt,
+                UpdatedAt = service.UpdatedAt
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<PropertyServiceDto> CreatePropertyServiceAsync(
+        Guid organizationId,
+        Guid propertyId,
+        CreatePropertyServiceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var propertyExists = await _context.Properties
+            .AsNoTracking()
+            .AnyAsync(
+                entity => entity.Id == propertyId && entity.OrganizationId == organizationId,
+                cancellationToken);
+
+        if (!propertyExists)
+        {
+            throw new KeyNotFoundException("Property not found in organization.");
+        }
+
+        var duplicatedName = await _context.PropertyServices
+            .AsNoTracking()
+            .AnyAsync(
+                service => service.PropertyId == propertyId && service.ServiceName == request.ServiceName,
+                cancellationToken);
+
+        if (duplicatedName)
+        {
+            throw new InvalidOperationException("Property service name already exists in property.");
+        }
+
+        var propertyService = new Models.PropertyService
+        {
+            Id = Guid.NewGuid(),
+            PropertyId = propertyId,
+            ServiceName = request.ServiceName,
+            ServiceCode = request.ServiceCode,
+            Description = request.Description,
+            DefaultPrice = request.DefaultPrice,
+            Unit = request.Unit,
+            BillingCycle = request.BillingCycle,
+            IsActive = request.IsActive,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _context.PropertyServices.AddAsync(propertyService, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new PropertyServiceDto
+        {
+            Id = propertyService.Id,
+            PropertyId = propertyService.PropertyId,
+            ServiceName = propertyService.ServiceName,
+            ServiceCode = propertyService.ServiceCode,
+            Description = propertyService.Description,
+            DefaultPrice = propertyService.DefaultPrice,
+            Unit = propertyService.Unit,
+            BillingCycle = propertyService.BillingCycle,
+            IsActive = propertyService.IsActive,
+            CreatedAt = propertyService.CreatedAt,
+            UpdatedAt = propertyService.UpdatedAt
+        };
+    }
+
+    public async Task<PropertyServiceDto> UpdatePropertyServiceAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid propertyServiceId,
+        decimal defaultPrice,
+        string? billingCycle,
+        bool isActive,
+        CancellationToken cancellationToken = default)
+    {
+        var propertyService = await _context.PropertyServices
+            .FirstOrDefaultAsync(
+                service => service.Id == propertyServiceId &&
+                           service.PropertyId == propertyId &&
+                           service.Property.OrganizationId == organizationId,
+                cancellationToken);
+
+        if (propertyService is null)
+        {
+            throw new KeyNotFoundException("Property service not found in property.");
+        }
+
+        propertyService.DefaultPrice = defaultPrice;
+        propertyService.BillingCycle = string.IsNullOrWhiteSpace(billingCycle) ? null : billingCycle.Trim();
+        propertyService.IsActive = isActive;
+        propertyService.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new PropertyServiceDto
+        {
+            Id = propertyService.Id,
+            PropertyId = propertyService.PropertyId,
+            ServiceName = propertyService.ServiceName,
+            ServiceCode = propertyService.ServiceCode,
+            Description = propertyService.Description,
+            DefaultPrice = propertyService.DefaultPrice,
+            Unit = propertyService.Unit,
+            BillingCycle = propertyService.BillingCycle,
+            IsActive = propertyService.IsActive,
+            CreatedAt = propertyService.CreatedAt,
+            UpdatedAt = propertyService.UpdatedAt
+        };
+    }
+}
+
 internal sealed class ResidentRepository : Repository<DomainResident, DatabaseResident>, IResidentRepository
 {
     private readonly HostContext _context;
