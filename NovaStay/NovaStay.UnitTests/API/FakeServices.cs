@@ -354,6 +354,116 @@ internal sealed class FakeRoomService : IRoomService
     }
 }
 
+internal sealed class FakePropertyService : IPropertyService
+{
+    public IReadOnlyList<PropertyDto> Properties { get; set; } = [];
+    public PropertyDto CreateResponse { get; set; } = new();
+    public PropertyDto UpdateResponse { get; set; } = new();
+
+    public Task<IReadOnlyList<PropertyDto>> GetPropertiesByOrganizationAsync(Guid organizationId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Properties);
+    }
+
+    public Task<PropertyDto> CreatePropertyAsync(Guid organizationId, CreatePropertyRequest request, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(CreateResponse);
+    }
+
+    public Task<PropertyDto> UpdatePropertyAsync(Guid organizationId, Guid propertyId, UpdatePropertyRequest request, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(UpdateResponse);
+    }
+
+    public Task DeletePropertyAsync(Guid organizationId, Guid propertyId, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+}
+
+internal sealed class FakePropertyCatalogService : IPropertyCatalogService
+{
+    public Guid OrganizationId { get; private set; }
+    public Guid PropertyId { get; private set; }
+    public string? Search { get; private set; }
+    public IReadOnlyList<PropertyServiceDto>? Services { get; set; }
+    public CreatePropertyServiceRequest? CreateRequest { get; private set; }
+    public PropertyServiceDto CreateResponse { get; set; } = new();
+    public KeyNotFoundException? CreateNotFoundException { get; set; }
+    public InvalidOperationException? CreateInvalidOperationException { get; set; }
+    public ArgumentException? CreateArgumentException { get; set; }
+    public Guid PropertyServiceId { get; private set; }
+    public UpdatePropertyServiceRequest? UpdateRequest { get; private set; }
+    public PropertyServiceDto UpdateResponse { get; set; } = new();
+    public KeyNotFoundException? UpdateException { get; set; }
+    public ArgumentException? UpdateArgumentException { get; set; }
+
+    public Task<IReadOnlyList<PropertyServiceDto>?> GetPropertyServicesAsync(
+        Guid organizationId,
+        Guid propertyId,
+        string? search = null,
+        CancellationToken cancellationToken = default)
+    {
+        OrganizationId = organizationId;
+        PropertyId = propertyId;
+        Search = search;
+        return Task.FromResult(Services);
+    }
+
+    public Task<PropertyServiceDto> CreatePropertyServiceAsync(
+        Guid organizationId,
+        Guid propertyId,
+        CreatePropertyServiceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        OrganizationId = organizationId;
+        PropertyId = propertyId;
+        CreateRequest = request;
+
+        if (CreateNotFoundException is not null)
+        {
+            throw CreateNotFoundException;
+        }
+
+        if (CreateInvalidOperationException is not null)
+        {
+            throw CreateInvalidOperationException;
+        }
+
+        if (CreateArgumentException is not null)
+        {
+            throw CreateArgumentException;
+        }
+
+        return Task.FromResult(CreateResponse);
+    }
+
+    public Task<PropertyServiceDto> UpdatePropertyServiceAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid propertyServiceId,
+        UpdatePropertyServiceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        OrganizationId = organizationId;
+        PropertyId = propertyId;
+        PropertyServiceId = propertyServiceId;
+        UpdateRequest = request;
+
+        if (UpdateException is not null)
+        {
+            throw UpdateException;
+        }
+
+        if (UpdateArgumentException is not null)
+        {
+            throw UpdateArgumentException;
+        }
+
+        return Task.FromResult(UpdateResponse);
+    }
+}
+
 internal sealed class FakeSampleDataService : ISampleDataService
 {
     public IReadOnlyList<OrganizationDto> Organizations { get; set; } = [];
