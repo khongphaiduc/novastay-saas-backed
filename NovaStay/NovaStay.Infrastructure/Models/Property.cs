@@ -21,6 +21,12 @@ public partial class Property
 
     public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 
+    public virtual ICollection<Expense> Expenses { get; set; } = new List<Expense>();
+
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+
+    public virtual ICollection<PaymentReceipt> PaymentReceipts { get; set; } = new List<PaymentReceipt>();
+
     public virtual ICollection<PropertyService> PropertyServices { get; set; } = new List<PropertyService>();
 
     public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();

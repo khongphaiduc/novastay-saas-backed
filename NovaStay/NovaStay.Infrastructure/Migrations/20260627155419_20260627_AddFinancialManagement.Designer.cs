@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NovaStay.Infrastructure.ContextDB;
 
@@ -11,9 +12,11 @@ using NovaStay.Infrastructure.ContextDB;
 namespace NovaStay.Infrastructure.Migrations
 {
     [DbContext(typeof(HostContext))]
-    partial class HostContextModelSnapshot : ModelSnapshot
+    [Migration("20260627155419_20260627_AddFinancialManagement")]
+    partial class _20260627_AddFinancialManagement
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -808,7 +811,7 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("ResidentId")
+                    b.Property<Guid>("ResidentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ResolvedImageUrl")
@@ -1982,6 +1985,7 @@ namespace NovaStay.Infrastructure.Migrations
                     b.HasOne("NovaStay.Infrastructure.Models.Resident", "Resident")
                         .WithMany("MaintenanceTickets")
                         .HasForeignKey("ResidentId")
+                        .IsRequired()
                         .HasConstraintName("FK__Maintenan__Resid__43D61337");
 
                     b.HasOne("NovaStay.Infrastructure.Models.Room", "Room")

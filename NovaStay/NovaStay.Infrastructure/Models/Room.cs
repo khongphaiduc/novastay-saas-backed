@@ -33,6 +33,10 @@ public partial class Room
 
     public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 
+    public virtual ICollection<Expense> Expenses { get; set; } = new List<Expense>();
+
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+
     public virtual ICollection<MaintenanceTicket> MaintenanceTickets { get; set; } = new List<MaintenanceTicket>();
 
     public virtual Property Property { get; set; } = null!;
