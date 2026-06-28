@@ -22,11 +22,15 @@ public sealed class PropertiesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<PropertyDto>>> GetProperties(
+    public async Task<ActionResult<PagedResult<PropertyDto>>> GetProperties(
         Guid organizationId,
+        [FromQuery] string? search = null,
+        [FromQuery] string? status = null,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 12,
         CancellationToken cancellationToken = default)
     {
-        var properties = await _propertyService.GetPropertiesByOrganizationAsync(organizationId, cancellationToken);
+        var properties = await _propertyService.GetPropertiesAsync(organizationId, search, status, pageIndex, pageSize, cancellationToken);
         return Ok(properties);
     }
 

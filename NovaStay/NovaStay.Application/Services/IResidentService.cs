@@ -15,4 +15,15 @@ public interface IResidentService
     Task<IReadOnlyList<ResidentAccommodationDto>> GetActiveAccommodationsAsync(
         Guid accountId,
         CancellationToken cancellationToken = default);
+
+    Task<ResidentDto> UpdateResidentAsync(
+        Guid residentId,
+        UpdateResidentRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<ResidentDto> UploadImageAsync(
+        Guid residentId,
+        string imageType,
+        string imageUrl,
+        CancellationToken cancellationToken = default);
 }

@@ -18,10 +18,44 @@ public sealed class PropertyService : IPropertyService
         _mapper = mapper;
     }
 
-    public async Task<IReadOnlyList<PropertyDto>> GetPropertiesByOrganizationAsync(Guid organizationId, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<PropertyDto>> GetPropertiesAsync(
+        Guid organizationId,
+        string? search = null,
+        string? status = null,
+        int pageIndex = 1,
+        int pageSize = 12,
+        CancellationToken cancellationToken = default)
     {
-        var properties = await _unitOfWork.Properties.FindAsync(p => p.OrganizationId == organizationId, cancellationToken);
-        return _mapper.Map<IReadOnlyList<PropertyDto>>(properties);
+        var allProperties = await _unitOfWork.Properties.FindAsync(p => p.OrganizationId == organizationId, cancellationToken);
+        
+        // In memory filtering
+        var query = allProperties.AsEnumerable();
+        
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.ToLower();
+            query = query.Where(p => 
+                p.PropertyName.Value.ToLower().Contains(s) || 
+                p.Address.ToLower().Contains(s));
+        }
+
+        // No status filter for Property as PropertyEntity doesn't have a Status property.
+
+        var totalCount = query.Count();
+        var pagedItems = query
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .Select(_mapper.Map<PropertyDto>)
+            .ToList();
+
+        return new PagedResult<PropertyDto>
+        {
+            Items = pagedItems,
+            TotalCount = totalCount,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
     }
 
     public async Task<PropertyDto> CreatePropertyAsync(Guid organizationId, CreatePropertyRequest request, CancellationToken cancellationToken = default)

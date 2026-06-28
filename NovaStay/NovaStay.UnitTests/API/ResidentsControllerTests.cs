@@ -10,7 +10,7 @@ public sealed class ResidentsControllerTests
     public async Task CreateResidentAccount_ReturnsCreated_WhenServiceSucceeds()
     {
         var response = new CreateResidentAccountResponse { ResidentId = Guid.NewGuid() };
-        var controller = new ResidentsController(new FakeResidentService { CreateResponse = response });
+        var controller = new ResidentsController(new FakeResidentService { CreateResponse = response }, null);
 
         var result = await controller.CreateResidentAccount(new CreateResidentAccountRequest());
 
@@ -25,7 +25,7 @@ public sealed class ResidentsControllerTests
         var controller = new ResidentsController(new FakeResidentService
         {
             CreateException = new InvalidOperationException("invalid")
-        });
+        }, null);
 
         var result = await controller.CreateResidentAccount(new CreateResidentAccountRequest());
 
@@ -39,7 +39,7 @@ public sealed class ResidentsControllerTests
         {
             SearchResults = [new ResidentDto { Id = Guid.NewGuid() }]
         };
-        var controller = new ResidentsController(service);
+        var controller = new ResidentsController(service, null);
 
         var result = await controller.SearchByPhone("090");
 

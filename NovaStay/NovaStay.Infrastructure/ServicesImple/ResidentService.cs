@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using NovaStay.Application.Common.Interfaces;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
@@ -143,6 +143,63 @@ public sealed class ResidentService : IResidentService
         return await _unitOfWork.ResidentMemberships.GetActiveAccommodationsByAccountIdAsync(
             accountId,
             cancellationToken);
+    }
+
+    public async Task<ResidentDto> UpdateResidentAsync(
+        Guid residentId,
+        UpdateResidentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var resident = await _unitOfWork.Residents.GetByIdAsync(residentId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Resident with id {residentId} not found");
+
+        if (!string.IsNullOrWhiteSpace(request.Name))
+            resident.FullName = new EntityName(request.Name.Trim());
+        if (!string.IsNullOrWhiteSpace(request.Sdt))
+            resident.Phone = new PhoneNumber(request.Sdt.Trim());
+        if (!string.IsNullOrWhiteSpace(request.IdentityCardNumber))
+            resident.IdentityCardNumber = request.IdentityCardNumber.Trim();
+        if (!string.IsNullOrWhiteSpace(request.Sex))
+            resident.Sex = request.Sex.Trim();
+        if (!string.IsNullOrWhiteSpace(request.Address))
+            resident.Address = request.Address.Trim();
+        if (request.Email != null) // Allow empty string to clear email if needed, or check IsNullOrWhiteSpace
+            resident.Email = request.Email.Trim();
+
+        _unitOfWork.Residents.Update(resident);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return _mapper.Map<ResidentDto>(resident);
+    }
+
+    public async Task<ResidentDto> UploadImageAsync(
+        Guid residentId,
+        string imageType,
+        string imageUrl,
+        CancellationToken cancellationToken = default)
+    {
+        var resident = await _unitOfWork.Residents.GetByIdAsync(residentId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Resident with id {residentId} not found");
+
+        switch (imageType.ToLowerInvariant())
+        {
+            case "front":
+                resident.IdFrontImageUrl = imageUrl;
+                break;
+            case "back":
+                resident.IdBackImageUrl = imageUrl;
+                break;
+            case "profile":
+                resident.ProfileImageUrl = imageUrl;
+                break;
+            default:
+                throw new ArgumentException("Invalid image type. Expected: 'front', 'back', 'profile'.");
+        }
+
+        _unitOfWork.Residents.Update(resident);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return _mapper.Map<ResidentDto>(resident);
     }
 
     private static string NormalizeRequired(string? value, string message)
