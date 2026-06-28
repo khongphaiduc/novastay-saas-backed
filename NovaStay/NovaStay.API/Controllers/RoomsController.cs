@@ -35,7 +35,7 @@ public sealed class RoomsController : ControllerBase
         try
         {
             var rooms = await _roomService.GetRoomsAsync(propertyId, search, status, pageIndex, pageSize, cancellationToken);
-            return Ok(rooms.Items);
+            return Ok(rooms);
         }
         catch (ArgumentException ex)
         {
