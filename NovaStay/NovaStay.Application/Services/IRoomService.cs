@@ -5,10 +5,12 @@ namespace NovaStay.Application.Services;
 public interface IRoomService
 {
     // TASK-011, 012, 013: Danh sách + tìm kiếm + lọc phòng
-    Task<IReadOnlyList<RoomDto>> GetRoomsAsync(
+    Task<PagedResult<RoomDto>> GetRoomsAsync(
         Guid propertyId,
         string? search = null,
         string? status = null,
+        int pageIndex = 1,
+        int pageSize = 12,
         CancellationToken cancellationToken = default);
 
     // TASK-014: Thêm phòng mới
