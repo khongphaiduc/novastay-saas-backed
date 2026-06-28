@@ -62,6 +62,15 @@ public static class DependencyInjection
         // Asset Management
         services.AddScoped<IAssetService, AssetService>();
 
+        // Contract Management (TASK-031 to TASK-039)
+        services.AddScoped<IContractService, ContractService>();
+
+        // Maintenance Management (TASK-021, TASK-022)
+        services.AddScoped<IMaintenanceService, MaintenanceService>();
+
+        // Background Services
+        services.AddHostedService<NovaStay.Infrastructure.BackgroundServices.ContractRenewalNotifierBackgroundService>();
+
         return services;
     }
 }
