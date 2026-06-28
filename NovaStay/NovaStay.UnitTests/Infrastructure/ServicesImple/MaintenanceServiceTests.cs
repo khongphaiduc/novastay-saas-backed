@@ -27,11 +27,9 @@ namespace NovaStay.UnitTests.Infrastructure.ServicesImple
                 _mockUnitOfWork.Object,
                 _mockMapper.Object);
 
-            _mockUnitOfWork.Setup(u => u.Properties.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((PropertyEntity)null!);
-            _mockUnitOfWork.Setup(u => u.Contracts.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<ContractEntity, bool>>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<ContractEntity>());
-            _mockUnitOfWork.Setup(u => u.MaintenanceTickets.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<MaintenanceTicketEntity, bool>>>(), It.IsAny<CancellationToken>()))
+            _mockUnitOfWork.Setup(u => u.MaintenanceTickets.FindAsync(
+                    It.IsAny<System.Linq.Expressions.Expression<Func<MaintenanceTicketEntity, bool>>>(),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<MaintenanceTicketEntity>());
         }
 

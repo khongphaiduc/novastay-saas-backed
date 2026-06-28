@@ -18,8 +18,7 @@ public sealed class OrganizationsControllerTests
         var result = await controller.GetResidents(Guid.NewGuid(), "ACTIVE");
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var pagedResponse = Assert.IsType<PagedResponse<OrganizationResidentDto>>(ok.Value);
-        Assert.Same(service.Residents, pagedResponse.Data);
+        Assert.Same(service.Residents, ok.Value);
     }
 
     [Fact]
