@@ -110,35 +110,7 @@ public sealed class OrganizationsController : ControllerBase
         }
     }
 
-    [HttpPost("{organizationId:guid}/residents")]
-    public async Task<ActionResult<CreateResidentAccountResponse>> CreateAndAddResident(
-        Guid organizationId,
-        [FromBody] CreateResidentAccountRequest request,
-        [FromServices] IResidentService residentService,
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            // 1. Create the global resident account
-            var response = await residentService.CreateResidentAccountAsync(request, cancellationToken);
 
-            // 2. Add the new resident to the organization immediately as Active
-            await _organizationResidentService.AddActiveResidentAsync(
-                organizationId,
-                response.ResidentId,
-                cancellationToken);
-
-            return Created($"/api/resident-memberships", response);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return BadRequest(new { message = exception.Message });
-        }
-        catch (KeyNotFoundException exception)
-        {
-            return NotFound(new { message = exception.Message });
-        }
-    }
 
     [HttpDelete("{organizationId:guid}/residents/{residentId:guid}")]
     public async Task<ActionResult> RemoveResident(
