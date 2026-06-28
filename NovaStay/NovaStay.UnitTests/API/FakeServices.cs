@@ -420,9 +420,22 @@ internal sealed class FakePropertyService : IPropertyService
     public PropertyDto CreateResponse { get; set; } = new();
     public PropertyDto UpdateResponse { get; set; } = new();
 
-    public Task<IReadOnlyList<PropertyDto>> GetPropertiesByOrganizationAsync(Guid organizationId, CancellationToken cancellationToken = default)
+    public Task<PagedResult<PropertyDto>> GetPropertiesAsync(
+        Guid organizationId,
+        string? search = null,
+        string? status = null,
+        int pageIndex = 1,
+        int pageSize = 12,
+        CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Properties);
+        var pagedResult = new PagedResult<PropertyDto>
+        {
+            Items = Properties,
+            TotalCount = Properties.Count,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
+        return Task.FromResult(pagedResult);
     }
 
     public Task<PropertyDto> CreatePropertyAsync(Guid organizationId, CreatePropertyRequest request, CancellationToken cancellationToken = default)
