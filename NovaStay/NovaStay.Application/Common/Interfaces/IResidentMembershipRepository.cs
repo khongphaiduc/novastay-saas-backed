@@ -23,9 +23,12 @@ public interface IResidentMembershipRepository : IRepository<ResidentMembershipE
         string membershipCode,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<OrganizationResidentDto>> GetResidentsByOrganizationAsync(
+    Task<(IReadOnlyList<OrganizationResidentDto> Data, int TotalRecords)> GetResidentsByOrganizationAsync(
         Guid organizationId,
         string? status = null,
+        string? search = null,
+        int page = 1,
+        int pageSize = 10,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<OrganizationResidentInvitationDto>> GetInvitationsByOrganizationAsync(

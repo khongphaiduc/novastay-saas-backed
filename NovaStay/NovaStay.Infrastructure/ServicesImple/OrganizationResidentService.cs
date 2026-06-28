@@ -23,9 +23,12 @@ public sealed class OrganizationResidentService : IOrganizationResidentService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<IReadOnlyList<OrganizationResidentDto>?> GetResidentsAsync(
+    public async Task<PagedResponse<OrganizationResidentDto>?> GetResidentsAsync(
         Guid organizationId,
         string? status = null,
+        string? search = null,
+        int page = 1,
+        int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
         var organization = await _organizationRepository.GetByIdAsync(organizationId, cancellationToken);
@@ -35,10 +38,21 @@ public sealed class OrganizationResidentService : IOrganizationResidentService
             return null;
         }
 
-        return await _residentMembershipRepository.GetResidentsByOrganizationAsync(
+        var result = await _residentMembershipRepository.GetResidentsByOrganizationAsync(
             organizationId,
             status,
+            search,
+            page,
+            pageSize,
             cancellationToken);
+
+        return new PagedResponse<OrganizationResidentDto>
+        {
+            Data = result.Data,
+            TotalRecords = result.TotalRecords,
+            PageNumber = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<IReadOnlyList<OrganizationResidentInvitationDto>?> GetResidentInvitationsAsync(
@@ -109,6 +123,79 @@ public sealed class OrganizationResidentService : IOrganizationResidentService
         return ToResponse(membership);
     }
 
+    public async Task<ResidentMembershipResponse> AddActiveResidentAsync(
+        Guid organizationId,
+        Guid residentId,
+        CancellationToken cancellationToken = default)
+    {
+        if (residentId == Guid.Empty)
+        {
+            throw new InvalidOperationException("ResidentId is required.");
+        }
+
+        var organization = await _unitOfWork.Organizations.GetByIdAsync(organizationId, cancellationToken);
+        if (organization is null)
+        {
+            throw new KeyNotFoundException("Organization not found.");
+        }
+
+        var resident = await _unitOfWork.Residents.GetByIdAsync(residentId, cancellationToken);
+        if (resident is null)
+        {
+            throw new KeyNotFoundException("Resident not found.");
+        }
+
+        var existingMembership = await _unitOfWork.ResidentMemberships.GetByResidentAndOrganizationAsync(
+            residentId,
+            organizationId,
+            cancellationToken);
+        if (existingMembership is not null)
+        {
+            throw new InvalidOperationException("Resident already has a membership with this organization.");
+        }
+
+        var now = DateTime.UtcNow;
+        var membership = new ResidentMembershipEntity
+        {
+            Id = Guid.NewGuid(),
+            AccountId = resident.AccountId,
+            ResidentId = resident.Id,
+            OrganizationId = organization.Id,
+            MembershipCode = await CreateUniqueMembershipCodeAsync(cancellationToken),
+            Status = ResidentMembershipStatuses.Active,
+            InvitedAt = now,
+            RespondedAt = now,
+            JoinedAt = now,
+            ActivatedAt = now,
+            CreatedAt = now
+        };
+
+        await _unitOfWork.ResidentMemberships.AddAsync(membership, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToResponse(membership);
+    }
+
+    public async Task RemoveResidentAsync(
+        Guid organizationId,
+        Guid residentId,
+        CancellationToken cancellationToken = default)
+    {
+        var membership = await _unitOfWork.ResidentMemberships.GetByResidentAndOrganizationAsync(
+            residentId,
+            organizationId,
+            cancellationToken);
+
+        if (membership is null)
+        {
+            throw new KeyNotFoundException("Resident membership not found.");
+        }
+
+        membership.Status = "INACTIVE";
+        _unitOfWork.ResidentMemberships.Update(membership);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<ResidentMembershipResponse> AcceptInvitationAsync(
         Guid accountId,
         Guid membershipId,
@@ -162,6 +249,32 @@ public sealed class OrganizationResidentService : IOrganizationResidentService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return ToResponse(membership);
+    }
+
+    public async Task CancelInvitationAsync(
+        Guid organizationId,
+        Guid membershipId,
+        CancellationToken cancellationToken = default)
+    {
+        var organization = await _unitOfWork.Organizations.GetByIdAsync(organizationId, cancellationToken);
+        if (organization is null)
+        {
+            throw new KeyNotFoundException("Organization not found.");
+        }
+
+        var membership = await _unitOfWork.ResidentMemberships.GetByIdAsync(membershipId, cancellationToken);
+        if (membership is null || membership.OrganizationId != organizationId)
+        {
+            throw new KeyNotFoundException("Invitation not found in this organization.");
+        }
+
+        if (membership.Status.Value != ResidentMembershipStatuses.Pending)
+        {
+            throw new InvalidOperationException("Only pending invitations can be cancelled.");
+        }
+
+        _unitOfWork.ResidentMemberships.Remove(membership);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<string> CreateUniqueMembershipCodeAsync(CancellationToken cancellationToken)
