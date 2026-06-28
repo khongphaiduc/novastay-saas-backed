@@ -498,20 +498,9 @@ internal sealed class FakePropertyCatalogService : IPropertyCatalogService
         PropertyId = propertyId;
         CreateRequest = request;
 
-        if (CreateNotFoundException is not null)
-        {
-            throw CreateNotFoundException;
-        }
-
-        if (CreateInvalidOperationException is not null)
-        {
-            throw CreateInvalidOperationException;
-        }
-
-        if (CreateArgumentException is not null)
-        {
-            throw CreateArgumentException;
-        }
+        if (CreateNotFoundException is not null) throw CreateNotFoundException;
+        if (CreateInvalidOperationException is not null) throw CreateInvalidOperationException;
+        if (CreateArgumentException is not null) throw CreateArgumentException;
 
         return Task.FromResult(CreateResponse);
     }
@@ -528,15 +517,8 @@ internal sealed class FakePropertyCatalogService : IPropertyCatalogService
         PropertyServiceId = propertyServiceId;
         UpdateRequest = request;
 
-        if (UpdateException is not null)
-        {
-            throw UpdateException;
-        }
-
-        if (UpdateArgumentException is not null)
-        {
-            throw UpdateArgumentException;
-        }
+        if (UpdateException is not null) throw UpdateException;
+        if (UpdateArgumentException is not null) throw UpdateArgumentException;
 
         return Task.FromResult(UpdateResponse);
     }

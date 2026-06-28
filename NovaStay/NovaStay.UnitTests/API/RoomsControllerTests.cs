@@ -17,8 +17,7 @@ public sealed class RoomsControllerTests
         var result = await controller.GetRooms(propertyId, "101", "Available");
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var pagedResult = Assert.IsType<PagedResult<RoomDto>>(ok.Value);
-        Assert.Equal(service.Rooms, pagedResult.Items);
+        Assert.Same(service.Rooms, ok.Value);
         Assert.Equal(propertyId, service.GetRoomsPropertyId);
         Assert.Equal("101", service.GetRoomsSearch);
         Assert.Equal("Available", service.GetRoomsStatus);
