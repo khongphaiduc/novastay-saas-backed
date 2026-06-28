@@ -127,13 +127,18 @@ internal sealed class FakeOrganizationResidentService : IOrganizationResidentSer
         int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(new PagedResponse<OrganizationResidentDto>
+        if (Residents is null)
         {
-            Data = new List<OrganizationResidentDto>(),
-            TotalRecords = 0,
+            return Task.FromResult<PagedResponse<OrganizationResidentDto>?>(null);
+        }
+
+        return Task.FromResult<PagedResponse<OrganizationResidentDto>?>(new PagedResponse<OrganizationResidentDto>
+        {
+            Data = Residents,
+            TotalRecords = Residents.Count,
             PageNumber = page,
             PageSize = pageSize
-        })!;
+        });
     }
 
     public Task<IReadOnlyList<OrganizationResidentInvitationDto>?> GetResidentInvitationsAsync(
