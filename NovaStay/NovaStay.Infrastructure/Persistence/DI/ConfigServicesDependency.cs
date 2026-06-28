@@ -25,9 +25,9 @@ namespace NovaStay.Infrastructure.Persistence.DI
 
             services.AddMassTransit(x =>
             {
-
                 x.AddConsumer<NotificationEmailComsumer>();
                 x.AddConsumer<NotificationResetPasswordConsumer>();
+                x.AddConsumer<NotificationContractRenewConsumer>();
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
@@ -47,6 +47,12 @@ namespace NovaStay.Infrastructure.Persistence.DI
                     {
                         e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
                         e.ConfigureConsumer<NotificationResetPasswordConsumer>(context);      
+                    });
+
+                    cfg.ReceiveEndpoint("NotificationContractRenewqueue", e =>  
+                    {
+                        e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
+                        e.ConfigureConsumer<NotificationContractRenewConsumer>(context);      
                     });
                 });
             });

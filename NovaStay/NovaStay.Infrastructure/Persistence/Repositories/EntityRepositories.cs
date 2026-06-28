@@ -261,11 +261,121 @@ internal sealed class BrokerRepository : Repository<DomainBroker, DatabaseBroker
 
 internal sealed class ContractRepository : Repository<DomainContract, DatabaseContract>, IContractRepository
 {
+    private readonly HostContext _context;
+    private readonly IDatabaseModelMapper<DomainContract, DatabaseContract> _mapper;
+
     public ContractRepository(HostContext context, IDatabaseModelMapper<DomainContract, DatabaseContract> mapper)
         : base(context, mapper)
     {
+        _context = context;
+        _mapper = mapper;
+    }
+
+    private static ContractDetailDto MapToDetail(DatabaseContract c) => new()
+    {
+        Id = c.Id,
+        OrganizationId = c.OrganizationId,
+        PropertyId = c.PropertyId,
+        RoomId = c.RoomId,
+        ResidentId = c.ResidentId,
+        BrokerId = c.BrokerId,
+        BookingId = c.BookingId,
+        StartDate = c.StartDate,
+        EndDate = c.EndDate,
+        DepositAmount = c.DepositAmount,
+        BrokerCommission = c.BrokerCommission,
+        CommissionStatus = c.CommissionStatus,
+        ContractPdfUrl = c.ContractPdfUrl,
+        Status = c.Status,
+        CreatedAt = c.CreatedAt,
+        ResidentName = c.Resident != null ? c.Resident.FullName : null,
+        ResidentPhone = c.Resident != null ? c.Resident.Phone : null,
+        RoomNumber = c.Room != null ? c.Room.RoomNumber : null,
+        BasePrice = c.Room != null ? c.Room.BasePrice : 0
+    };
+
+    public async Task<IReadOnlyList<ContractDetailDto>> GetContractsWithDetailsAsync(
+        Guid organizationId,
+        string? search = null,
+        string? status = null,
+        Guid? residentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Contracts
+            .AsNoTracking()
+            .Include(c => c.Resident)
+            .Include(c => c.Room)
+            .Where(c => c.OrganizationId == organizationId);
+
+        if (residentId.HasValue)
+            query = query.Where(c => c.ResidentId == residentId.Value);
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(c => c.Status == status.Trim());
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var lower = search.Trim().ToLower();
+            query = query.Where(c =>
+                c.Resident.FullName.ToLower().Contains(lower) ||
+                c.Room.RoomNumber.ToLower().Contains(lower));
+        }
+
+        var contracts = await query.OrderByDescending(c => c.CreatedAt).ToListAsync(cancellationToken);
+        return contracts.Select(MapToDetail).ToList();
+    }
+
+    public async Task<ContractDetailDto?> GetContractDetailByIdAsync(
+        Guid contractId,
+        CancellationToken cancellationToken = default)
+    {
+        var c = await _context.Contracts
+            .AsNoTracking()
+            .Include(x => x.Resident)
+            .Include(x => x.Room)
+            .FirstOrDefaultAsync(x => x.Id == contractId, cancellationToken);
+
+        return c is null ? null : MapToDetail(c);
+    }
+
+    public async Task<IReadOnlyList<ContractDetailDto>> GetExpiringSoonAsync(
+        Guid organizationId,
+        int daysThreshold = 30,
+        CancellationToken cancellationToken = default)
+    {
+        var threshold = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(daysThreshold));
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var contracts = await _context.Contracts
+            .AsNoTracking()
+            .Include(c => c.Resident)
+            .Include(c => c.Room)
+            .Where(c => c.OrganizationId == organizationId
+                && c.Status == "Active"
+                && c.EndDate >= today
+                && c.EndDate <= threshold)
+            .OrderBy(c => c.EndDate)
+            .ToListAsync(cancellationToken);
+
+        return contracts.Select(MapToDetail).ToList();
+    }
+
+    public async Task<IReadOnlyList<DomainContract>> GetAllActiveExpiringOnDateAsync(
+        DateTime targetDate,
+        CancellationToken cancellationToken = default)
+    {
+        var dateOnly = DateOnly.FromDateTime(targetDate);
+
+        var databaseContracts = await _context.Contracts
+            .AsNoTracking()
+            .Where(c => c.Status == "Active" && c.EndDate == dateOnly)
+            .ToListAsync(cancellationToken);
+
+        // Map database entities to domain entities using the injected mapper
+        return databaseContracts.Select(_mapper.ToDomain).ToList();
     }
 }
+
 
 internal sealed class InvoiceRepository : Repository<DomainInvoice, DatabaseInvoice>, IInvoiceRepository
 {
@@ -277,11 +387,74 @@ internal sealed class InvoiceRepository : Repository<DomainInvoice, DatabaseInvo
 
 internal sealed class MaintenanceTicketRepository : Repository<DomainMaintenanceTicket, DatabaseMaintenanceTicket>, IMaintenanceTicketRepository
 {
+    private readonly HostContext _context;
+
     public MaintenanceTicketRepository(HostContext context, IDatabaseModelMapper<DomainMaintenanceTicket, DatabaseMaintenanceTicket> mapper)
         : base(context, mapper)
     {
+        _context = context;
+    }
+
+    private static MaintenanceTicketDetailDto MapToDetail(DatabaseMaintenanceTicket t) => new()
+    {
+        Id = t.Id,
+        OrganizationId = t.OrganizationId,
+        RoomId = t.RoomId,
+        ResidentId = t.ResidentId,
+        Category = t.Category,
+        UserDescription = t.UserDescription,
+        IncidentImageUrl = t.IncidentImageUrl,
+        Status = t.Status,
+        TechnicianId = t.TechnicianId,
+        ResolvedImageUrl = t.ResolvedImageUrl,
+        CreatedAt = t.CreatedAt,
+        UpdatedAt = t.UpdatedAt,
+        ResidentName = t.Resident != null ? t.Resident.FullName : null,
+        RoomNumber = t.Room != null ? t.Room.RoomNumber : null
+    };
+
+    public async Task<(IReadOnlyList<MaintenanceTicketDetailDto> Items, int TotalCount)> GetByRoomIdAsync(
+        Guid roomId,
+        int pageIndex,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.MaintenanceTickets
+            .AsNoTracking()
+            .Where(t => t.RoomId == roomId);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var tickets = await query
+            .Include(t => t.Resident)
+            .Include(t => t.Room)
+            .OrderByDescending(t => t.CreatedAt)
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (tickets.Select(MapToDetail).ToList(), totalCount);
+    }
+
+    public async Task<IReadOnlyList<MaintenanceTicketDetailDto>> GetByOrganizationIdAsync(
+        Guid organizationId,
+        string? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.MaintenanceTickets
+            .AsNoTracking()
+            .Include(t => t.Resident)
+            .Include(t => t.Room)
+            .Where(t => t.OrganizationId == organizationId);
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(t => t.Status == status.Trim());
+
+        var tickets = await query.OrderByDescending(t => t.CreatedAt).ToListAsync(cancellationToken);
+        return tickets.Select(MapToDetail).ToList();
     }
 }
+
 
 internal sealed class PermissionRepository : Repository<DomainPermission, DatabasePermission>, IPermissionRepository
 {
@@ -417,9 +590,12 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
                 cancellationToken);
     }
 
-    public async Task<IReadOnlyList<OrganizationResidentDto>> GetResidentsByOrganizationAsync(
+    public async Task<(IReadOnlyList<OrganizationResidentDto> Data, int TotalRecords)> GetResidentsByOrganizationAsync(
         Guid organizationId,
         string? status = null,
+        string? search = null,
+        int page = 1,
+        int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
         var normalizedStatus = string.IsNullOrWhiteSpace(status)
@@ -430,19 +606,30 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
             .AsNoTracking()
             .Where(membership => membership.OrganizationId == organizationId);
 
-        if(normalizedStatus == null)
-        {
-            normalizedStatus = "ACTIVE";
-        }
-
         if (normalizedStatus is not null)
         {
             query = query.Where(membership => membership.Status == normalizedStatus);
         }
+        else
+        {
+            query = query.Where(membership => membership.Status != "INACTIVE" && membership.Status != "REMOVED");
+        }
 
-        return await query
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchLower = search.Trim().ToLower();
+            query = query.Where(membership => 
+                membership.Resident.FullName.ToLower().Contains(searchLower) ||
+                membership.Resident.Phone.Contains(searchLower));
+        }
+
+        var totalRecords = await query.CountAsync(cancellationToken);
+
+        var data = await query
             .OrderBy(membership => membership.Status)
             .ThenBy(membership => membership.Resident.FullName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(membership => new OrganizationResidentDto
             {
                 MembershipId = membership.Id,
@@ -464,6 +651,7 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
                 MustSetPassword = membership.Account.MustSetPassword
             })
             .ToListAsync(cancellationToken);
+        return (data, totalRecords);
     }
 
     public async Task<IReadOnlyList<OrganizationResidentInvitationDto>> GetInvitationsByOrganizationAsync(
