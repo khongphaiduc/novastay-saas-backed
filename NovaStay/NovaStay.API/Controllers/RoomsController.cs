@@ -200,4 +200,40 @@ public sealed class RoomsController : ControllerBase
             return NotFound(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Proxy ảnh từ MinIO để vượt rào Mixed Content / SSL Error
+    /// </summary>
+    [HttpGet("proxy-image")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ProxyImage(
+        [FromQuery] string url,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return BadRequest(new { message = "URL is required" });
+        }
+
+        try
+        {
+            using var httpClient = new HttpClient();
+            // Lấy trực tiếp bằng giao thức HTTP nội bộ của server (hoặc URL mà Sếp config)
+            var response = await httpClient.GetAsync(url, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return StatusCode((int)response.StatusCode, new { message = "Failed to fetch image" });
+            }
+
+            var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/jpeg";
+
+            return File(stream, contentType);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Proxy error: " + ex.Message });
+        }
+    }
 }
