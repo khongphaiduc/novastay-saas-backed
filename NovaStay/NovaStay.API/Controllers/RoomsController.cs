@@ -24,15 +24,17 @@ public sealed class RoomsController : ControllerBase
     /// TASK-013: Lọc phòng theo trạng thái (query param: status)
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<RoomDto>>> GetRooms(
+    public async Task<ActionResult<PagedResult<RoomDto>>> GetRooms(
         [FromQuery] Guid propertyId,
         [FromQuery] string? search = null,
         [FromQuery] string? status = null,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 12,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            var rooms = await _roomService.GetRoomsAsync(propertyId, search, status, cancellationToken);
+            var rooms = await _roomService.GetRoomsAsync(propertyId, search, status, pageIndex, pageSize, cancellationToken);
             return Ok(rooms);
         }
         catch (ArgumentException ex)
