@@ -808,7 +808,7 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ResidentId")
+                    b.Property<Guid?>("ResidentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ResolvedImageUrl")
@@ -1982,7 +1982,6 @@ namespace NovaStay.Infrastructure.Migrations
                     b.HasOne("NovaStay.Infrastructure.Models.Resident", "Resident")
                         .WithMany("MaintenanceTickets")
                         .HasForeignKey("ResidentId")
-                        .IsRequired()
                         .HasConstraintName("FK__Maintenan__Resid__43D61337");
 
                     b.HasOne("NovaStay.Infrastructure.Models.Room", "Room")

@@ -119,12 +119,21 @@ internal sealed class FakeOrganizationResidentService : IOrganizationResidentSer
     public Guid AcceptMembershipId { get; private set; }
     public bool AcceptIsAccepted { get; private set; }
 
-    public Task<IReadOnlyList<OrganizationResidentDto>?> GetResidentsAsync(
+    public Task<PagedResponse<OrganizationResidentDto>?> GetResidentsAsync(
         Guid organizationId,
         string? status = null,
+        string? search = null,
+        int page = 1,
+        int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Residents);
+        return Task.FromResult(new PagedResponse<OrganizationResidentDto>
+        {
+            Data = new List<OrganizationResidentDto>(),
+            TotalRecords = 0,
+            PageNumber = page,
+            PageSize = pageSize
+        })!;
     }
 
     public Task<IReadOnlyList<OrganizationResidentInvitationDto>?> GetResidentInvitationsAsync(
@@ -146,6 +155,30 @@ internal sealed class FakeOrganizationResidentService : IOrganizationResidentSer
         }
 
         return Task.FromResult(InviteResponse);
+    }
+
+    public Task<ResidentMembershipResponse> AddActiveResidentAsync(
+        Guid organizationId,
+        Guid residentId,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new ResidentMembershipResponse());
+    }
+
+    public Task RemoveResidentAsync(
+        Guid organizationId,
+        Guid residentId,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task CancelInvitationAsync(
+        Guid organizationId,
+        Guid membershipId,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
     }
 
     public Task<ResidentMembershipResponse> AcceptInvitationAsync(
@@ -201,6 +234,23 @@ internal sealed class FakeResidentService : IResidentService
     {
         return Task.FromResult(Accommodations);
     }
+
+    public Task<ResidentDto> UpdateResidentAsync(
+        Guid residentId,
+        UpdateResidentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new ResidentDto());
+    }
+
+    public Task<ResidentDto> UploadImageAsync(
+        Guid residentId,
+        string imageType,
+        string imageUrl,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new ResidentDto());
+    }
 }
 
 internal sealed class FakeResidentInvitationService : IResidentInvitationService
@@ -237,10 +287,12 @@ internal sealed class FakeRoomService : IRoomService
     public string? GetRoomsStatus { get; private set; }
     public Guid DeleteRoomId { get; private set; }
 
-    public Task<IReadOnlyList<RoomDto>> GetRoomsAsync(
+    public Task<PagedResult<RoomDto>> GetRoomsAsync(
         Guid propertyId,
         string? search = null,
         string? status = null,
+        int pageIndex = 1,
+        int pageSize = 12,
         CancellationToken cancellationToken = default)
     {
         GetRoomsPropertyId = propertyId;
@@ -252,7 +304,15 @@ internal sealed class FakeRoomService : IRoomService
             throw GetRoomsException;
         }
 
-        return Task.FromResult(Rooms);
+        var result = new PagedResult<RoomDto>
+        {
+            Items = Rooms,
+            TotalCount = Rooms.Count,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
+
+        return Task.FromResult(result);
     }
 
     public Task<RoomDto> CreateRoomAsync(CreateRoomRequest request, CancellationToken cancellationToken = default)
@@ -360,9 +420,22 @@ internal sealed class FakePropertyService : IPropertyService
     public PropertyDto CreateResponse { get; set; } = new();
     public PropertyDto UpdateResponse { get; set; } = new();
 
-    public Task<IReadOnlyList<PropertyDto>> GetPropertiesByOrganizationAsync(Guid organizationId, CancellationToken cancellationToken = default)
+    public Task<PagedResult<PropertyDto>> GetPropertiesAsync(
+        Guid organizationId,
+        string? search = null,
+        string? status = null,
+        int pageIndex = 1,
+        int pageSize = 12,
+        CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Properties);
+        var pagedResult = new PagedResult<PropertyDto>
+        {
+            Items = Properties,
+            TotalCount = Properties.Count,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
+        return Task.FromResult(pagedResult);
     }
 
     public Task<PropertyDto> CreatePropertyAsync(Guid organizationId, CreatePropertyRequest request, CancellationToken cancellationToken = default)

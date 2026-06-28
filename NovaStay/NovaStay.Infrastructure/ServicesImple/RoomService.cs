@@ -24,16 +24,32 @@ public sealed class RoomService : IRoomService
     }
 
     // TASK-011, 012, 013: Danh sách + tìm kiếm + lọc
-    public async Task<IReadOnlyList<RoomDto>> GetRoomsAsync(
+    public async Task<PagedResult<RoomDto>> GetRoomsAsync(
         Guid propertyId,
         string? search = null,
         string? status = null,
+        int pageIndex = 1,
+        int pageSize = 12,
         CancellationToken cancellationToken = default)
     {
         if (propertyId == Guid.Empty)
             throw new ArgumentException("propertyId là bắt buộc.");
 
-        return await _unitOfWork.Rooms.GetRoomsWithImagesAsync(propertyId, search, status, cancellationToken);
+        var allRooms = await _unitOfWork.Rooms.GetRoomsWithImagesAsync(propertyId, search, status, cancellationToken);
+        
+        var totalCount = allRooms.Count;
+        var pagedItems = allRooms
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return new PagedResult<RoomDto>
+        {
+            Items = pagedItems,
+            TotalCount = totalCount,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
     }
 
     // TASK-014: Thêm phòng mới

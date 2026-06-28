@@ -26,6 +26,7 @@ public sealed class ResidentAccommodationsController : ControllerBase
         if (!Guid.TryParse(accountIdClaim, out var accountId))
         {
             return Unauthorized(new { message = "Invalid access token." });
+
         }
 
         var accommodations = await _residentService.GetActiveAccommodationsAsync(

@@ -64,7 +64,8 @@ public sealed class MinioStorageService : IMinioStorageService
                 cancellationToken);
         }
 
-        var objectName = $"rooms/{Guid.NewGuid():N}_{fileName}";
+        var extension = Path.GetExtension(fileName);
+        var objectName = $"rooms/{Guid.NewGuid():N}{extension}";
 
         await _minioClient.PutObjectAsync(
             new PutObjectArgs()
