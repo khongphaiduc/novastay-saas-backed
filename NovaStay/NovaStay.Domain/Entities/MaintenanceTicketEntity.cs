@@ -6,7 +6,7 @@ public sealed class MaintenanceTicketEntity : Entity
 {
     public Guid OrganizationId { get; set; }
     public Guid RoomId { get; set; }
-    public Guid ResidentId { get; set; }
+    public Guid? ResidentId { get; set; }
     public Guid? AssetAssignmentId { get; set; }
     public string Category { get; set; } = string.Empty;
     public string UserDescription { get; set; } = string.Empty;
