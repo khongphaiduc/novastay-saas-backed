@@ -11,7 +11,7 @@ public partial class MaintenanceTicket
 
     public Guid RoomId { get; set; }
 
-    public Guid ResidentId { get; set; }
+    public Guid? ResidentId { get; set; }
 
     public Guid? AssetAssignmentId { get; set; }
 
