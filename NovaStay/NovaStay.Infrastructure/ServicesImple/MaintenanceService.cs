@@ -50,24 +50,7 @@ public sealed class MaintenanceService : IMaintenanceService
         var room = await _unitOfWork.Rooms.GetByIdAsync(roomId, cancellationToken)
             ?? throw new KeyNotFoundException($"Room {roomId} not found.");
 
-        // FIX: Ensure organizationId is valid by taking it from the room's property if possible
-        var property = await _unitOfWork.Properties.GetByIdAsync(room.PropertyId, cancellationToken);
-        if (property != null)
-        {
-            organizationId = property.OrganizationId;
-        }
-
         var previousStatus = room.Status.ToString();
-
-        if (newStatus == "Available")
-        {
-            var activeContracts = await _unitOfWork.Contracts.FindAsync(
-                c => c.RoomId == roomId && c.Status == "Active", cancellationToken);
-            if (activeContracts.Any())
-            {
-                newStatus = "Occupied";
-            }
-        }
 
         room.Status = new Status(newStatus);
         _unitOfWork.Rooms.Update(room);

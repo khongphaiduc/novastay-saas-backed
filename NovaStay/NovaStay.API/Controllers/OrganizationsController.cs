@@ -38,7 +38,7 @@ public sealed class OrganizationsController : ControllerBase
             return NotFound(new { message = "Organization not found." });
         }
 
-        return Ok(residents);
+        return Ok(residents.Data);
     }
 
     [HttpGet("{organizationId:guid}/residents/invitations")]
