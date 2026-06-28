@@ -33,7 +33,11 @@ public partial class Resident
 
     public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+
     public virtual ICollection<MaintenanceTicket> MaintenanceTickets { get; set; } = new List<MaintenanceTicket>();
+
+    public virtual ICollection<PaymentReceipt> PaymentReceipts { get; set; } = new List<PaymentReceipt>();
 
     public virtual ICollection<ResidentMembership> ResidentMemberships { get; set; } = new List<ResidentMembership>();
 }

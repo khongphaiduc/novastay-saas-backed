@@ -19,5 +19,7 @@ public partial class Broker
 
     public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 
+    public virtual ICollection<Expense> Expenses { get; set; } = new List<Expense>();
+
     public virtual Organization Organization { get; set; } = null!;
 }

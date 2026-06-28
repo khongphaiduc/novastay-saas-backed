@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
+    <Folder Include="GlobalException\" />
+    <Folder Include="Middleware\" />
   </ItemGroup>
 
   <ItemGroup>
