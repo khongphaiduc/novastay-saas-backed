@@ -773,13 +773,13 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
         }
         else
         {
-            query = query.Where(membership => membership.Status != "INACTIVE" && membership.Status != "REMOVED");
+            query = query.Where(membership => membership.Status != "INACTIVE" && membership.Status != "REMOVED" && membership.Status == "ACTIVE");
         }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             var searchLower = search.Trim().ToLower();
-            query = query.Where(membership => 
+            query = query.Where(membership =>
                 membership.Resident.FullName.ToLower().Contains(searchLower) ||
                 membership.Resident.Phone.Contains(searchLower));
         }
@@ -923,7 +923,7 @@ internal sealed class RoleRepository : Repository<DomainRole, DatabaseRole>, IRo
         : base(context, mapper)
     {
     }
-} 
+}
 
 internal sealed class RoomRepository : Repository<DomainRoom, DatabaseRoom>, IRoomRepository
 {
