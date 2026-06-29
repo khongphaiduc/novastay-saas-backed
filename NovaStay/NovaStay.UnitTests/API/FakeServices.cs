@@ -1,5 +1,6 @@
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
+using NovaStay.Domain.Enums;
 
 namespace NovaStay.UnitTests.API;
 
@@ -416,6 +417,100 @@ internal sealed class FakeRoomService : IRoomService
         }
 
         return Task.CompletedTask;
+    }
+}
+
+internal sealed class FakeExpenseService : IExpenseService
+{
+    public IReadOnlyList<ExpenseDto>? Expenses { get; set; } = [];
+    public ExpenseDto? ExpenseDetail { get; set; }
+    public ExpenseDto CreateResponse { get; set; } = new();
+    public Exception? CreateException { get; set; }
+    public Guid DetailOrganizationId { get; private set; }
+    public Guid DetailPropertyId { get; private set; }
+    public Guid DetailExpenseId { get; private set; }
+
+    public Task<IReadOnlyList<ExpenseDto>?> GetByPropertyAsync(
+        Guid organizationId,
+        Guid propertyId,
+        ApprovalStatus? status = null,
+        PaymentMethod? paymentMethod = null,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Expenses);
+    }
+
+    public Task<ExpenseDto?> GetByIdAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid expenseId,
+        CancellationToken cancellationToken = default)
+    {
+        DetailOrganizationId = organizationId;
+        DetailPropertyId = propertyId;
+        DetailExpenseId = expenseId;
+        return Task.FromResult(ExpenseDetail);
+    }
+
+    public Task<ExpenseDto> CreateAsync(
+        Guid organizationId,
+        Guid propertyId,
+        CreateExpenseRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (CreateException is not null)
+        {
+            throw CreateException;
+        }
+
+        return Task.FromResult(CreateResponse);
+    }
+}
+
+internal sealed class FakeIncomeReceiptService : IIncomeReceiptService
+{
+    public IReadOnlyList<IncomeReceiptDto>? Receipts { get; set; } = [];
+    public IncomeReceiptDto? ReceiptDetail { get; set; }
+    public IncomeReceiptDto CreateResponse { get; set; } = new();
+    public Exception? CreateException { get; set; }
+    public Guid DetailOrganizationId { get; private set; }
+    public Guid DetailPropertyId { get; private set; }
+    public Guid DetailIncomeReceiptId { get; private set; }
+
+    public Task<IReadOnlyList<IncomeReceiptDto>?> GetByPropertyAsync(
+        Guid organizationId,
+        Guid propertyId,
+        ApprovalStatus? status = null,
+        PaymentMethod? paymentMethod = null,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Receipts);
+    }
+
+    public Task<IncomeReceiptDto?> GetByIdAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid incomeReceiptId,
+        CancellationToken cancellationToken = default)
+    {
+        DetailOrganizationId = organizationId;
+        DetailPropertyId = propertyId;
+        DetailIncomeReceiptId = incomeReceiptId;
+        return Task.FromResult(ReceiptDetail);
+    }
+
+    public Task<IncomeReceiptDto> CreateAsync(
+        Guid organizationId,
+        Guid propertyId,
+        CreateIncomeReceiptRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (CreateException is not null)
+        {
+            throw CreateException;
+        }
+
+        return Task.FromResult(CreateResponse);
     }
 }
 

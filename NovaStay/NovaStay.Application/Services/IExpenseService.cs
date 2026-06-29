@@ -12,6 +12,12 @@ public interface IExpenseService
         PaymentMethod? paymentMethod = null,
         CancellationToken cancellationToken = default);
 
+    Task<ExpenseDto?> GetByIdAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid expenseId,
+        CancellationToken cancellationToken = default);
+
     Task<ExpenseDto> CreateAsync(
         Guid organizationId,
         Guid propertyId,

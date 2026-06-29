@@ -29,6 +29,19 @@ public sealed class IncomeReceiptService : IIncomeReceiptService
             cancellationToken);
     }
 
+    public Task<IncomeReceiptDto?> GetByIdAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid incomeReceiptId,
+        CancellationToken cancellationToken = default)
+    {
+        return _incomeReceiptRepository.GetByIdAsync(
+            organizationId,
+            propertyId,
+            incomeReceiptId,
+            cancellationToken);
+    }
+
     public async Task<IncomeReceiptDto> CreateAsync(
         Guid organizationId,
         Guid propertyId,
