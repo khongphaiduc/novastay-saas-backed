@@ -8,7 +8,7 @@ namespace NovaStay.API.Controllers;
 /// <summary>
 /// Maintenance Management: TASK-021 và TASK-022
 /// </summary>
-// [Authorize(Roles = "BusinessOwner")]
+[Authorize(Roles = "BusinessOwner")]
 [ApiController]
 [Route("api/maintenance")]
 public sealed class MaintenanceController : ControllerBase
