@@ -11,6 +11,7 @@ public interface IUnitOfWork : IAsyncDisposable
     IMaintenanceTicketRepository MaintenanceTickets { get; }
     IPermissionRepository Permissions { get; }
     IPropertyRepository Properties { get; }
+    IPropertyServiceRepository PropertyServices { get; }
     IResidentRepository Residents { get; }
     IResidentMembershipRepository ResidentMemberships { get; }
     IRoleRepository Roles { get; }

@@ -26,6 +26,8 @@ public partial class HostContext : DbContext
 
     public virtual DbSet<Contract> Contracts { get; set; }
 
+    public virtual DbSet<InvoiceGenerationSchedule> InvoiceGenerationSchedules { get; set; }
+
     public virtual DbSet<Invoice> Invoices { get; set; }
 
     public virtual DbSet<InvoiceLine> InvoiceLines { get; set; }
@@ -37,8 +39,6 @@ public partial class HostContext : DbContext
     public virtual DbSet<ExpenseCategory> ExpenseCategories { get; set; }
 
     public virtual DbSet<Permission> Permissions { get; set; }
-
-    public virtual DbSet<PaymentAllocation> PaymentAllocations { get; set; }
 
     public virtual DbSet<PaymentReceipt> PaymentReceipts { get; set; }
 
@@ -63,6 +63,12 @@ public partial class HostContext : DbContext
     public virtual DbSet<SubscriptionPackage> SubscriptionPackages { get; set; }
 
     public virtual DbSet<Technician> Technicians { get; set; }
+
+    public virtual DbSet<UtilityMeter> UtilityMeters { get; set; }
+
+    public virtual DbSet<UtilityReading> UtilityReadings { get; set; }
+
+    public virtual DbSet<UtilityTariff> UtilityTariffs { get; set; }
 
     public virtual DbSet<Account> Accounts { get; set; }
 
@@ -273,6 +279,56 @@ public partial class HostContext : DbContext
                 .HasConstraintName("FK__Contracts__Tenan__2CF2ADDF");
         });
 
+        modelBuilder.Entity<InvoiceGenerationSchedule>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_InvoiceGenerationSchedules");
+
+            entity.HasIndex(e => e.CreatedByStaffUserId, "IX_InvoiceGenerationSchedules_CreatedByStaffUserId");
+
+            entity.HasIndex(e => new { e.IsActive, e.NextRunAt }, "IX_InvoiceGenerationSchedules_IsActive_NextRunAt");
+
+            entity.HasIndex(e => e.OrganizationId, "IX_InvoiceGenerationSchedules_OrganizationId");
+
+            entity.HasIndex(e => e.PropertyId, "IX_InvoiceGenerationSchedules_PropertyId");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.ScheduleName }, "UX_InvoiceGenerationSchedules_OrganizationId_ScheduleName")
+                .IsUnique()
+                .HasFilter("[PropertyId] IS NULL");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.PropertyId, e.ScheduleName }, "UX_InvoiceGenerationSchedules_OrganizationId_PropertyId_ScheduleName")
+                .IsUnique()
+                .HasFilter("[PropertyId] IS NOT NULL");
+
+            entity.Property(e => e.AutoSendToResident).HasDefaultValue(true);
+            entity.Property(e => e.BillingCycle)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.DueAfterDays).HasDefaultValue(7);
+            entity.Property(e => e.GenerateTime).HasColumnType("time");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.LastRunAt).HasColumnType("datetime");
+            entity.Property(e => e.NextRunAt).HasColumnType("datetime");
+            entity.Property(e => e.ScheduleName).HasMaxLength(150);
+            entity.Property(e => e.TimeZone).HasMaxLength(100);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.CreatedByStaffUser).WithMany(p => p.InvoiceGenerationSchedules)
+                .HasForeignKey(d => d.CreatedByStaffUserId)
+                .HasConstraintName("FK_InvoiceGenerationSchedules_StaffUsers_CreatedByStaffUserId");
+
+            entity.HasOne(d => d.Organization).WithMany(p => p.InvoiceGenerationSchedules)
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_InvoiceGenerationSchedules_Organizations_OrganizationId");
+
+            entity.HasOne(d => d.Property).WithMany(p => p.InvoiceGenerationSchedules)
+                .HasForeignKey(d => d.PropertyId)
+                .HasConstraintName("FK_InvoiceGenerationSchedules_Properties_PropertyId");
+        });
+
         modelBuilder.Entity<Invoice>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Invoices__3214EC07023BFFC1");
@@ -288,7 +344,6 @@ public partial class HostContext : DbContext
             entity.HasIndex(e => new { e.Status, e.InvoicePeriod }, "IX_Invoices_Status_Period");
 
             entity.Property(e => e.AdjustmentAmount).HasColumnType("decimal(18, 2)");
-            entity.Property(e => e.AmountPaid).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -305,7 +360,6 @@ public partial class HostContext : DbContext
             entity.Property(e => e.IssuedAt).HasColumnType("datetime");
             entity.Property(e => e.LateFeeAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.Note).HasMaxLength(500);
-            entity.Property(e => e.OutstandingAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.PaidAt).HasColumnType("datetime");
             entity.Property(e => e.QrCodeUrl)
                 .HasMaxLength(500)
@@ -529,34 +583,12 @@ public partial class HostContext : DbContext
             entity.Property(e => e.PermissionName).HasMaxLength(100);
         });
 
-        modelBuilder.Entity<PaymentAllocation>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK_PaymentAllocations");
-
-            entity.HasIndex(e => e.InvoiceId, "IX_PaymentAllocations_InvoiceId");
-
-            entity.HasIndex(e => new { e.PaymentReceiptId, e.InvoiceId }, "UX_PaymentAllocations_PaymentReceiptId_InvoiceId")
-                .IsUnique();
-
-            entity.Property(e => e.AllocatedAmount).HasColumnType("decimal(18, 2)");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-
-            entity.HasOne(d => d.Invoice).WithMany(p => p.PaymentAllocations)
-                .HasForeignKey(d => d.InvoiceId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_PaymentAllocations_Invoices_InvoiceId");
-
-            entity.HasOne(d => d.PaymentReceipt).WithMany(p => p.PaymentAllocations)
-                .HasForeignKey(d => d.PaymentReceiptId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_PaymentAllocations_PaymentReceipts_PaymentReceiptId");
-        });
-
         modelBuilder.Entity<PaymentReceipt>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_PaymentReceipts");
+
+            entity.HasIndex(e => e.InvoiceId, "UX_PaymentReceipts_InvoiceId")
+                .IsUnique();
 
             entity.HasIndex(e => new { e.OrganizationId, e.ReceiptNumber }, "UX_PaymentReceipts_OrganizationId_ReceiptNumber")
                 .IsUnique();
@@ -589,6 +621,10 @@ public partial class HostContext : DbContext
             entity.HasOne(d => d.CollectedByStaffUser).WithMany(p => p.CollectedPaymentReceipts)
                 .HasForeignKey(d => d.CollectedByStaffUserId)
                 .HasConstraintName("FK_PaymentReceipts_StaffUsers_CollectedByStaffUserId");
+
+            entity.HasOne(d => d.Invoice).WithOne(p => p.PaymentReceipt)
+                .HasForeignKey<PaymentReceipt>(d => d.InvoiceId)
+                .HasConstraintName("FK_PaymentReceipts_Invoices_InvoiceId");
 
             entity.HasOne(d => d.Organization).WithMany(p => p.PaymentReceipts)
                 .HasForeignKey(d => d.OrganizationId)
@@ -635,6 +671,29 @@ public partial class HostContext : DbContext
                 .HasConstraintName("FK_PropertyServices_Properties_PropertyId");
         });
 
+        modelBuilder.Entity<UtilityTariff>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_UtilityTariffs");
+
+            entity.HasIndex(e => new { e.PropertyServiceId, e.EffectiveFrom }, "UX_UtilityTariffs_PropertyServiceId_EffectiveFrom")
+                .IsUnique();
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.EffectiveFrom).HasColumnType("datetime");
+            entity.Property(e => e.EffectiveTo).HasColumnType("datetime");
+            entity.Property(e => e.PricingMode)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 2)");
+
+            entity.HasOne(d => d.PropertyService).WithMany(p => p.UtilityTariffs)
+                .HasForeignKey(d => d.PropertyServiceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UtilityTariffs_PropertyServices_PropertyServiceId");
+        });
+
         modelBuilder.Entity<Property>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Properti__3214EC07FE441D45");
@@ -647,6 +706,10 @@ public partial class HostContext : DbContext
             entity.Property(e => e.PropertyType)
                 .HasMaxLength(20)
                 .IsUnicode(false);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Active");
 
             entity.HasOne(d => d.Organization).WithMany(p => p.Properties)
                 .HasForeignKey(d => d.OrganizationId)
@@ -835,6 +898,86 @@ public partial class HostContext : DbContext
                 .HasForeignKey(d => d.RoomId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_RoomServices_Rooms_RoomId");
+        });
+
+        modelBuilder.Entity<UtilityMeter>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_UtilityMeters");
+
+            entity.HasIndex(e => e.PropertyServiceId, "IX_UtilityMeters_PropertyServiceId");
+
+            entity.HasIndex(e => e.RoomId, "IX_UtilityMeters_RoomId");
+
+            entity.HasIndex(e => new { e.RoomId, e.PropertyServiceId }, "UX_UtilityMeters_RoomId_PropertyServiceId")
+                .IsUnique();
+
+            entity.HasIndex(e => e.MeterCode, "UX_UtilityMeters_MeterCode")
+                .IsUnique()
+                .HasFilter("[MeterCode] IS NOT NULL");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.InitialReading).HasColumnType("decimal(18, 3)");
+            entity.Property(e => e.InstalledAt).HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.MeterCode)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.MeterType)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.Unit).HasMaxLength(20);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.PropertyService).WithMany(p => p.UtilityMeters)
+                .HasForeignKey(d => d.PropertyServiceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UtilityMeters_PropertyServices_PropertyServiceId");
+
+            entity.HasOne(d => d.Room).WithMany(p => p.UtilityMeters)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UtilityMeters_Rooms_RoomId");
+        });
+
+        modelBuilder.Entity<UtilityReading>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_UtilityReadings");
+
+            entity.HasIndex(e => new { e.UtilityMeterId, e.BillingPeriod }, "UX_UtilityReadings_UtilityMeterId_BillingPeriod")
+                .IsUnique();
+
+            entity.HasIndex(e => new { e.Status, e.BillingPeriod }, "IX_UtilityReadings_Status_BillingPeriod");
+
+            entity.HasIndex(e => e.RecordedByStaffUserId, "IX_UtilityReadings_RecordedByStaffUserId");
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.BillingPeriod)
+                .HasMaxLength(7)
+                .IsUnicode(false);
+            entity.Property(e => e.Consumption).HasColumnType("decimal(18, 3)");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.CurrentReading).HasColumnType("decimal(18, 3)");
+            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.Property(e => e.PreviousReading).HasColumnType("decimal(18, 3)");
+            entity.Property(e => e.ReadingDate).HasColumnType("datetime");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Draft");
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 2)");
+
+            entity.HasOne(d => d.RecordedByStaffUser).WithMany(p => p.UtilityReadings)
+                .HasForeignKey(d => d.RecordedByStaffUserId)
+                .HasConstraintName("FK_UtilityReadings_StaffUsers_RecordedByStaffUserId");
+
+            entity.HasOne(d => d.UtilityMeter).WithMany(p => p.UtilityReadings)
+                .HasForeignKey(d => d.UtilityMeterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UtilityReadings_UtilityMeters_UtilityMeterId");
         });
 
         modelBuilder.Entity<RoomAvailability>(entity =>

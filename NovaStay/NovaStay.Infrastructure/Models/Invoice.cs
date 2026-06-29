@@ -43,10 +43,6 @@ public partial class Invoice
 
     public decimal TotalAmount { get; set; }
 
-    public decimal AmountPaid { get; set; }
-
-    public decimal OutstandingAmount { get; set; }
-
     public string? QrCodeUrl { get; set; }
 
     public string? Status { get; set; }
@@ -67,7 +63,7 @@ public partial class Invoice
 
     public virtual Organization Organization { get; set; } = null!;
 
-    public virtual ICollection<PaymentAllocation> PaymentAllocations { get; set; } = new List<PaymentAllocation>();
+    public virtual PaymentReceipt? PaymentReceipt { get; set; }
 
     public virtual Property? Property { get; set; }
 

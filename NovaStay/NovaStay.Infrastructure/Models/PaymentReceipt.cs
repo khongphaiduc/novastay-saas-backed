@@ -7,6 +7,8 @@ public partial class PaymentReceipt
 {
     public Guid Id { get; set; }
 
+    public Guid InvoiceId { get; set; }
+
     public Guid OrganizationId { get; set; }
 
     public Guid? PropertyId { get; set; }
@@ -37,9 +39,9 @@ public partial class PaymentReceipt
 
     public virtual StaffUser? CollectedByStaffUser { get; set; }
 
-    public virtual Organization Organization { get; set; } = null!;
+    public virtual Invoice Invoice { get; set; } = null!;
 
-    public virtual ICollection<PaymentAllocation> PaymentAllocations { get; set; } = new List<PaymentAllocation>();
+    public virtual Organization Organization { get; set; } = null!;
 
     public virtual Property? Property { get; set; }
 

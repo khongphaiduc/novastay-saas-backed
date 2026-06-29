@@ -18,6 +18,7 @@ public sealed class UnitOfWork : IUnitOfWork
         IMaintenanceTicketRepository maintenanceTickets,
         IPermissionRepository permissions,
         IPropertyRepository properties,
+        IPropertyServiceRepository propertyServices,
         IResidentRepository residents,
         IResidentMembershipRepository residentMemberships,
         IRoleRepository roles,
@@ -41,6 +42,7 @@ public sealed class UnitOfWork : IUnitOfWork
         MaintenanceTickets = maintenanceTickets;
         Permissions = permissions;
         Properties = properties;
+        PropertyServices = propertyServices;
         Residents = residents;
         ResidentMemberships = residentMemberships;
         Roles = roles;
@@ -72,6 +74,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IPermissionRepository Permissions { get; }
 
     public IPropertyRepository Properties { get; }
+
+    public IPropertyServiceRepository PropertyServices { get; }
 
     public IResidentRepository Residents { get; }
 

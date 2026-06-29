@@ -15,6 +15,8 @@ public partial class Property
 
     public string PropertyType { get; set; } = null!;
 
+    public string Status { get; set; } = null!;
+
     public DateTime? CreatedAt { get; set; }
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
@@ -22,6 +24,8 @@ public partial class Property
     public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 
     public virtual ICollection<Expense> Expenses { get; set; } = new List<Expense>();
+
+    public virtual ICollection<InvoiceGenerationSchedule> InvoiceGenerationSchedules { get; set; } = new List<InvoiceGenerationSchedule>();
 
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 

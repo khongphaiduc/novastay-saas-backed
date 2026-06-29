@@ -27,19 +27,26 @@ public sealed class PropertyService : IPropertyService
         CancellationToken cancellationToken = default)
     {
         var allProperties = await _unitOfWork.Properties.FindAsync(p => p.OrganizationId == organizationId, cancellationToken);
-        
+
         // In memory filtering
         var query = allProperties.AsEnumerable();
-        
+
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.ToLower();
-            query = query.Where(p => 
-                p.PropertyName.Value.ToLower().Contains(s) || 
+            query = query.Where(p =>
+                p.PropertyName.Value.ToLower().Contains(s) ||
                 p.Address.ToLower().Contains(s));
         }
 
-        // No status filter for Property as PropertyEntity doesn't have a Status property.
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            var normalizedStatus = status.Trim();
+            query = query.Where(p => string.Equals(
+                p.Status.Value,
+                normalizedStatus,
+                StringComparison.OrdinalIgnoreCase));
+        }
 
         var totalCount = query.Count();
         var pagedItems = query
@@ -67,11 +74,46 @@ public sealed class PropertyService : IPropertyService
             PropertyName = new EntityName(request.PropertyName),
             Address = request.Address,
             PropertyType = new Code(request.PropertyType),
+            Status = new Status(request.Status),
             CreatedAt = DateTime.UtcNow
         };
 
         await _unitOfWork.Properties.AddAsync(property, cancellationToken);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+
+        await _unitOfWork.PropertyServices.CreatePropertyServiceAsync(
+            organizationId,
+            property.Id,
+            new CreatePropertyServiceRequest
+            {
+                ServiceName = "Nước",
+                ServiceCode = "WATER",
+                Description = "Dịch vụ nước sinh hoạt",
+                DefaultPrice = 0,
+                Unit = "m³",
+                BillingCycle = "monthly",
+                IsActive = false,
+            },
+            cancellationToken);
+
+        await _unitOfWork.PropertyServices.CreatePropertyServiceAsync(
+            organizationId,
+            property.Id,
+            new CreatePropertyServiceRequest
+            {
+                ServiceName = "Điện",
+                ServiceCode = "ELECTRIC",
+                Description = "Dịch vụ điện sinh hoạt",
+                DefaultPrice = 0,
+                Unit = "kWh",
+                BillingCycle = "monthly",
+                IsActive = false,
+            },
+            cancellationToken);
+
+
 
         return _mapper.Map<PropertyDto>(property);
     }
@@ -87,6 +129,7 @@ public sealed class PropertyService : IPropertyService
         property.PropertyName = new EntityName(request.PropertyName);
         property.Address = request.Address;
         property.PropertyType = new Code(request.PropertyType);
+        property.Status = new Status(request.Status);
 
         _unitOfWork.Properties.Update(property);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
