@@ -38,6 +38,10 @@ public partial class HostContext : DbContext
 
     public virtual DbSet<ExpenseCategory> ExpenseCategories { get; set; }
 
+    public virtual DbSet<IncomeCategory> IncomeCategories { get; set; }
+
+    public virtual DbSet<IncomeReceipt> IncomeReceipts { get; set; }
+
     public virtual DbSet<Permission> Permissions { get; set; }
 
     public virtual DbSet<PaymentReceipt> PaymentReceipts { get; set; }
@@ -521,6 +525,28 @@ public partial class HostContext : DbContext
                 .HasForeignKey(d => d.OrganizationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ExpenseCategories_Organizations_OrganizationId");
+        });
+
+        modelBuilder.Entity<IncomeCategory>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_IncomeCategories");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.CategoryCode }, "UX_IncomeCategories_OrganizationId_CategoryCode")
+                .IsUnique();
+
+            entity.Property(e => e.CategoryCode)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.CategoryName).HasMaxLength(100);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne(d => d.Organization).WithMany(p => p.IncomeCategories)
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_IncomeCategories_Organizations_OrganizationId");
         });
 
         modelBuilder.Entity<MaintenanceTicket>(entity =>
@@ -1176,6 +1202,69 @@ public partial class HostContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.AccountRefreshTokens)
                 .HasForeignKey(d => d.AccountId)
                 .HasConstraintName("FK_AccountRefreshTokens_Accounts_AccountId");
+        });
+
+        modelBuilder.Entity<IncomeReceipt>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_IncomeReceipts");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.ReceiptNumber }, "UX_IncomeReceipts_OrganizationId_ReceiptNumber")
+                .IsUnique();
+
+            entity.HasIndex(e => new { e.OrganizationId, e.CollectedAt }, "IX_IncomeReceipts_OrganizationId_CollectedAt");
+
+            entity.HasIndex(e => new { e.PropertyId, e.IncomeCategoryId, e.CollectedAt }, "IX_IncomeReceipts_PropertyId_IncomeCategoryId_CollectedAt");
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.CollectedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.IncomeType)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.PayerName).HasMaxLength(150);
+            entity.Property(e => e.PaymentMethod)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.ReferenceCode)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.ReceiptNumber)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.CollectedByStaffUser).WithMany(p => p.CollectedIncomeReceipts)
+                .HasForeignKey(d => d.CollectedByStaffUserId)
+                .HasConstraintName("FK_IncomeReceipts_StaffUsers_CollectedByStaffUserId");
+
+            entity.HasOne(d => d.IncomeCategory).WithMany(p => p.IncomeReceipts)
+                .HasForeignKey(d => d.IncomeCategoryId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_IncomeReceipts_IncomeCategories_IncomeCategoryId");
+
+            entity.HasOne(d => d.Organization).WithMany(p => p.IncomeReceipts)
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_IncomeReceipts_Organizations_OrganizationId");
+
+            entity.HasOne(d => d.Property).WithMany(p => p.IncomeReceipts)
+                .HasForeignKey(d => d.PropertyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_IncomeReceipts_Properties_PropertyId");
+
+            entity.HasOne(d => d.Resident).WithMany(p => p.IncomeReceipts)
+                .HasForeignKey(d => d.ResidentId)
+                .HasConstraintName("FK_IncomeReceipts_Residents_ResidentId");
+
+            entity.HasOne(d => d.Room).WithMany()
+                .HasForeignKey(d => d.RoomId)
+                .HasConstraintName("FK_IncomeReceipts_Rooms_RoomId");
         });
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
