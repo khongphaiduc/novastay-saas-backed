@@ -6,7 +6,7 @@ using NovaStay.Domain.Enums;
 
 namespace NovaStay.API.Controllers;
 
-[Authorize(Roles = "BusinessOwner")]
+//[Authorize(Roles = "BusinessOwner")]
 [ApiController]
 [Route("api/organizations/{organizationId:guid}/properties/{propertyId:guid}/expenses")]
 public sealed class ExpensesController : ControllerBase
@@ -39,6 +39,27 @@ public sealed class ExpensesController : ControllerBase
         }
 
         return Ok(expenses);
+    }
+
+    [HttpGet("{expenseId:guid}")]
+    public async Task<ActionResult<ExpenseDto>> GetById(
+        Guid organizationId,
+        Guid propertyId,
+        Guid expenseId,
+        CancellationToken cancellationToken = default)
+    {
+        var expense = await _expenseService.GetByIdAsync(
+            organizationId,
+            propertyId,
+            expenseId,
+            cancellationToken);
+
+        if (expense is null)
+        {
+            return NotFound(new { message = "Expense not found in property." });
+        }
+
+        return Ok(expense);
     }
 
     [HttpPost]

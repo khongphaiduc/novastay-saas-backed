@@ -29,6 +29,19 @@ public sealed class ExpenseService : IExpenseService
             cancellationToken);
     }
 
+    public Task<ExpenseDto?> GetByIdAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid expenseId,
+        CancellationToken cancellationToken = default)
+    {
+        return _expenseRepository.GetByIdAsync(
+            organizationId,
+            propertyId,
+            expenseId,
+            cancellationToken);
+    }
+
     public Task<ExpenseDto> CreateAsync(
         Guid organizationId,
         Guid propertyId,

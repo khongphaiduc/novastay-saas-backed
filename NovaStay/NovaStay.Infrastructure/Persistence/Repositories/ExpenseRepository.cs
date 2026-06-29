@@ -62,6 +62,27 @@ internal sealed class ExpenseRepository : IExpenseRepository
         return expenses.Select(MapToDto).ToList();
     }
 
+    public async Task<ExpenseDto?> GetByIdAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid expenseId,
+        CancellationToken cancellationToken = default)
+    {
+        var expense = await _context.Expenses
+            .AsNoTracking()
+            .Include(entity => entity.ExpenseCategory)
+            .Include(entity => entity.Room)
+            .Include(entity => entity.ApprovedByStaffUser)
+            .Include(entity => entity.CreatedByStaffUser)
+            .FirstOrDefaultAsync(
+                entity => entity.Id == expenseId
+                    && entity.OrganizationId == organizationId
+                    && entity.PropertyId == propertyId,
+                cancellationToken);
+
+        return expense is null ? null : MapToDto(expense);
+    }
+
     public async Task<ExpenseDto> CreateAsync(
         Guid organizationId,
         Guid propertyId,

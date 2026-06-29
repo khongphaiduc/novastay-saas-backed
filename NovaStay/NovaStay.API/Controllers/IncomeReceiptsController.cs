@@ -41,6 +41,27 @@ public sealed class IncomeReceiptsController : ControllerBase
         return Ok(receipts);
     }
 
+    [HttpGet("{incomeReceiptId:guid}")]
+    public async Task<ActionResult<IncomeReceiptDto>> GetById(
+        Guid organizationId,
+        Guid propertyId,
+        Guid incomeReceiptId,
+        CancellationToken cancellationToken = default)
+    {
+        var receipt = await _incomeReceiptService.GetByIdAsync(
+            organizationId,
+            propertyId,
+            incomeReceiptId,
+            cancellationToken);
+
+        if (receipt is null)
+        {
+            return NotFound(new { message = "Income receipt not found in property." });
+        }
+
+        return Ok(receipt);
+    }
+
     [HttpPost]
     public async Task<ActionResult<IncomeReceiptDto>> Create(
         Guid organizationId,

@@ -115,6 +115,27 @@ internal sealed class IncomeReceiptRepository : IIncomeReceiptRepository
         return receipts.Select(MapToDto).ToList();
     }
 
+    public async Task<IncomeReceiptDto?> GetByIdAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid incomeReceiptId,
+        CancellationToken cancellationToken = default)
+    {
+        var receipt = await _context.IncomeReceipts
+            .AsNoTracking()
+            .Include(entity => entity.IncomeCategory)
+            .Include(entity => entity.Room)
+            .Include(entity => entity.Resident)
+            .Include(entity => entity.CollectedByStaffUser)
+            .FirstOrDefaultAsync(
+                entity => entity.Id == incomeReceiptId
+                    && entity.OrganizationId == organizationId
+                    && entity.PropertyId == propertyId,
+                cancellationToken);
+
+        return receipt is null ? null : MapToDto(receipt);
+    }
+
     public async Task<Guid> EnsureIncomeCategoryAsync(
         Guid organizationId,
         Guid? incomeCategoryId,

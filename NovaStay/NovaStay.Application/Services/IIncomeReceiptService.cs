@@ -12,6 +12,12 @@ public interface IIncomeReceiptService
         PaymentMethod? paymentMethod = null,
         CancellationToken cancellationToken = default);
 
+    Task<IncomeReceiptDto?> GetByIdAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid incomeReceiptId,
+        CancellationToken cancellationToken = default);
+
     Task<IncomeReceiptDto> CreateAsync(
         Guid organizationId,
         Guid propertyId,
