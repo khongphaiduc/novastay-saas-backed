@@ -16,6 +16,63 @@ internal sealed class IncomeReceiptRepository : IIncomeReceiptRepository
         _context = context;
     }
 
+    public Task<bool> PropertyExistsAsync(
+        Guid organizationId,
+        Guid propertyId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.Properties
+            .AsNoTracking()
+            .AnyAsync(
+                entity => entity.Id == propertyId && entity.OrganizationId == organizationId,
+                cancellationToken);
+    }
+
+    public Task<bool> ReceiptNumberExistsAsync(
+        Guid organizationId,
+        string receiptNumber,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.IncomeReceipts
+            .AsNoTracking()
+            .AnyAsync(
+                entity => entity.OrganizationId == organizationId && entity.ReceiptNumber == receiptNumber,
+                cancellationToken);
+    }
+
+    public Task<bool> RoomExistsAsync(
+        Guid propertyId,
+        Guid roomId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.Rooms
+            .AsNoTracking()
+            .AnyAsync(
+                entity => entity.Id == roomId && entity.PropertyId == propertyId,
+                cancellationToken);
+    }
+
+    public Task<bool> ResidentExistsAsync(
+        Guid residentId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.Residents
+            .AsNoTracking()
+            .AnyAsync(entity => entity.Id == residentId, cancellationToken);
+    }
+
+    public Task<bool> StaffUserExistsAsync(
+        Guid organizationId,
+        Guid staffUserId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.StaffUsers
+            .AsNoTracking()
+            .AnyAsync(
+                entity => entity.Id == staffUserId && entity.OrganizationId == organizationId,
+                cancellationToken);
+    }
+
     public async Task<IReadOnlyList<IncomeReceiptDto>?> GetByPropertyAsync(
         Guid organizationId,
         Guid propertyId,
@@ -23,9 +80,7 @@ internal sealed class IncomeReceiptRepository : IIncomeReceiptRepository
         PaymentMethod? paymentMethod = null,
         CancellationToken cancellationToken = default)
     {
-        var propertyExists = await _context.Properties
-            .AsNoTracking()
-            .AnyAsync(entity => entity.Id == propertyId && entity.OrganizationId == organizationId, cancellationToken);
+        var propertyExists = await PropertyExistsAsync(organizationId, propertyId, cancellationToken);
 
         if (!propertyExists)
         {
@@ -60,73 +115,67 @@ internal sealed class IncomeReceiptRepository : IIncomeReceiptRepository
         return receipts.Select(MapToDto).ToList();
     }
 
-    public async Task<IncomeReceiptDto> CreateAsync(
+    public async Task<Guid> EnsureIncomeCategoryAsync(
+        Guid organizationId,
+        Guid? incomeCategoryId,
+        IncomeCategory incomeType,
+        CancellationToken cancellationToken = default)
+    {
+        if (incomeCategoryId.HasValue)
+        {
+            var existingCategoryId = await _context.IncomeCategories
+                .AsNoTracking()
+                .Where(entity => entity.Id == incomeCategoryId.Value && entity.OrganizationId == organizationId)
+                .Select(entity => (Guid?)entity.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (existingCategoryId.HasValue)
+            {
+                return existingCategoryId.Value;
+            }
+        }
+
+        var categoryCode = BuildCategoryCode(incomeType);
+        var categoryName = BuildCategoryName(incomeType);
+
+        var existingCategory = await _context.IncomeCategories
+            .FirstOrDefaultAsync(
+                entity => entity.OrganizationId == organizationId && entity.CategoryCode == categoryCode,
+                cancellationToken);
+
+        if (existingCategory is not null)
+        {
+            return existingCategory.Id;
+        }
+
+        var category = new Models.IncomeCategory
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = organizationId,
+            CategoryCode = categoryCode,
+            CategoryName = categoryName,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _context.IncomeCategories.AddAsync(category, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return category.Id;
+    }
+
+    public async Task<IncomeReceiptDto> AddAsync(
         Guid organizationId,
         Guid propertyId,
+        Guid incomeCategoryId,
         CreateIncomeReceiptRequest request,
         CancellationToken cancellationToken = default)
     {
-        var propertyExists = await _context.Properties
-            .AsNoTracking()
-            .AnyAsync(entity => entity.Id == propertyId && entity.OrganizationId == organizationId, cancellationToken);
-
-        if (!propertyExists)
-        {
-            throw new KeyNotFoundException("Property not found in organization.");
-        }
-
-        var duplicatedReceiptNumber = await _context.IncomeReceipts
-            .AsNoTracking()
-            .AnyAsync(entity => entity.OrganizationId == organizationId && entity.ReceiptNumber == request.ReceiptNumber, cancellationToken);
-
-        if (duplicatedReceiptNumber)
-        {
-            throw new InvalidOperationException("Receipt number already exists in organization.");
-        }
-
-        if (request.RoomId.HasValue)
-        {
-            var roomExists = await _context.Rooms
-                .AsNoTracking()
-                .AnyAsync(entity => entity.Id == request.RoomId.Value && entity.PropertyId == propertyId, cancellationToken);
-
-            if (!roomExists)
-            {
-                throw new KeyNotFoundException("Room not found in property.");
-            }
-        }
-
-        if (request.ResidentId.HasValue)
-        {
-            var residentExists = await _context.Residents
-                .AsNoTracking()
-                .AnyAsync(entity => entity.Id == request.ResidentId.Value, cancellationToken);
-
-            if (!residentExists)
-            {
-                throw new KeyNotFoundException("Resident not found.");
-            }
-        }
-
-        if (request.CollectedByStaffUserId.HasValue)
-        {
-            var staffUserExists = await _context.StaffUsers
-                .AsNoTracking()
-                .AnyAsync(entity => entity.Id == request.CollectedByStaffUserId.Value && entity.OrganizationId == organizationId, cancellationToken);
-
-            if (!staffUserExists)
-            {
-                throw new KeyNotFoundException("CollectedByStaffUser not found in organization.");
-            }
-        }
-
-        var category = await ResolveIncomeCategoryAsync(organizationId, request, cancellationToken);
-
         var receipt = new Models.IncomeReceipt
         {
             Id = Guid.NewGuid(),
             OrganizationId = organizationId,
-            IncomeCategoryId = category.Id,
+            IncomeCategoryId = incomeCategoryId,
             PropertyId = propertyId,
             RoomId = request.RoomId,
             ResidentId = request.ResidentId,
@@ -156,53 +205,6 @@ internal sealed class IncomeReceiptRepository : IIncomeReceiptRepository
             .FirstAsync(entity => entity.Id == receipt.Id, cancellationToken);
 
         return MapToDto(createdReceipt);
-    }
-
-    private async Task<Models.IncomeCategory> ResolveIncomeCategoryAsync(
-        Guid organizationId,
-        CreateIncomeReceiptRequest request,
-        CancellationToken cancellationToken)
-    {
-        if (request.IncomeCategoryId.HasValue)
-        {
-            var existingCategory = await _context.IncomeCategories
-                .FirstOrDefaultAsync(
-                    entity => entity.Id == request.IncomeCategoryId.Value && entity.OrganizationId == organizationId,
-                    cancellationToken);
-
-            if (existingCategory is not null)
-            {
-                return existingCategory;
-            }
-        }
-
-        var categoryCode = BuildCategoryCode(request.IncomeType);
-        var categoryName = BuildCategoryName(request.IncomeType);
-
-        var category = await _context.IncomeCategories
-            .FirstOrDefaultAsync(
-                entity => entity.OrganizationId == organizationId && entity.CategoryCode == categoryCode,
-                cancellationToken);
-
-        if (category is not null)
-        {
-            return category;
-        }
-
-        category = new Models.IncomeCategory
-        {
-            Id = Guid.NewGuid(),
-            OrganizationId = organizationId,
-            CategoryCode = categoryCode,
-            CategoryName = categoryName,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        await _context.IncomeCategories.AddAsync(category, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return category;
     }
 
     private static IncomeReceiptDto MapToDto(Models.IncomeReceipt receipt)
