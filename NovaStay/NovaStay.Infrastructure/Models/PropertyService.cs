@@ -30,4 +30,8 @@ public partial class PropertyService
     public virtual Property Property { get; set; } = null!;
 
     public virtual ICollection<RoomService> RoomServices { get; set; } = new List<RoomService>();
+
+    public virtual ICollection<UtilityMeter> UtilityMeters { get; set; } = new List<UtilityMeter>();
+
+    public virtual ICollection<UtilityTariff> UtilityTariffs { get; set; } = new List<UtilityTariff>();
 }

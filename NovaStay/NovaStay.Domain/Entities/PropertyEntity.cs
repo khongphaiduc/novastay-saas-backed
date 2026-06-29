@@ -8,5 +8,6 @@ public sealed class PropertyEntity : Entity
     public EntityName PropertyName { get; set; }
     public string Address { get; set; } = string.Empty;
     public Code PropertyType { get; set; }
+    public Status Status { get; set; } = new("Active");
     public DateTime? CreatedAt { get; set; }
 }

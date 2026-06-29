@@ -46,4 +46,6 @@ public partial class Room
     public virtual ICollection<RoomImage> RoomImages { get; set; } = new List<RoomImage>();
 
     public virtual ICollection<RoomService> RoomServices { get; set; } = new List<RoomService>();
+
+    public virtual ICollection<UtilityMeter> UtilityMeters { get; set; } = new List<UtilityMeter>();
 }

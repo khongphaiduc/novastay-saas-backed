@@ -2,7 +2,7 @@ using NovaStay.Application.DTOs;
 
 namespace NovaStay.Application.Common.Interfaces;
 
-public interface IPropertyServiceRepository
+public interface IPropertyServiceRepository 
 {
     Task<IReadOnlyList<PropertyServiceDto>?> GetPropertyServicesAsync(
         Guid organizationId,

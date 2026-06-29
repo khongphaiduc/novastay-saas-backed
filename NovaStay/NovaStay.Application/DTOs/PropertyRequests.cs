@@ -5,6 +5,7 @@ public sealed class CreatePropertyRequest
     public string PropertyName { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
     public string PropertyType { get; set; } = "BoardingHouse";
+    public string Status { get; set; } = "Active";
 }
 
 public sealed class UpdatePropertyRequest
@@ -12,6 +13,7 @@ public sealed class UpdatePropertyRequest
     public string PropertyName { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
     public string PropertyType { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
 }
 
 public sealed class CreatePropertyServiceRequest

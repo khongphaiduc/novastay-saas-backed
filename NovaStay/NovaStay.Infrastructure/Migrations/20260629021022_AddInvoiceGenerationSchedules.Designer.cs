@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NovaStay.Infrastructure.ContextDB;
 
@@ -11,9 +12,11 @@ using NovaStay.Infrastructure.ContextDB;
 namespace NovaStay.Infrastructure.Migrations
 {
     [DbContext(typeof(HostContext))]
-    partial class HostContextModelSnapshot : ModelSnapshot
+    [Migration("20260629021022_AddInvoiceGenerationSchedules")]
+    partial class AddInvoiceGenerationSchedules
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -600,6 +603,9 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Property<decimal>("AdjustmentAmount")
                         .HasColumnType("decimal(18, 2)");
 
+                    b.Property<decimal>("AmountPaid")
+                        .HasColumnType("decimal(18, 2)");
+
                     b.Property<Guid?>("BookingId")
                         .HasColumnType("uniqueidentifier");
 
@@ -645,6 +651,9 @@ namespace NovaStay.Infrastructure.Migrations
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("OutstandingAmount")
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("datetime");
@@ -785,13 +794,13 @@ namespace NovaStay.Infrastructure.Migrations
 
                     b.HasIndex(new[] { "PropertyId" }, "IX_InvoiceGenerationSchedules_PropertyId");
 
-                    b.HasIndex(new[] { "OrganizationId", "PropertyId", "ScheduleName" }, "UX_InvoiceGenerationSchedules_OrganizationId_PropertyId_ScheduleName")
-                        .IsUnique()
-                        .HasFilter("[PropertyId] IS NOT NULL");
-
                     b.HasIndex(new[] { "OrganizationId", "ScheduleName" }, "UX_InvoiceGenerationSchedules_OrganizationId_ScheduleName")
                         .IsUnique()
                         .HasFilter("[PropertyId] IS NULL");
+
+                    b.HasIndex(new[] { "OrganizationId", "PropertyId", "ScheduleName" }, "UX_InvoiceGenerationSchedules_OrganizationId_PropertyId_ScheduleName")
+                        .IsUnique()
+                        .HasFilter("[PropertyId] IS NOT NULL");
 
                     b.ToTable("InvoiceGenerationSchedules");
                 });
@@ -1008,6 +1017,38 @@ namespace NovaStay.Infrastructure.Migrations
                     b.ToTable("Organizations");
                 });
 
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.PaymentAllocation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("(newsequentialid())");
+
+                    b.Property<decimal>("AllocatedAmount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PaymentReceiptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id")
+                        .HasName("PK_PaymentAllocations");
+
+                    b.HasIndex(new[] { "InvoiceId" }, "IX_PaymentAllocations_InvoiceId");
+
+                    b.HasIndex(new[] { "PaymentReceiptId", "InvoiceId" }, "UX_PaymentAllocations_PaymentReceiptId_InvoiceId")
+                        .IsUnique();
+
+                    b.ToTable("PaymentAllocations");
+                });
+
             modelBuilder.Entity("NovaStay.Infrastructure.Models.PaymentReceipt", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1025,9 +1066,6 @@ namespace NovaStay.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("(getdate())");
-
-                    b.Property<Guid>("InvoiceId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Note")
                         .HasMaxLength(500)
@@ -1088,9 +1126,6 @@ namespace NovaStay.Infrastructure.Migrations
                     b.HasIndex("ResidentId");
 
                     b.HasIndex(new[] { "OrganizationId", "PaidAt" }, "IX_PaymentReceipts_OrganizationId_PaidAt");
-
-                    b.HasIndex(new[] { "InvoiceId" }, "UX_PaymentReceipts_InvoiceId")
-                        .IsUnique();
 
                     b.HasIndex(new[] { "OrganizationId", "ReceiptNumber" }, "UX_PaymentReceipts_OrganizationId_ReceiptNumber")
                         .IsUnique();
@@ -1161,14 +1196,6 @@ namespace NovaStay.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .IsUnicode(false)
                         .HasColumnType("varchar(20)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(20)")
-                        .HasDefaultValue("Active");
 
                     b.HasKey("Id")
                         .HasName("PK__Properti__3214EC07FE441D45");
@@ -2286,19 +2313,31 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Navigation("Package");
                 });
 
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.PaymentAllocation", b =>
+                {
+                    b.HasOne("NovaStay.Infrastructure.Models.Invoice", "Invoice")
+                        .WithMany("PaymentAllocations")
+                        .HasForeignKey("InvoiceId")
+                        .IsRequired()
+                        .HasConstraintName("FK_PaymentAllocations_Invoices_InvoiceId");
+
+                    b.HasOne("NovaStay.Infrastructure.Models.PaymentReceipt", "PaymentReceipt")
+                        .WithMany("PaymentAllocations")
+                        .HasForeignKey("PaymentReceiptId")
+                        .IsRequired()
+                        .HasConstraintName("FK_PaymentAllocations_PaymentReceipts_PaymentReceiptId");
+
+                    b.Navigation("Invoice");
+
+                    b.Navigation("PaymentReceipt");
+                });
+
             modelBuilder.Entity("NovaStay.Infrastructure.Models.PaymentReceipt", b =>
                 {
                     b.HasOne("NovaStay.Infrastructure.Models.StaffUser", "CollectedByStaffUser")
                         .WithMany("CollectedPaymentReceipts")
                         .HasForeignKey("CollectedByStaffUserId")
                         .HasConstraintName("FK_PaymentReceipts_StaffUsers_CollectedByStaffUserId");
-
-                    b.HasOne("NovaStay.Infrastructure.Models.Invoice", "Invoice")
-                        .WithOne("PaymentReceipt")
-                        .HasForeignKey("NovaStay.Infrastructure.Models.PaymentReceipt", "InvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_PaymentReceipts_Invoices_InvoiceId");
 
                     b.HasOne("NovaStay.Infrastructure.Models.Organization", "Organization")
                         .WithMany("PaymentReceipts")
@@ -2317,8 +2356,6 @@ namespace NovaStay.Infrastructure.Migrations
                         .HasConstraintName("FK_PaymentReceipts_Residents_ResidentId");
 
                     b.Navigation("CollectedByStaffUser");
-
-                    b.Navigation("Invoice");
 
                     b.Navigation("Organization");
 
@@ -2629,7 +2666,7 @@ namespace NovaStay.Infrastructure.Migrations
                 {
                     b.Navigation("InvoiceLines");
 
-                    b.Navigation("PaymentReceipt");
+                    b.Navigation("PaymentAllocations");
                 });
 
             modelBuilder.Entity("NovaStay.Infrastructure.Models.MaintenanceTicket", b =>
@@ -2670,6 +2707,11 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Navigation("StaffUsers");
 
                     b.Navigation("Technicians");
+                });
+
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.PaymentReceipt", b =>
+                {
+                    b.Navigation("PaymentAllocations");
                 });
 
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Property", b =>
