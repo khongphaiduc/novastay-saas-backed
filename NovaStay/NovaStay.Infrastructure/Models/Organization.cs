@@ -43,6 +43,10 @@ public partial class Organization
 
     public virtual ICollection<Expense> Expenses { get; set; } = new List<Expense>();
 
+    public virtual ICollection<IncomeCategory> IncomeCategories { get; set; } = new List<IncomeCategory>();
+
+    public virtual ICollection<IncomeReceipt> IncomeReceipts { get; set; } = new List<IncomeReceipt>();
+
     public virtual ICollection<InvoiceGenerationSchedule> InvoiceGenerationSchedules { get; set; } = new List<InvoiceGenerationSchedule>();
 
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();

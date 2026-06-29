@@ -1,0 +1,20 @@
+using NovaStay.Application.DTOs;
+using NovaStay.Domain.Enums;
+
+namespace NovaStay.Application.Common.Interfaces;
+
+public interface IIncomeReceiptRepository
+{
+    Task<IReadOnlyList<IncomeReceiptDto>?> GetByPropertyAsync(
+        Guid organizationId,
+        Guid propertyId,
+        ApprovalStatus? status = null,
+        PaymentMethod? paymentMethod = null,
+        CancellationToken cancellationToken = default);
+
+    Task<IncomeReceiptDto> CreateAsync(
+        Guid organizationId,
+        Guid propertyId,
+        CreateIncomeReceiptRequest request,
+        CancellationToken cancellationToken = default);
+}

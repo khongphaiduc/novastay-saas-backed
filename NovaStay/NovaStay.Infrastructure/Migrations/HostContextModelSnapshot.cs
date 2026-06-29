@@ -590,6 +590,144 @@ namespace NovaStay.Infrastructure.Migrations
                     b.ToTable("ExpenseCategories");
                 });
 
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.IncomeCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("(newsequentialid())");
+
+                    b.Property<string>("CategoryCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id")
+                        .HasName("PK_IncomeCategories");
+
+                    b.HasIndex(new[] { "OrganizationId", "CategoryCode" }, "UX_IncomeCategories_OrganizationId_CategoryCode")
+                        .IsUnique();
+
+                    b.ToTable("IncomeCategories");
+                });
+
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.IncomeReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("(newsequentialid())");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<DateTime>("CollectedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<Guid?>("CollectedByStaffUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("IncomeCategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("IncomeType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PayerName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<Guid>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReceiptNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("ReferenceCode")
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<Guid?>("ResidentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime");
+
+                    b.HasKey("Id")
+                        .HasName("PK_IncomeReceipts");
+
+                    b.HasIndex("CollectedByStaffUserId");
+
+                    b.HasIndex("IncomeCategoryId");
+
+                    b.HasIndex("ResidentId");
+
+                    b.HasIndex("RoomId");
+
+                    b.HasIndex(new[] { "OrganizationId", "CollectedAt" }, "IX_IncomeReceipts_OrganizationId_CollectedAt");
+
+                    b.HasIndex(new[] { "PropertyId", "IncomeCategoryId", "CollectedAt" }, "IX_IncomeReceipts_PropertyId_IncomeCategoryId_CollectedAt");
+
+                    b.HasIndex(new[] { "OrganizationId", "ReceiptNumber" }, "UX_IncomeReceipts_OrganizationId_ReceiptNumber")
+                        .IsUnique();
+
+                    b.ToTable("IncomeReceipts");
+                });
+
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Invoice", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2145,6 +2283,65 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Navigation("Organization");
                 });
 
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.IncomeCategory", b =>
+                {
+                    b.HasOne("NovaStay.Infrastructure.Models.Organization", "Organization")
+                        .WithMany("IncomeCategories")
+                        .HasForeignKey("OrganizationId")
+                        .IsRequired()
+                        .HasConstraintName("FK_IncomeCategories_Organizations_OrganizationId");
+
+                    b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.IncomeReceipt", b =>
+                {
+                    b.HasOne("NovaStay.Infrastructure.Models.StaffUser", "CollectedByStaffUser")
+                        .WithMany("CollectedIncomeReceipts")
+                        .HasForeignKey("CollectedByStaffUserId")
+                        .HasConstraintName("FK_IncomeReceipts_StaffUsers_CollectedByStaffUserId");
+
+                    b.HasOne("NovaStay.Infrastructure.Models.IncomeCategory", "IncomeCategory")
+                        .WithMany("IncomeReceipts")
+                        .HasForeignKey("IncomeCategoryId")
+                        .IsRequired()
+                        .HasConstraintName("FK_IncomeReceipts_IncomeCategories_IncomeCategoryId");
+
+                    b.HasOne("NovaStay.Infrastructure.Models.Organization", "Organization")
+                        .WithMany("IncomeReceipts")
+                        .HasForeignKey("OrganizationId")
+                        .IsRequired()
+                        .HasConstraintName("FK_IncomeReceipts_Organizations_OrganizationId");
+
+                    b.HasOne("NovaStay.Infrastructure.Models.Property", "Property")
+                        .WithMany("IncomeReceipts")
+                        .HasForeignKey("PropertyId")
+                        .IsRequired()
+                        .HasConstraintName("FK_IncomeReceipts_Properties_PropertyId");
+
+                    b.HasOne("NovaStay.Infrastructure.Models.Resident", "Resident")
+                        .WithMany("IncomeReceipts")
+                        .HasForeignKey("ResidentId")
+                        .HasConstraintName("FK_IncomeReceipts_Residents_ResidentId");
+
+                    b.HasOne("NovaStay.Infrastructure.Models.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .HasConstraintName("FK_IncomeReceipts_Rooms_RoomId");
+
+                    b.Navigation("CollectedByStaffUser");
+
+                    b.Navigation("IncomeCategory");
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("Property");
+
+                    b.Navigation("Resident");
+
+                    b.Navigation("Room");
+                });
+
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Invoice", b =>
                 {
                     b.HasOne("NovaStay.Infrastructure.Models.Booking", "Booking")
@@ -2625,6 +2822,11 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Navigation("Expenses");
                 });
 
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.IncomeCategory", b =>
+                {
+                    b.Navigation("IncomeReceipts");
+                });
+
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Invoice", b =>
                 {
                     b.Navigation("InvoiceLines");
@@ -2653,6 +2855,10 @@ namespace NovaStay.Infrastructure.Migrations
 
                     b.Navigation("Expenses");
 
+                    b.Navigation("IncomeCategories");
+
+                    b.Navigation("IncomeReceipts");
+
                     b.Navigation("InvoiceGenerationSchedules");
 
                     b.Navigation("Invoices");
@@ -2680,6 +2886,8 @@ namespace NovaStay.Infrastructure.Migrations
 
                     b.Navigation("Expenses");
 
+                    b.Navigation("IncomeReceipts");
+
                     b.Navigation("InvoiceGenerationSchedules");
 
                     b.Navigation("Invoices");
@@ -2703,6 +2911,8 @@ namespace NovaStay.Infrastructure.Migrations
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Resident", b =>
                 {
                     b.Navigation("Contracts");
+
+                    b.Navigation("IncomeReceipts");
 
                     b.Navigation("Invoices");
 
@@ -2739,6 +2949,8 @@ namespace NovaStay.Infrastructure.Migrations
             modelBuilder.Entity("NovaStay.Infrastructure.Models.StaffUser", b =>
                 {
                     b.Navigation("ApprovedExpenses");
+
+                    b.Navigation("CollectedIncomeReceipts");
 
                     b.Navigation("CollectedPaymentReceipts");
 

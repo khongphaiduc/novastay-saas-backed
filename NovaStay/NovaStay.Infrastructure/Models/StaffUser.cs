@@ -23,6 +23,8 @@ public partial class StaffUser
 
     public virtual ICollection<Expense> CreatedExpenses { get; set; } = new List<Expense>();
 
+    public virtual ICollection<IncomeReceipt> CollectedIncomeReceipts { get; set; } = new List<IncomeReceipt>();
+
     public virtual ICollection<InvoiceGenerationSchedule> InvoiceGenerationSchedules { get; set; } = new List<InvoiceGenerationSchedule>();
 
     public virtual ICollection<PaymentReceipt> CollectedPaymentReceipts { get; set; } = new List<PaymentReceipt>();
