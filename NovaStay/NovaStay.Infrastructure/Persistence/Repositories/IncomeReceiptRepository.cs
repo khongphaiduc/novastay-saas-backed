@@ -228,6 +228,42 @@ internal sealed class IncomeReceiptRepository : IIncomeReceiptRepository
         return MapToDto(createdReceipt);
     }
 
+    public async Task<IncomeReceiptDto> UpdateStatusAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid incomeReceiptId,
+        ApprovalStatus status,
+        CancellationToken cancellationToken = default)
+    {
+        var receipt = await _context.IncomeReceipts
+            .Include(entity => entity.IncomeCategory)
+            .Include(entity => entity.Room)
+            .Include(entity => entity.Resident)
+            .Include(entity => entity.CollectedByStaffUser)
+            .FirstOrDefaultAsync(
+                entity => entity.Id == incomeReceiptId
+                    && entity.OrganizationId == organizationId
+                    && entity.PropertyId == propertyId,
+                cancellationToken);
+
+        if (receipt is null)
+        {
+            throw new KeyNotFoundException("Income receipt not found in property.");
+        }
+
+        if (!string.Equals(receipt.Status, ApprovalStatus.Pending.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Only income receipts with Pending status can be updated.");
+        }
+
+        receipt.Status = status.ToString();
+        receipt.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(receipt);
+    }
+
     private static IncomeReceiptDto MapToDto(Models.IncomeReceipt receipt)
     {
         return new IncomeReceiptDto

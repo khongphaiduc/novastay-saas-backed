@@ -23,4 +23,11 @@ public interface IIncomeReceiptService
         Guid propertyId,
         CreateIncomeReceiptRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<IncomeReceiptDto> UpdateStatusAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid incomeReceiptId,
+        UpdateApprovalStatusRequest request,
+        CancellationToken cancellationToken = default);
 }

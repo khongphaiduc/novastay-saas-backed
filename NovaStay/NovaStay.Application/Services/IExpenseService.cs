@@ -23,4 +23,11 @@ public interface IExpenseService
         Guid propertyId,
         CreateExpenseRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<ExpenseDto> UpdateStatusAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid expenseId,
+        UpdateApprovalStatusRequest request,
+        CancellationToken cancellationToken = default);
 }

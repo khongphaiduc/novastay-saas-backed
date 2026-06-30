@@ -54,4 +54,11 @@ public interface IIncomeReceiptRepository
         Guid incomeCategoryId,
         CreateIncomeReceiptRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<IncomeReceiptDto> UpdateStatusAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid incomeReceiptId,
+        NovaStay.Domain.Enums.ApprovalStatus status,
+        CancellationToken cancellationToken = default);
 }

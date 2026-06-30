@@ -23,4 +23,11 @@ public interface IExpenseRepository
         Guid propertyId,
         CreateExpenseRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<ExpenseDto> UpdateStatusAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid expenseId,
+        NovaStay.Domain.Enums.ApprovalStatus status,
+        CancellationToken cancellationToken = default);
 }
