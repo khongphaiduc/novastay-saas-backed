@@ -61,4 +61,9 @@ public interface IIncomeReceiptRepository
         Guid incomeReceiptId,
         NovaStay.Domain.Enums.ApprovalStatus status,
         CancellationToken cancellationToken = default);
+
+    // TASK-052: Lấy hóa đơn theo ResidentId (cho cư dân tự xem)
+    Task<IReadOnlyList<IncomeReceiptDto>> GetByResidentAsync(
+        Guid residentId,
+        CancellationToken cancellationToken = default);
 }

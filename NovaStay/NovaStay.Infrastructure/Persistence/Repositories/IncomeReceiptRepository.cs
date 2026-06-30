@@ -320,4 +320,23 @@ internal sealed class IncomeReceiptRepository : IIncomeReceiptRepository
     {
         return Regex.Replace(incomeType.ToString(), "([a-z0-9])([A-Z])", "$1 $2");
     }
+
+    // TASK-052: Lấy hóa đơn theo ResidentId (cho cư dân tự xem)
+    public async Task<IReadOnlyList<IncomeReceiptDto>> GetByResidentAsync(
+        Guid residentId,
+        CancellationToken cancellationToken = default)
+    {
+        var receipts = await _context.IncomeReceipts
+            .AsNoTracking()
+            .Include(r => r.IncomeCategory)
+            .Include(r => r.Room)
+            .Include(r => r.Resident)
+            .Include(r => r.CollectedByStaffUser)
+            .Where(r => r.ResidentId == residentId)
+            .OrderByDescending(r => r.CollectedAt)
+            .ThenByDescending(r => r.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return receipts.Select(MapToDto).ToList();
+    }
 }

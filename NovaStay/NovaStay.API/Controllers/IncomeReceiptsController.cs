@@ -6,7 +6,7 @@ using NovaStay.Domain.Enums;
 
 namespace NovaStay.API.Controllers;
 
-//[Authorize(Roles = "BusinessOwner")]
+[Authorize(Roles = "BusinessOwner")]
 [ApiController]
 [Route("api/organizations/{organizationId:guid}/properties/{propertyId:guid}/income-receipts")]
 public sealed class IncomeReceiptsController : ControllerBase
