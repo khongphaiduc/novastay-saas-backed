@@ -94,4 +94,33 @@ public sealed class IncomeReceiptsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpPatch("{incomeReceiptId:guid}/status")]
+    public async Task<ActionResult<IncomeReceiptDto>> UpdateStatus(
+        Guid organizationId,
+        Guid propertyId,
+        Guid incomeReceiptId,
+        [FromBody] UpdateApprovalStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var receipt = await _incomeReceiptService.UpdateStatusAsync(
+                organizationId,
+                propertyId,
+                incomeReceiptId,
+                request,
+                cancellationToken);
+
+            return Ok(receipt);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

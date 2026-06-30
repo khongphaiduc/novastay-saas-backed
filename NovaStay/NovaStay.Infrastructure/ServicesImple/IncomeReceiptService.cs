@@ -139,4 +139,19 @@ public sealed class IncomeReceiptService : IIncomeReceiptService
             request,
             cancellationToken);
     }
+
+    public Task<IncomeReceiptDto> UpdateStatusAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid incomeReceiptId,
+        UpdateApprovalStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return _incomeReceiptRepository.UpdateStatusAsync(
+            organizationId,
+            propertyId,
+            incomeReceiptId,
+            request.Status,
+            cancellationToken);
+    }
 }

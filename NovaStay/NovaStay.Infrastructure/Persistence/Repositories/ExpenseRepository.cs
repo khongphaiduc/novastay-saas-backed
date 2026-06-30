@@ -228,6 +228,42 @@ internal sealed class ExpenseRepository : IExpenseRepository
         return MapToDto(createdExpense);
     }
 
+    public async Task<ExpenseDto> UpdateStatusAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid expenseId,
+        ApprovalStatus status,
+        CancellationToken cancellationToken = default)
+    {
+        var expense = await _context.Expenses
+            .Include(entity => entity.ExpenseCategory)
+            .Include(entity => entity.Room)
+            .Include(entity => entity.ApprovedByStaffUser)
+            .Include(entity => entity.CreatedByStaffUser)
+            .FirstOrDefaultAsync(
+                entity => entity.Id == expenseId
+                    && entity.OrganizationId == organizationId
+                    && entity.PropertyId == propertyId,
+                cancellationToken);
+
+        if (expense is null)
+        {
+            throw new KeyNotFoundException("Expense not found in property.");
+        }
+
+        if (!string.Equals(expense.Status, ApprovalStatus.Pending.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Only expenses with Pending status can be updated.");
+        }
+
+        expense.Status = status.ToString();
+        expense.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(expense);
+    }
+
     private async Task<Models.ExpenseCategory> ResolveExpenseCategoryAsync(
         Guid organizationId,
         CreateExpenseRequest request,

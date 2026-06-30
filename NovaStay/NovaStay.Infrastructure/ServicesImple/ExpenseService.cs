@@ -74,4 +74,19 @@ public sealed class ExpenseService : IExpenseService
             request,
             cancellationToken);
     }
+
+    public Task<ExpenseDto> UpdateStatusAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid expenseId,
+        UpdateApprovalStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return _expenseRepository.UpdateStatusAsync(
+            organizationId,
+            propertyId,
+            expenseId,
+            request.Status,
+            cancellationToken);
+    }
 }

@@ -94,4 +94,33 @@ public sealed class ExpensesController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpPatch("{expenseId:guid}/status")]
+    public async Task<ActionResult<ExpenseDto>> UpdateStatus(
+        Guid organizationId,
+        Guid propertyId,
+        Guid expenseId,
+        [FromBody] UpdateApprovalStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var expense = await _expenseService.UpdateStatusAsync(
+                organizationId,
+                propertyId,
+                expenseId,
+                request,
+                cancellationToken);
+
+            return Ok(expense);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

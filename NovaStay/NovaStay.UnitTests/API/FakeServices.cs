@@ -425,10 +425,14 @@ internal sealed class FakeExpenseService : IExpenseService
     public IReadOnlyList<ExpenseDto>? Expenses { get; set; } = [];
     public ExpenseDto? ExpenseDetail { get; set; }
     public ExpenseDto CreateResponse { get; set; } = new();
+    public ExpenseDto UpdateStatusResponse { get; set; } = new();
     public Exception? CreateException { get; set; }
+    public Exception? UpdateStatusException { get; set; }
     public Guid DetailOrganizationId { get; private set; }
     public Guid DetailPropertyId { get; private set; }
     public Guid DetailExpenseId { get; private set; }
+    public Guid UpdateStatusExpenseId { get; private set; }
+    public UpdateApprovalStatusRequest? UpdateStatusRequest { get; private set; }
 
     public Task<IReadOnlyList<ExpenseDto>?> GetByPropertyAsync(
         Guid organizationId,
@@ -464,6 +468,26 @@ internal sealed class FakeExpenseService : IExpenseService
         }
 
         return Task.FromResult(CreateResponse);
+    }
+
+    public Task<ExpenseDto> UpdateStatusAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid expenseId,
+        UpdateApprovalStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        DetailOrganizationId = organizationId;
+        DetailPropertyId = propertyId;
+        UpdateStatusExpenseId = expenseId;
+        UpdateStatusRequest = request;
+
+        if (UpdateStatusException is not null)
+        {
+            throw UpdateStatusException;
+        }
+
+        return Task.FromResult(UpdateStatusResponse);
     }
 }
 
@@ -516,10 +540,14 @@ internal sealed class FakeIncomeReceiptService : IIncomeReceiptService
     public IReadOnlyList<IncomeReceiptDto>? Receipts { get; set; } = [];
     public IncomeReceiptDto? ReceiptDetail { get; set; }
     public IncomeReceiptDto CreateResponse { get; set; } = new();
+    public IncomeReceiptDto UpdateStatusResponse { get; set; } = new();
     public Exception? CreateException { get; set; }
+    public Exception? UpdateStatusException { get; set; }
     public Guid DetailOrganizationId { get; private set; }
     public Guid DetailPropertyId { get; private set; }
     public Guid DetailIncomeReceiptId { get; private set; }
+    public Guid UpdateStatusIncomeReceiptId { get; private set; }
+    public UpdateApprovalStatusRequest? UpdateStatusRequest { get; private set; }
 
     public Task<IReadOnlyList<IncomeReceiptDto>?> GetByPropertyAsync(
         Guid organizationId,
@@ -555,6 +583,26 @@ internal sealed class FakeIncomeReceiptService : IIncomeReceiptService
         }
 
         return Task.FromResult(CreateResponse);
+    }
+
+    public Task<IncomeReceiptDto> UpdateStatusAsync(
+        Guid organizationId,
+        Guid propertyId,
+        Guid incomeReceiptId,
+        UpdateApprovalStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        DetailOrganizationId = organizationId;
+        DetailPropertyId = propertyId;
+        UpdateStatusIncomeReceiptId = incomeReceiptId;
+        UpdateStatusRequest = request;
+
+        if (UpdateStatusException is not null)
+        {
+            throw UpdateStatusException;
+        }
+
+        return Task.FromResult(UpdateStatusResponse);
     }
 }
 
