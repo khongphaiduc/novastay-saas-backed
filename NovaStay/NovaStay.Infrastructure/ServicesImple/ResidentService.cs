@@ -13,11 +13,13 @@ public sealed class ResidentService : IResidentService
     private const string ResidentAccountType = "Resident";
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly IMinioStorageService _storage;
 
-    public ResidentService(IUnitOfWork unitOfWork, IMapper mapper)
+    public ResidentService(IUnitOfWork unitOfWork, IMapper mapper, IMinioStorageService storage)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _storage = storage;
     }
 
     public async Task<CreateResidentAccountResponse> CreateResidentAccountAsync(
@@ -224,5 +226,188 @@ public sealed class ResidentService : IResidentService
             32);
 
         return $"pbkdf2-sha256${iterations}${Convert.ToBase64String(salt)}${Convert.ToBase64String(hash)}";
+    }
+
+    // ─── TASK-053: Hồ sơ cá nhân cư dân ───────────────────────────────────────
+    public async Task<ResidentProfileDto> GetMyProfileAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        if (accountId == Guid.Empty)
+            throw new UnauthorizedAccessException("Invalid access token.");
+
+        var resident = await _unitOfWork.Residents.GetByAccountIdAsync(accountId, cancellationToken)
+            ?? throw new KeyNotFoundException("Resident profile not found.");
+
+        var account = await _unitOfWork.Accounts.GetByIdAsync(resident.AccountId, cancellationToken);
+
+        var membership = await _unitOfWork.ResidentMemberships.GetActiveByAccountIdAsync(accountId, cancellationToken);
+
+        var profile = new ResidentProfileDto
+        {
+            ResidentId          = resident.Id,
+            AccountId           = resident.AccountId,
+            FullName            = resident.FullName.Value,
+            Sex                 = resident.Sex,
+            Phone               = resident.Phone.Value,
+            Email               = resident.Email,
+            Address             = resident.Address,
+            IdentityCardNumber  = resident.IdentityCardNumber,
+            IdFrontImageUrl     = resident.IdFrontImageUrl,
+            IdBackImageUrl      = resident.IdBackImageUrl,
+            ProfileImageUrl     = resident.ProfileImageUrl,
+            MustSetPassword     = account?.MustSetPassword ?? false,
+            CreatedAt           = resident.CreatedAt,
+        };
+
+        if (membership != null)
+        {
+            var org = await _unitOfWork.Organizations.GetByIdAsync(membership.OrganizationId, cancellationToken);
+            profile.MembershipId     = membership.Id;
+            profile.MembershipCode   = membership.MembershipCode;
+            profile.MembershipStatus = membership.Status.Value;
+            profile.OrganizationId   = membership.OrganizationId;
+            profile.BusinessName     = org?.BusinessName.Value;
+            profile.OwnerPhone       = org?.OwnerPhone.Value;
+            profile.OwnerEmail       = org?.OwnerEmail.Value;
+        }
+
+        return profile;
+    }
+
+    // ─── TASK-049: Lấy thông tin phòng đang ở + ảnh ───────────────────────────
+    public async Task<ResidentRoomDto?> GetMyRoomAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        if (accountId == Guid.Empty)
+            throw new UnauthorizedAccessException("Invalid access token.");
+
+        var resident = await _unitOfWork.Residents.GetByAccountIdAsync(accountId, cancellationToken);
+        if (resident == null) return null;
+
+        var membership = await _unitOfWork.ResidentMemberships.GetActiveByAccountIdAsync(accountId, cancellationToken);
+        var organizationId = membership?.OrganizationId ?? Guid.Empty;
+
+        // Tìm hợp đồng Active của cư dân để biết phòng đang ở
+        var contracts = await _unitOfWork.Contracts.GetContractsWithDetailsAsync(
+            organizationId: organizationId,
+            residentId: resident.Id,
+            status: "Active",
+            cancellationToken: cancellationToken);
+
+        var activeContract = contracts.FirstOrDefault();
+        if (activeContract == null) return null;
+
+        var roomDto = await _unitOfWork.Rooms.GetRoomWithImagesAsync(activeContract.RoomId, cancellationToken);
+        if (roomDto == null) return null;
+
+        var property = await _unitOfWork.Properties.GetByIdAsync(activeContract.PropertyId, cancellationToken);
+
+        return new ResidentRoomDto
+        {
+            RoomId          = roomDto.Id,
+            RoomNumber      = roomDto.RoomNumber,
+            Floor           = roomDto.Floor,
+            BasePrice       = roomDto.BasePrice,
+            MaxOccupants    = roomDto.MaxOccupants,
+            Status          = roomDto.Status,
+            AmenitiesJson   = roomDto.AmenitiesJson,
+            PropertyId      = activeContract.PropertyId,
+            PropertyName    = property?.PropertyName,
+            PropertyAddress = property?.Address,
+            Images          = roomDto.Images?.Select(img => new RoomImageDto
+            {
+                Id       = img.Id,
+                ImageUrl = img.ImageUrl,
+                IsCover  = img.IsCover,
+            }).ToList() ?? []
+        };
+    }
+
+    // ─── TASK-051: Danh sách hợp đồng ─────────────────────────────────────────
+    public async Task<IReadOnlyList<ContractDetailDto>> GetMyContractsAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        if (accountId == Guid.Empty)
+            throw new UnauthorizedAccessException("Invalid access token.");
+
+        var resident = await _unitOfWork.Residents.GetByAccountIdAsync(accountId, cancellationToken);
+        if (resident == null) return [];
+
+        var membership = await _unitOfWork.ResidentMemberships.GetActiveByAccountIdAsync(accountId, cancellationToken);
+        var organizationId = membership?.OrganizationId ?? Guid.Empty;
+
+        return await _unitOfWork.Contracts.GetContractsWithDetailsAsync(
+            organizationId: organizationId,
+            residentId: resident.Id,
+            cancellationToken: cancellationToken);
+    }
+
+    // ─── TASK-052: Danh sách hóa đơn ─────────────────────────────────────────────────────
+    public async Task<IReadOnlyList<IncomeReceiptDto>> GetMyInvoicesAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        if (accountId == Guid.Empty)
+            throw new UnauthorizedAccessException("Invalid access token.");
+
+        var resident = await _unitOfWork.Residents.GetByAccountIdAsync(accountId, cancellationToken);
+        if (resident == null) return [];
+
+        // ✅ Fixed UnitOfWork pattern violation — dng qua _unitOfWork.IncomeReceipts thay vì inject trực tiếp
+        return await _unitOfWork.IncomeReceipts.GetByResidentAsync(resident.Id, cancellationToken);
+    }
+
+    // ─── TASK-053: Cư dân tự cập nhật hồ sơ ─────────────────────────────────────────────
+    public async Task<ResidentProfileDto> UpdateMyProfileAsync(
+        Guid accountId,
+        UpdateMyProfileRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (accountId == Guid.Empty)
+            throw new UnauthorizedAccessException("Invalid access token.");
+
+        var resident = await _unitOfWork.Residents.GetByAccountIdAsync(accountId, cancellationToken)
+            ?? throw new KeyNotFoundException("Resident not found.");
+
+        if (!string.IsNullOrWhiteSpace(request.FullName))
+            resident.FullName = new EntityName(request.FullName.Trim());
+        if (!string.IsNullOrWhiteSpace(request.Phone))
+            resident.Phone = new PhoneNumber(request.Phone.Trim());
+        if (request.Email is not null)
+            resident.Email = request.Email.Trim();
+        if (request.Address is not null)
+            resident.Address = request.Address.Trim();
+
+        _unitOfWork.Residents.Update(resident);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Return full updated profile
+        return await GetMyProfileAsync(accountId, cancellationToken);
+    }
+
+    // ─── TASK-053: Cư dân tự upload ảnh đại diện ───────────────────────────────────────
+    public async Task<string> UploadMyAvatarAsync(
+        Guid accountId,
+        Stream fileStream,
+        string fileName,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        if (accountId == Guid.Empty)
+            throw new UnauthorizedAccessException("Invalid access token.");
+
+        var resident = await _unitOfWork.Residents.GetByAccountIdAsync(accountId, cancellationToken)
+            ?? throw new KeyNotFoundException("Resident not found.");
+
+        var imageUrl = await _storage.UploadImageAsync(fileStream, fileName, contentType, cancellationToken);
+
+        resident.ProfileImageUrl = imageUrl;
+        _unitOfWork.Residents.Update(resident);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return imageUrl;
     }
 }
