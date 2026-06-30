@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
@@ -6,7 +7,7 @@ using NovaStay.Infrastructure.ServicesImple;
 
 namespace NovaStay.API.Controllers;
 
-[Authorize(Roles = "BusinessOwner")]
+[Authorize]
 [ApiController]
 [Route("api/residents")]
 public sealed class ResidentsController : ControllerBase
@@ -20,6 +21,7 @@ public sealed class ResidentsController : ControllerBase
         _storageService = storageService;
     }
 
+    [Authorize(Roles = "BusinessOwner")]
     [HttpPost]
     public async Task<ActionResult<CreateResidentAccountResponse>> CreateResidentAccount(
         [FromBody] CreateResidentAccountRequest request,
@@ -39,6 +41,7 @@ public sealed class ResidentsController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "BusinessOwner")]
     [HttpGet("search")]
     public async Task<ActionResult<IReadOnlyList<ResidentDto>>> SearchByPhone(
         [FromQuery] string? phone,
@@ -49,6 +52,7 @@ public sealed class ResidentsController : ControllerBase
         return Ok(residents);
     }
 
+    [Authorize(Roles = "BusinessOwner")]
     [HttpPut("{id}")]
     public async Task<ActionResult<ResidentDto>> UpdateResident(
         Guid id,
@@ -66,6 +70,7 @@ public sealed class ResidentsController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "BusinessOwner")]
     [HttpPost("{id}/images/{imageType}")]
     public async Task<ActionResult<ResidentDto>> UploadImage(
         Guid id,
@@ -93,5 +98,111 @@ public sealed class ResidentsController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    // ─── TASK-053: Hồ sơ cá nhân cư dân ────────────────────────────────────────
+    [Authorize(Roles = "Resident")]
+    [HttpGet("me")]
+    public async Task<ActionResult<ResidentProfileDto>> GetMyProfile(
+        CancellationToken cancellationToken = default)
+    {
+        var accountIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(accountIdClaim, out var accountId))
+            return Unauthorized(new { message = "Invalid access token." });
+
+        try
+        {
+            var profile = await _residentService.GetMyProfileAsync(accountId, cancellationToken);
+            return Ok(profile);
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+    }
+
+    // ─── TASK-049: Thông tin phòng đang ở + ảnh ─────────────────────────────────
+    [Authorize(Roles = "Resident")]
+    [HttpGet("me/room")]
+    public async Task<ActionResult<ResidentRoomDto>> GetMyRoom(
+        CancellationToken cancellationToken = default)
+    {
+        var accountIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(accountIdClaim, out var accountId))
+            return Unauthorized(new { message = "Invalid access token." });
+
+        var room = await _residentService.GetMyRoomAsync(accountId, cancellationToken);
+        if (room == null)
+            return NotFound(new { message = "Không tìm thấy phòng đang ở. Hợp đồng có thể chưa được kích hoạt." });
+
+        return Ok(room);
+    }
+
+    // ─── TASK-051: Danh sách hợp đồng ───────────────────────────────────────────
+    [Authorize(Roles = "Resident")]
+    [HttpGet("me/contracts")]
+    public async Task<ActionResult<IReadOnlyList<ContractDetailDto>>> GetMyContracts(
+        CancellationToken cancellationToken = default)
+    {
+        var accountIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(accountIdClaim, out var accountId))
+            return Unauthorized(new { message = "Invalid access token." });
+
+        var contracts = await _residentService.GetMyContractsAsync(accountId, cancellationToken);
+        return Ok(contracts);
+    }
+
+    // ─── TASK-052: Danh sách hóa đơn ────────────────────────────────────────────
+    [Authorize(Roles = "Resident")]
+    [HttpGet("me/invoices")]
+    public async Task<ActionResult<IReadOnlyList<IncomeReceiptDto>>> GetMyInvoices(
+        CancellationToken cancellationToken = default)
+    {
+        var accountIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(accountIdClaim, out var accountId))
+            return Unauthorized(new { message = "Invalid access token." });
+
+        var invoices = await _residentService.GetMyInvoicesAsync(accountId, cancellationToken);
+        return Ok(invoices);
+    }
+
+    // ─── TASK-053: Cư dân tự cập nhật hồ sơ cá nhân ──────────────────────────
+    [Authorize(Roles = "Resident")]
+    [HttpPut("me/profile")]
+    public async Task<ActionResult<ResidentProfileDto>> UpdateMyProfile(
+        [FromBody] UpdateMyProfileRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var accountIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(accountIdClaim, out var accountId))
+            return Unauthorized(new { message = "Invalid access token." });
+
+        try
+        {
+            var profile = await _residentService.UpdateMyProfileAsync(accountId, request, cancellationToken);
+            return Ok(profile);
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+    }
+
+    // ─── TASK-053: Cư dân tự upload ảnh đại diện ───────────────────────────
+    [Authorize(Roles = "Resident")]
+    [HttpPost("me/avatar")]
+    public async Task<ActionResult<object>> UploadMyAvatar(
+        IFormFile? file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "File is required." });
+
+        var accountIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(accountIdClaim, out var accountId))
+            return Unauthorized(new { message = "Invalid access token." });
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var imageUrl = await _residentService.UploadMyAvatarAsync(
+                accountId, stream, file.FileName, file.ContentType, cancellationToken);
+            return Ok(new { profileImageUrl = imageUrl });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
     }
 }
