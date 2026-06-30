@@ -467,6 +467,50 @@ internal sealed class FakeExpenseService : IExpenseService
     }
 }
 
+internal sealed class FakeFinancialTransactionService : IFinancialTransactionService
+{
+    public PagedResult<FinancialTransactionDto>? Result { get; set; } = new();
+    public Exception? Exception { get; set; }
+    public Guid OrganizationId { get; private set; }
+    public Guid PropertyId { get; private set; }
+    public string? TransactionType { get; private set; }
+    public string? Search { get; private set; }
+    public DateTime? FromDate { get; private set; }
+    public DateTime? ToDate { get; private set; }
+    public int PageIndex { get; private set; }
+    public int PageSize { get; private set; }
+
+    public Task<PagedResult<FinancialTransactionDto>?> GetByPropertyAsync(
+        Guid organizationId,
+        Guid propertyId,
+        string? transactionType = null,
+        string? search = null,
+        ApprovalStatus? status = null,
+        PaymentMethod? paymentMethod = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        int pageIndex = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        OrganizationId = organizationId;
+        PropertyId = propertyId;
+        TransactionType = transactionType;
+        Search = search;
+        FromDate = fromDate;
+        ToDate = toDate;
+        PageIndex = pageIndex;
+        PageSize = pageSize;
+
+        if (Exception is not null)
+        {
+            throw Exception;
+        }
+
+        return Task.FromResult(Result);
+    }
+}
+
 internal sealed class FakeIncomeReceiptService : IIncomeReceiptService
 {
     public IReadOnlyList<IncomeReceiptDto>? Receipts { get; set; } = [];
