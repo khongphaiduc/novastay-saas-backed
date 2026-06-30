@@ -249,6 +249,24 @@ internal sealed class FakeResidentService : IResidentService
         return Task.FromResult(new ResidentDto());
     }
 
+    public Task<ResidentProfileDto?> GetMyProfileAsync(Guid accountId, CancellationToken cancellationToken = default)
+        => Task.FromResult<ResidentProfileDto?>(null);
+
+    public Task<ResidentRoomDto?> GetMyRoomAsync(Guid accountId, CancellationToken cancellationToken = default)
+        => Task.FromResult<ResidentRoomDto?>(null);
+
+    public Task<IReadOnlyList<ContractDetailDto>> GetMyContractsAsync(Guid accountId, CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<ContractDetailDto>>([]);
+
+    public Task<IReadOnlyList<IncomeReceiptDto>> GetMyInvoicesAsync(Guid accountId, CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<IncomeReceiptDto>>([]);
+
+    public Task<ResidentProfileDto> UpdateMyProfileAsync(Guid accountId, UpdateMyProfileRequest request, CancellationToken cancellationToken = default)
+        => Task.FromResult(new ResidentProfileDto());
+
+    public Task<string> UploadMyAvatarAsync(Guid accountId, Stream fileStream, string fileName, string contentType, CancellationToken cancellationToken = default)
+        => Task.FromResult(string.Empty);
+
     public Task<ResidentDto> UploadImageAsync(
         Guid residentId,
         string imageType,

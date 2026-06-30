@@ -5,7 +5,7 @@ using NovaStay.Application.Services;
 
 namespace NovaStay.API.Controllers;
 
-[Authorize(Roles = "BusinessOwner")]
+[Authorize]
 [ApiController]
 [Route("api/organizations/{organizationId:guid}/properties")]
 public sealed class PropertiesController : ControllerBase
@@ -21,6 +21,7 @@ public sealed class PropertiesController : ControllerBase
         _propertyCatalogService = propertyCatalogService;
     }
 
+    [Authorize(Roles = "BusinessOwner")]
     [HttpGet]
     public async Task<ActionResult<PagedResult<PropertyDto>>> GetProperties(
         Guid organizationId,
@@ -34,6 +35,7 @@ public sealed class PropertiesController : ControllerBase
         return Ok(properties);
     }
 
+    [Authorize(Roles = "BusinessOwner,Resident")]
     [HttpGet("{propertyId:guid}/services")]
     public async Task<ActionResult<IReadOnlyList<PropertyServiceDto>>> GetPropertyServices(
         Guid organizationId,
@@ -55,6 +57,7 @@ public sealed class PropertiesController : ControllerBase
         return Ok(response);
     }
 
+    [Authorize(Roles = "BusinessOwner")]
     [HttpPost("{propertyId:guid}/services")]
     public async Task<ActionResult<PropertyServiceDto>> CreatePropertyService(
         Guid organizationId,
@@ -88,6 +91,7 @@ public sealed class PropertiesController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "BusinessOwner")]
     [HttpPut("{propertyId:guid}/services/{propertyServiceId:guid}")]
     public async Task<ActionResult<PropertyServiceDto>> UpdatePropertyService(
         Guid organizationId,
@@ -117,6 +121,7 @@ public sealed class PropertiesController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "BusinessOwner")]
     [HttpPost]
     public async Task<ActionResult<PropertyDto>> CreateProperty(
         Guid organizationId,
@@ -127,6 +132,7 @@ public sealed class PropertiesController : ControllerBase
         return CreatedAtAction(nameof(GetProperties), new { organizationId }, property);
     }
 
+    [Authorize(Roles = "BusinessOwner")]
     [HttpPut("{propertyId:guid}")]
     public async Task<ActionResult<PropertyDto>> UpdateProperty(
         Guid organizationId,
@@ -145,6 +151,7 @@ public sealed class PropertiesController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "BusinessOwner")]
     [HttpDelete("{propertyId:guid}")]
     public async Task<ActionResult> DeleteProperty(
         Guid organizationId,

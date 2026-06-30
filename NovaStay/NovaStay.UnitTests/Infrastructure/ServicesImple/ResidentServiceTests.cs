@@ -17,16 +17,19 @@ namespace NovaStay.UnitTests.Infrastructure.ServicesImple
     {
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<IMapper> _mockMapper;
+        private readonly Mock<IMinioStorageService> _mockStorage;
         private readonly ResidentService _residentService;
 
         public ResidentServiceTests()
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockMapper = new Mock<IMapper>();
+            _mockStorage = new Mock<IMinioStorageService>();
 
             _residentService = new ResidentService(
                 _mockUnitOfWork.Object,
-                _mockMapper.Object);
+                _mockMapper.Object,
+                _mockStorage.Object);
         }
 
         [Fact]
