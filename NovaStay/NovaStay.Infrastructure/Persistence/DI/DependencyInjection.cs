@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IBrokerRepository, BrokerRepository>();
         services.AddScoped<IContractRepository, ContractRepository>();
         services.AddScoped<IExpenseRepository, ExpenseRepository>();
+        services.AddScoped<IFinancialTransactionRepository, FinancialTransactionRepository>();
         services.AddScoped<IIncomeReceiptRepository, IncomeReceiptRepository>();
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
         services.AddScoped<IMaintenanceTicketRepository, MaintenanceTicketRepository>();
@@ -69,6 +70,7 @@ public static class DependencyInjection
         // Contract Management (TASK-031 to TASK-039)
         services.AddScoped<IContractService, ContractService>();
         services.AddScoped<IExpenseService, ExpenseService>();
+        services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
         services.AddScoped<IIncomeReceiptService, IncomeReceiptService>();
 
         // Maintenance Management (TASK-021, TASK-022)
