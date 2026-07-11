@@ -1,18 +1,20 @@
 using NovaStay.Application.Common.Interfaces;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
+using NovaStay.Infrastructure.ContextDB;
 
 namespace NovaStay.Infrastructure.ServicesImple;
 
 public sealed class LogoutService : ILogoutService
 {
+    private readonly HostContext _dbcontext;
     private readonly IJwtTokenService _jwtTokenService;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public LogoutService(IJwtTokenService jwtTokenService, IUnitOfWork unitOfWork)
+    public LogoutService(IJwtTokenService jwtTokenService, IUnitOfWork unitOfWork, HostContext hostContext)
     {
+        _dbcontext = hostContext;
         _jwtTokenService = jwtTokenService;
-        _unitOfWork = unitOfWork;
+
     }
 
     public async Task LogoutAsync(
@@ -22,15 +24,28 @@ public sealed class LogoutService : ILogoutService
     {
         var tokenHash = _jwtTokenService.HashRefreshToken(request.RefreshToken.Trim());
 
-        var revoked = await _unitOfWork.AccountRefreshTokens.RevokeByTokenHashAsync(
-            tokenHash,
-            DateTime.UtcNow,
-            ipAddress,
-            cancellationToken);
-
-        if (revoked)
+        var user = _dbcontext.AccountRefreshTokens.Where(s => s.TokenHash == tokenHash && s.RevokedAt == null).Select(t => new InforUser
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-        }
+            AccountId = t.AccountId,
+            OrganizationId = t.Account.OwnedOrganizations.FirstOrDefault().Id,
+            AccountType = t.Account.AccountType,
+            UserName = t.Account.CustomerName,
+            Phone = t.Account.Phone,
+            Email = t.Account.Email,
+        }).FirstOrDefault();
+
     }
+
+
+}
+
+
+public class InfoUser
+{
+    public Guid AccountId { get; set; }
+    public Guid OrganizationId { get; set; }
+    public string AccountType { get; set; } = string.Empty;
+    public string UserName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string? Email { get; set; }
 }

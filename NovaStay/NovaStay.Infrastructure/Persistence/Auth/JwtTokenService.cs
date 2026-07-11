@@ -48,18 +48,18 @@ internal sealed class JwtTokenService : IJwtTokenService
         };
     }
 
-    private string CreateAccessToken(
-        Guid accountId,
-        Guid organizationId,
-        string accountType,
-        string customerName,
-        string phone,
-        string? email,
-        DateTime expiresAt)
+    public string CreateAccessToken(
+       Guid accountId,
+       Guid organizationId,
+       string accountType,
+       string customerName,
+       string phone,
+       string? email,
+       DateTime expiresAt)
     {
         var secret = GetJwtString("SecretKey" ?? "2HONDAICODONSuperSecretKeyForJWTTokenGeneration");
-        var issuer = GetJwtString("Issuer"?? "NovaStay");
-        var audience = GetJwtString("Audience"?? "NovaStayUsers");
+        var issuer = GetJwtString("Issuer" ?? "NovaStay");
+        var audience = GetJwtString("Audience" ?? "NovaStayUsers");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

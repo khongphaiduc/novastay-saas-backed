@@ -14,17 +14,20 @@ public sealed class AuthController : ControllerBase
     private readonly IChangePasswordService _changePasswordService;
     private readonly ILogoutService _logoutService;
     private readonly IResidentAuthService _residentAuthService;
+    private readonly IProvideAccessToken _provideNewAccessToken;
 
     public AuthController(
         IAuthService authService,
         IChangePasswordService changePasswordService,
         ILogoutService logoutService,
-        IResidentAuthService residentAuthService)
+        IResidentAuthService residentAuthService,
+        IProvideAccessToken provideAccessToken)
     {
         _authService = authService;
         _changePasswordService = changePasswordService;
         _logoutService = logoutService;
         _residentAuthService = residentAuthService;
+        _provideNewAccessToken = provideAccessToken;
     }
 
     [HttpPost("register-organization")]
@@ -144,4 +147,16 @@ public sealed class AuthController : ControllerBase
             return BadRequest(new { message = exception.Message });
         }
     }
+
+
+    [AllowAnonymous]
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+    {
+        var result = await _provideNewAccessToken.GetAccessToken(request.RefreshToken);
+
+        return Ok(result);
+    }
+
+
 }
