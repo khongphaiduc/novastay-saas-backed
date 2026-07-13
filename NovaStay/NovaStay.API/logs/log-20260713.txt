@@ -1,0 +1,10 @@
+2026-07-13 07:55:24.204 +07:00 [INF] Configured endpoint Notification, Consumer: NovaStay.Infrastructure.Consumers.NotificationEmailComsumer
+2026-07-13 07:55:24.241 +07:00 [INF] Configured endpoint NotificationResetPasswordqueue, Consumer: NovaStay.Infrastructure.Consumers.NotificationResetPasswordConsumer
+2026-07-13 07:55:24.245 +07:00 [INF] Configured endpoint NotificationContractRenewqueue, Consumer: NovaStay.Infrastructure.Consumers.NotificationContractRenewConsumer
+2026-07-13 07:55:24.340 +07:00 [INF] User profile is available. Using 'C:\Users\Admin\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-07-13 07:55:24.432 +07:00 [INF] ContractRenewalNotifierBackgroundService is starting.
+2026-07-13 07:55:24.674 +07:00 [INF] Now listening on: https://localhost:7286
+2026-07-13 07:55:24.675 +07:00 [INF] Now listening on: http://localhost:5050
+2026-07-13 07:55:24.777 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-07-13 07:55:24.779 +07:00 [INF] Hosting environment: Development
+2026-07-13 07:55:24.780 +07:00 [INF] Content root path: E:\StartUp NovaStay\backendv3\NovaStay\NovaStay.API

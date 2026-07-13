@@ -1,11 +1,16 @@
-using NovaStay.Application.Common.Mappings;
-using NovaStay.Application.Services;
 using DotNetEnv;
-using NovaStay.Infrastructure.Persistence.Mapping;
-using NovaStay.Infrastructure.Persistence.DI;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using NovaStay.Application.Common.Mappings;
+using NovaStay.Application.Services;
+using NovaStay.Infrastructure.Persistence.DI;
+using NovaStay.Infrastructure.Persistence.Mapping;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Serilog;
+using Serilog.Events;
 using System.Text;
 
 namespace NovaStay.API
@@ -14,7 +19,39 @@ namespace NovaStay.API
     {
         public static void Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Override("Microsoft.AspNetCore.Hosting", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.AspNetCore.Mvc", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+              .WriteTo.Console()   // write log  in console screen 
+                .WriteTo.File(
+        "logs/log-.txt",
+        rollingInterval: RollingInterval.Day)
+              .CreateLogger();
+
             var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddSerilog();
+
+            builder.Services.AddOpenTelemetry()
+             .ConfigureResource(resource => resource
+             .AddService(
+                   serviceName: "NovaStay.API",
+                   serviceVersion: "1.0.0"))
+             .WithTracing(tracing =>
+             {
+                 tracing
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddOtlpExporter();
+             })
+             .WithMetrics(metrics =>
+             {
+                 metrics
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddRuntimeInstrumentation()
+                .AddOtlpExporter();     // export metrics to OpenTelemetry Collector
+             });
 
             var infrastructureConfigPaths = new[]
             {
@@ -118,7 +155,7 @@ namespace NovaStay.API
             builder.Services.AddControllers();
 
             var app = builder.Build();
-
+            app.UseSerilogRequestLogging();    // middleware of Serilog
             app.UseHttpsRedirection();
             app.UseCors("AllowFrontend");
             app.UseAuthentication();
