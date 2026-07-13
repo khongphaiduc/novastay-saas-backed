@@ -6,6 +6,7 @@ using NovaStay.Application.Common.Mappings;
 using NovaStay.Application.Services;
 using NovaStay.Infrastructure.Persistence.DI;
 using NovaStay.Infrastructure.Persistence.Mapping;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -42,9 +43,11 @@ namespace NovaStay.API
                  tracing
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
+                   .AddConsoleExporter()
                   .AddOtlpExporter(options =>
                   {
                       options.Endpoint = new Uri("http://157.66.219.130:4317");     // end point of OpenTelemetry Collector
+                      options.Protocol = OtlpExportProtocol.Grpc;
                   });
              })
              .WithMetrics(metrics =>
@@ -53,10 +56,12 @@ namespace NovaStay.API
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
                 .AddRuntimeInstrumentation()
+                  .AddConsoleExporter()
                .AddOtlpExporter(options =>  // export metrics to OpenTelemetry Collector
                {
                    options.Endpoint = new Uri("http://157.66.219.130:4317");
-               });     
+                   options.Protocol = OtlpExportProtocol.Grpc;
+               });
              });
 
             var infrastructureConfigPaths = new[]
