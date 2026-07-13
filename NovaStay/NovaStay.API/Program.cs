@@ -44,7 +44,7 @@ namespace NovaStay.API
                     .AddHttpClientInstrumentation()
                   .AddOtlpExporter(options =>
                   {
-                      options.Endpoint = new Uri("http://157.66.219.130:4317");
+                      options.Endpoint = new Uri("http://157.66.219.130:4317");     // end point of OpenTelemetry Collector
                   });
              })
              .WithMetrics(metrics =>
@@ -121,8 +121,8 @@ namespace NovaStay.API
                             "http://localhost:5173",
                             "https://novastay.io.vn",
                             "https://www.novastay.io.vn",
-                            "https://nestone.io.vn/",
-                            "https://www.nestone.io.vn/"
+                            "https://nestone.io.vn",
+                            "https://www.nestone.io.vn"
                         )
                         .AllowAnyHeader()
                         .AllowAnyMethod();
