@@ -114,7 +114,9 @@ namespace NovaStay.API
                         .WithOrigins(
                             "http://localhost:5173",
                             "https://novastay.io.vn",
-                            "https://www.novastay.io.vn"
+                            "https://www.novastay.io.vn",
+                            "https://nestone.io.vn/",
+                            "https://www.nestone.io.vn/"
                         )
                         .AllowAnyHeader()
                         .AllowAnyMethod();
