@@ -42,7 +42,10 @@ namespace NovaStay.API
                  tracing
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddOtlpExporter();
+                  .AddOtlpExporter(options =>
+                  {
+                      options.Endpoint = new Uri("http://157.66.219.130:4317");
+                  });
              })
              .WithMetrics(metrics =>
              {
@@ -50,7 +53,10 @@ namespace NovaStay.API
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
                 .AddRuntimeInstrumentation()
-                .AddOtlpExporter();     // export metrics to OpenTelemetry Collector
+               .AddOtlpExporter(options =>  // export metrics to OpenTelemetry Collector
+               {
+                   options.Endpoint = new Uri("http://157.66.219.130:4317");
+               });     
              });
 
             var infrastructureConfigPaths = new[]
