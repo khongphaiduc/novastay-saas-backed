@@ -7,4 +7,6 @@ public interface ISampleDataService
     Task<IReadOnlyList<OrganizationDto>> GetOrganizationsAsync(
         int take = 20,
         CancellationToken cancellationToken = default);
+
+    Task<int> CreatePackageAsync();
 }
