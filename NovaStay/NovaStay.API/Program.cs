@@ -15,12 +15,13 @@ using OpenTelemetry.Trace;
 using Serilog;
 using Serilog.Events;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace NovaStay.API
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration().MinimumLevel.Override("Microsoft.AspNetCore.Hosting", LogEventLevel.Warning)
             .MinimumLevel.Override("Microsoft.AspNetCore.Mvc", LogEventLevel.Warning)
@@ -154,13 +155,25 @@ namespace NovaStay.API
                     var dbContext = scope.ServiceProvider
                         .GetRequiredService<HostContext>();
 
-                    dbContext.Database.Migrate();
+                    await dbContext.Database.MigrateAsync();
 
                     Log.Information("Database migration completed successfully.");
+
+                    var sampleDataService = scope.ServiceProvider
+                        .GetRequiredService<ISampleDataService>();
+
+                    var affectedRows = await sampleDataService.CreatePackageAsync();
+
+                    Log.Information(
+                        "Sample subscription packages seeded successfully. Affected rows: {AffectedRows}",
+                        affectedRows);
                 }
                 catch (Exception ex)
                 {
-                    Log.Fatal(ex, "An error occurred while creating or migrating the database.");
+                    Log.Fatal(
+                        ex,
+                        "An error occurred while migrating or seeding the database.");
+
                     throw;
                 }
             }
