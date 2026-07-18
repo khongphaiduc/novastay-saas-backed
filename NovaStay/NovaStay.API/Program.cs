@@ -66,29 +66,6 @@ namespace NovaStay.API
                });
              });
 
-            var infrastructureConfigPaths = new[]
-            {
-                Path.GetFullPath(Path.Combine(
-                    builder.Environment.ContentRootPath,
-                    "..",
-                    "NovaStay.Infrastructure",
-                    "Config",
-                    "appsettings.json")),
-                Path.GetFullPath(Path.Combine(
-                    builder.Environment.ContentRootPath,
-                    "NovaStay.Infrastructure",
-                    "Config",
-                    "appsettings.json"))
-            };
-
-            foreach (var infrastructureConfigPath in infrastructureConfigPaths)
-            {
-                builder.Configuration.AddJsonFile(
-                    infrastructureConfigPath,
-                    optional: true,
-                    reloadOnChange: builder.Environment.IsDevelopment());
-            }
-
             var envPaths = new[]
             {
                 Path.GetFullPath(Path.Combine(
@@ -144,7 +121,7 @@ namespace NovaStay.API
 
             builder.Services.AddScoped<ISampleDataService, SampleDataService>();
 
-            var jwtSecret = builder.Configuration["JWT:SecretKey"];
+            var jwtSecret = builder.Configuration["JWT_SecretKey"];
             if (!string.IsNullOrWhiteSpace(jwtSecret))
             {
                 builder.Services
@@ -157,8 +134,8 @@ namespace NovaStay.API
                             ValidateAudience = true,
                             ValidateLifetime = true,
                             ValidateIssuerSigningKey = true,
-                            ValidIssuer = builder.Configuration["JWT:Issuer"],
-                            ValidAudience = builder.Configuration["JWT:Audience"],
+                            ValidIssuer = builder.Configuration["JWT_Issuer"],
+                            ValidAudience = builder.Configuration["JWT_Audience"],
                             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
                         };
                     });
