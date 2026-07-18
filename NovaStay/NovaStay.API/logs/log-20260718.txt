@@ -1,0 +1,14 @@
+2026-07-18 17:11:04.565 +07:00 [INF] Database migration completed successfully.
+2026-07-18 17:11:04.834 +07:00 [INF] Configured endpoint Notification, Consumer: NovaStay.Infrastructure.Consumers.NotificationEmailComsumer
+2026-07-18 17:11:04.840 +07:00 [INF] Configured endpoint NotificationResetPasswordqueue, Consumer: NovaStay.Infrastructure.Consumers.NotificationResetPasswordConsumer
+2026-07-18 17:11:04.843 +07:00 [INF] Configured endpoint NotificationContractRenewqueue, Consumer: NovaStay.Infrastructure.Consumers.NotificationContractRenewConsumer
+2026-07-18 17:11:04.962 +07:00 [INF] User profile is available. Using 'C:\Users\Admin\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-07-18 17:11:05.080 +07:00 [INF] ContractRenewalNotifierBackgroundService is starting.
+2026-07-18 17:11:05.350 +07:00 [INF] Now listening on: https://localhost:7286
+2026-07-18 17:11:05.352 +07:00 [INF] Now listening on: http://localhost:5050
+2026-07-18 17:11:05.484 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-07-18 17:11:05.485 +07:00 [INF] Hosting environment: Development
+2026-07-18 17:11:05.486 +07:00 [INF] Content root path: E:\StartUp NovaStay\backendv3\NovaStay\NovaStay.API
+2026-07-18 17:11:05.772 +07:00 [INF] Bus started: "rabbitmq://157.66.219.130/"
+2026-07-18 17:12:05.233 +07:00 [WRN] You do not have a valid license key for the Lucky Penny software AutoMapper. This is allowed for development and testing scenarios. If you are running in production you are required to have a licensed version. Please visit https://luckypennysoftware.com to obtain a valid license.
+2026-07-18 17:12:05.612 +07:00 [INF] No contracts found expiring exactly on 2026-08-02.

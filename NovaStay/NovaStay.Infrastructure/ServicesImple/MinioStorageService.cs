@@ -17,13 +17,13 @@ public sealed class MinioStorageService : IMinioStorageService
 
     public MinioStorageService(IConfiguration configuration)
     {
-        var endpoint = configuration["MinIO:Endpoint"] ?? "localhost:9000";
-        var accessKey = configuration["MinIO:AccessKey"] ?? string.Empty;
-        var secretKey = configuration["MinIO:SecretKey"] ?? string.Empty;
-        var useSSL = bool.TryParse(configuration["MinIO:UseSSL"], out var ssl) && ssl;
+        var endpoint = configuration["MinIO_Endpoint"] ?? "localhost:9000";
+        var accessKey = configuration["MinIO_AccessKey"] ?? string.Empty;
+        var secretKey = configuration["MinIO_SecretKey"] ?? string.Empty;
+        var useSSL = bool.TryParse(configuration["MinIO_UseSSL"], out var ssl) && ssl;
 
-        _bucketName = configuration["MinIO:BucketName"] ?? "novastay-rooms";
-        _publicEndpoint = configuration["MinIO:PublicEndpoint"] ?? $"http://{endpoint}";
+        _bucketName = configuration["MinIO_BucketName"] ?? "novastay-rooms";
+        _publicEndpoint = configuration["MinIO_PublicEndpoint"] ?? $"http://{endpoint}";
 
         _minioClient = new MinioClient()
             .WithEndpoint(endpoint)

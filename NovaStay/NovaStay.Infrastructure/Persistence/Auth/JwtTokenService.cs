@@ -57,9 +57,9 @@ internal sealed class JwtTokenService : IJwtTokenService
        string? email,
        DateTime expiresAt)
     {
-        var secret = GetJwtString("SecretKey" ?? "2HONDAICODONSuperSecretKeyForJWTTokenGeneration");
-        var issuer = GetJwtString("Issuer" ?? "NovaStay");
-        var audience = GetJwtString("Audience" ?? "NovaStayUsers");
+        var secret = GetJwtString("SecretKey");
+        var issuer = GetJwtString("Issuer");
+        var audience = GetJwtString("Audience");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -88,10 +88,10 @@ internal sealed class JwtTokenService : IJwtTokenService
 
     private string GetJwtString(string key)
     {
-        var value = _configuration[$"JWT:{key}"];
+        var value = _configuration[$"JWT_{key}"];
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new InvalidOperationException($"JWT:{key} is not configured.");
+            throw new InvalidOperationException($"JWT_{key} is not configured.");
         }
 
         return value;
@@ -99,7 +99,7 @@ internal sealed class JwtTokenService : IJwtTokenService
 
     private int GetJwtInt(string key, int fallback)
     {
-        return int.TryParse(_configuration[$"JWT:{key}"], out var value)
+        return int.TryParse(_configuration[$"JWT_{key}"], out var value)
             ? value
             : fallback;
     }
