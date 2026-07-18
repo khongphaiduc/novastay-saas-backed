@@ -1,9 +1,11 @@
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using NovaStay.Application.Common.Mappings;
 using NovaStay.Application.Services;
+using NovaStay.Infrastructure.ContextDB;
 using NovaStay.Infrastructure.Persistence.DI;
 using NovaStay.Infrastructure.Persistence.Mapping;
 using OpenTelemetry.Exporter;
@@ -168,6 +170,24 @@ namespace NovaStay.API
             builder.Services.AddControllers();
 
             var app = builder.Build();
+            using (var scope = app.Services.CreateScope())
+            {
+                try
+                {
+                    var dbContext = scope.ServiceProvider
+                        .GetRequiredService<HostContext>();
+
+                    dbContext.Database.Migrate();
+
+                    Log.Information("Database migration completed successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Fatal(ex, "An error occurred while creating or migrating the database.");
+                    throw;
+                }
+            }
+
             app.UseSerilogRequestLogging();    // middleware of Serilog
             app.UseHttpsRedirection();
             app.UseCors("AllowFrontend");
