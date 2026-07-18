@@ -148,6 +148,7 @@ namespace NovaStay.API
             builder.Services.AddControllers();
 
             var app = builder.Build();
+
             using (var scope = app.Services.CreateScope())
             {
                 try
