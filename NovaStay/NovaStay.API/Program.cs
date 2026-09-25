@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace NovaStay.API
 {
@@ -73,12 +74,16 @@ namespace NovaStay.API
             {
                 options.AddPolicy("AllowFrontend", policy =>
                 {
+                    var origins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+                        ?? new[] { "https://novastay.io.vn", "https://www.novastay.io.vn" };
+
+                    if (builder.Environment.IsDevelopment())
+                    {
+                        origins = origins.Append("http://localhost:5173").ToArray();
+                    }
+
                     policy
-                        .WithOrigins(
-                            "http://localhost:5173",
-                            "https://novastay.io.vn",
-                            "https://www.novastay.io.vn"
-                        )
+                        .WithOrigins(origins)
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                 });
@@ -119,7 +124,18 @@ namespace NovaStay.API
 
             var app = builder.Build();
 
-            app.UseHttpsRedirection();
+            // HTTPS handled by Nginx reverse proxy — only redirect in Development
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
+
+            // Forward headers from Nginx (X-Forwarded-For, X-Forwarded-Proto)
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
+
             app.UseCors("AllowFrontend");
             app.UseAuthentication();
             app.UseAuthorization();
