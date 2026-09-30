@@ -1,4 +1,6 @@
-﻿using NovaStay.Application.DTOs;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
 using System;
 using System.Collections.Generic;
@@ -12,20 +14,34 @@ namespace NovaStay.Infrastructure.ServicesImple
 {
     public class Email : INotifications
     {
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<Email> _logger;
+
         public string TypeService => "Email";
+
+        public Email(IConfiguration configuration, ILogger<Email> logger)
+        {
+            _configuration = configuration;
+            _logger = logger;
+        }
 
         public async Task<bool> SendEmail(RequestSendMessage request)
         {
             try
             {
-                using (SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587))
+                var smtpHost = _configuration["SMTP:Host"] ?? "smtp.gmail.com";
+                var smtpPort = int.Parse(_configuration["SMTP:Port"] ?? "587");
+                var smtpUser = _configuration["SMTP:Username"] ?? "";
+                var smtpPass = _configuration["SMTP:Password"] ?? "";
+
+                using (SmtpClient smtp = new SmtpClient(smtpHost, smtpPort))
                 {
-                    smtp.Credentials = new NetworkCredential("hotelluxurytrungduc@gmail.com", "ykbg blmo tqxy hrld");
+                    smtp.Credentials = new NetworkCredential(smtpUser, smtpPass);
                     smtp.EnableSsl = true;
 
                     using (MailMessage message = new MailMessage())
                     {
-                        message.From = new MailAddress("hotelluxurytrungduc@gmail.com", "NovaStay");
+                        message.From = new MailAddress(smtpUser, "NovaStay");
                         message.To.Add(request.To);
                         message.Subject = request.Subject;
                         message.Body = request.Body;
@@ -35,12 +51,12 @@ namespace NovaStay.Infrastructure.ServicesImple
                     }
                 }
 
-                Console.WriteLine("Email sent successfully!");
+                _logger.LogInformation("Email sent successfully to {To}!", request.To);
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error sending email: " + ex.Message);
+                _logger.LogError(ex, "Error sending email to {To}", request.To);
                 return false;
             }
         }
