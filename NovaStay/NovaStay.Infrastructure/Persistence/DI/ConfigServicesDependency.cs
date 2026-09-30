@@ -18,7 +18,8 @@ namespace NovaStay.Infrastructure.Persistence.DI
 
             services.AddStackExchangeRedisCache(options =>
             {
-                options.Configuration = configuration["Redis:ConnectionString"];
+                options.Configuration = configuration["Redis_ConnectionString"]
+                    ?? throw new InvalidOperationException("Redis_ConnectionString is not configured.");
                 options.InstanceName = "NovaStay:";
             });
 
