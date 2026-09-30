@@ -75,7 +75,7 @@ namespace NovaStay.API
                 options.AddPolicy("AllowFrontend", policy =>
                 {
                     var origins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
-                        ?? new[] { "https://novastay.io.vn", "https://www.novastay.io.vn" };
+                        ?? new[] { "https://nestone.io.vn", "https://www.nestone.io.vn" };
 
                     if (builder.Environment.IsDevelopment())
                     {
