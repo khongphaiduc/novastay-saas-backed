@@ -60,7 +60,7 @@ public static class DependencyInjection
         services.AddScoped<INotifications, Email>();
 
         // Room Management
-        services.AddSingleton<IMinioStorageService, MinioStorageService>();
+        services.AddSingleton<IMinioStorageService, LocalStorageService>();
         services.AddScoped<IRoomService, RoomService>();
         services.AddScoped<IPropertyService, PropertyService>();
 
@@ -75,6 +75,13 @@ public static class DependencyInjection
 
         // Maintenance Management (TASK-021, TASK-022)
         services.AddScoped<IMaintenanceService, MaintenanceService>();
+
+        // Utility Meter & Reading (Ghi số dịch vụ điện/nước)
+        services.AddScoped<IUtilityService, UtilityService>();
+
+        // Admin Dashboard
+        services.AddScoped<IAdminService, AdminService>();
+
 
         // Background Services
         services.AddHostedService<NovaStay.Infrastructure.BackgroundServices.ContractRenewalNotifierBackgroundService>();
