@@ -31,10 +31,10 @@ namespace NovaStay.Infrastructure.Persistence.DI
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(configuration["RabbitMQ:HostName"] ?? "157.66.219.130", h =>
+                    cfg.Host(configuration["RabbitMQ_HostName"] ?? "157.66.219.130", h =>
                     {
-                        h.Username(configuration["RabbitMQ:Username"]!);
-                        h.Password(configuration["RabbitMQ:Password"]!);
+                        h.Username(configuration["RabbitMQ_UserName"]!);
+                        h.Password(configuration["RabbitMQ_Password"]!);
                     });
 
                     cfg.ReceiveEndpoint("Notification", e =>  // name of queue
@@ -61,11 +61,11 @@ namespace NovaStay.Infrastructure.Persistence.DI
             services.AddSingleton(sp =>
             {
                 return new MinioClient()
-                    .WithEndpoint(configuration["MinIO:Endpoint"])
+                    .WithEndpoint(configuration["MinIO_Endpoint"])
                     .WithCredentials(
-                        configuration["MinIO:AccessKey"],
-                        configuration["MinIO:SecretKey"])
-                    .WithSSL(bool.Parse(configuration["MinIO:UseSSL"]!))
+                        configuration["MinIO_AccessKey"],
+                        configuration["MinIO_SecretKey"])
+                    .WithSSL(bool.Parse(configuration["MinIO_UseSSL"]!))
                     .Build();
             });
 
