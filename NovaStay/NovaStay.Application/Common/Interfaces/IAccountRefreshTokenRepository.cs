@@ -13,4 +13,21 @@ public interface IAccountRefreshTokenRepository : IRepository<AccountRefreshToke
         DateTime revokedAt,
         string? revokedByIp,
         CancellationToken cancellationToken = default);
+
+}
+
+public class InforUser
+{
+    public Guid AccountId { get; set; }
+
+    public Guid OrganizationId { get; set; }
+
+    public string AccountType { get; set; } = string.Empty;
+
+    public string UserName { get; set; } = string.Empty;
+
+    public string Phone { get; set; } = string.Empty;
+
+    public string? Email { get; set; }
+
 }

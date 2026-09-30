@@ -249,8 +249,8 @@ internal sealed class FakeResidentService : IResidentService
         return Task.FromResult(new ResidentDto());
     }
 
-    public Task<ResidentProfileDto?> GetMyProfileAsync(Guid accountId, CancellationToken cancellationToken = default)
-        => Task.FromResult<ResidentProfileDto?>(null);
+    public Task<ResidentProfileDto> GetMyProfileAsync(Guid accountId, CancellationToken cancellationToken = default)
+        => Task.FromResult(new ResidentProfileDto());
 
     public Task<ResidentRoomDto?> GetMyRoomAsync(Guid accountId, CancellationToken cancellationToken = default)
         => Task.FromResult<ResidentRoomDto?>(null);
@@ -733,6 +733,7 @@ internal sealed class FakeSampleDataService : ISampleDataService
 {
     public IReadOnlyList<OrganizationDto> Organizations { get; set; } = [];
     public int Take { get; private set; }
+    public int CreatePackageResult { get; set; }
 
     public Task<IReadOnlyList<OrganizationDto>> GetOrganizationsAsync(
         int take = 20,
@@ -740,5 +741,10 @@ internal sealed class FakeSampleDataService : ISampleDataService
     {
         Take = take;
         return Task.FromResult(Organizations);
+    }
+
+    public Task<int> CreatePackageAsync()
+    {
+        return Task.FromResult(CreatePackageResult);
     }
 }

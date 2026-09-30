@@ -14,4 +14,14 @@ public interface IJwtTokenService
         DateTime issuedAt);
 
     string HashRefreshToken(string refreshToken);
+
+    string CreateAccessToken(
+        Guid accountId,
+        Guid organizationId,
+        string accountType,
+        string customerName,
+        string phone,
+        string? email,
+        DateTime expiresAt);
+
 }
