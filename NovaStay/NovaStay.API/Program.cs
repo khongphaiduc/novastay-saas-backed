@@ -1,21 +1,13 @@
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using NovaStay.Application.Common.Mappings;
-using NovaStay.Application.Services;
 using NovaStay.Infrastructure.ContextDB;
 using NovaStay.Infrastructure.Persistence.DI;
 using NovaStay.Infrastructure.Persistence.Mapping;
-using OpenTelemetry.Exporter;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using Serilog;
-using Serilog.Events;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace NovaStay.API
 {
@@ -23,63 +15,32 @@ namespace NovaStay.API
     {
         public static async Task Main(string[] args)
         {
-            Log.Logger = new LoggerConfiguration().MinimumLevel.Override("Microsoft.AspNetCore.Hosting", LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.AspNetCore.Mvc", LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
-              .WriteTo.Console()   // write log  in console screen 
-                .WriteTo.File(
-        "logs/log-.txt",
-        rollingInterval: RollingInterval.Day)
-              .CreateLogger();
-
             var builder = WebApplication.CreateBuilder(args);
-            builder.Services.AddSerilog();
 
-            builder.Services.AddOpenTelemetry()
-             .ConfigureResource(resource => resource
-             .AddService(
-                   serviceName: "NovaStay.API",
-                   serviceVersion: "1.0.0"))
-             .WithTracing(tracing =>
-             {
-                 tracing
-                    .AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation()
-                   .AddConsoleExporter()
-                  .AddOtlpExporter(options =>
-                  {
-                      options.Endpoint = new Uri("http://157.66.219.130:4317");     // end point of OpenTelemetry Collector
-                      options.Protocol = OtlpExportProtocol.Grpc;
-                  });
-             })
-             .WithMetrics(metrics =>
-             {
-                 metrics
-                .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation()
-                .AddRuntimeInstrumentation()
-                  .AddConsoleExporter()
-               .AddOtlpExporter(options =>  // export metrics to OpenTelemetry Collector
-               {
-                   options.Endpoint = new Uri("http://157.66.219.130:4317");
-                   options.Protocol = OtlpExportProtocol.Grpc;
-               });
-             });
+            // ── Load appsettings from Infrastructure ───────────────────────────────
+            var infrastructureConfigPaths = new[]
+            {
+                Path.GetFullPath(Path.Combine(
+                    builder.Environment.ContentRootPath, "..", "NovaStay.Infrastructure", "Config", "appsettings.json")),
+                Path.GetFullPath(Path.Combine(
+                    builder.Environment.ContentRootPath, "NovaStay.Infrastructure", "Config", "appsettings.json"))
+            };
 
+            foreach (var configPath in infrastructureConfigPaths)
+            {
+                builder.Configuration.AddJsonFile(
+                    configPath,
+                    optional: true,
+                    reloadOnChange: builder.Environment.IsDevelopment());
+            }
+
+            // ── Load .env file ─────────────────────────────────────────────────────
             var envPaths = new[]
             {
                 Path.GetFullPath(Path.Combine(
-                    builder.Environment.ContentRootPath,
-                    "..",
-                    "NovaStay.Infrastructure",
-                    "Config",
-                    ".env")),
+                    builder.Environment.ContentRootPath, "..", "NovaStay.Infrastructure", "Config", ".env")),
                 Path.GetFullPath(Path.Combine(
-                    builder.Environment.ContentRootPath,
-                    "NovaStay.Infrastructure",
-                    "Config",
-                    ".env"))
+                    builder.Environment.ContentRootPath, "NovaStay.Infrastructure", "Config", ".env"))
             };
 
             foreach (var envPath in envPaths)
@@ -93,22 +54,24 @@ namespace NovaStay.API
 
             builder.Configuration.AddEnvironmentVariables();
 
-            builder.Services.ConfigurePersistenceServices(builder.Configuration); // dependency service of project 
-
+            // ── Services ───────────────────────────────────────────────────────────
+            builder.Services.ConfigurePersistenceServices(builder.Configuration);
             builder.Services.AddInfrastructure(builder.Configuration);
 
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend", policy =>
                 {
+                    var origins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+                        ?? new[] { "https://nestone.io.vn", "https://www.nestone.io.vn" };
+
+                    if (builder.Environment.IsDevelopment())
+                    {
+                        origins = origins.Append("http://localhost:5173").ToArray();
+                    }
+
                     policy
-                        .WithOrigins(
-                            "http://localhost:5173",
-                            "https://novastay.io.vn",
-                            "https://www.novastay.io.vn",
-                            "https://nestone.io.vn",
-                            "https://www.nestone.io.vn"
-                        )
+                        .WithOrigins(origins)
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                 });
@@ -120,9 +83,10 @@ namespace NovaStay.API
                 configuration.AddProfile<DatabaseModelMappingProfile>();
             });
 
-            builder.Services.AddScoped<ISampleDataService, SampleDataService>();
+            // ── JWT ────────────────────────────────────────────────────────────────
+            var jwtSecret = builder.Configuration["JWT_SecretKey"]
+                         ?? builder.Configuration["JWT:SecretKey"];
 
-            var jwtSecret = builder.Configuration["JWT_SecretKey"];
             if (!string.IsNullOrWhiteSpace(jwtSecret))
             {
                 builder.Services
@@ -135,59 +99,53 @@ namespace NovaStay.API
                             ValidateAudience = true,
                             ValidateLifetime = true,
                             ValidateIssuerSigningKey = true,
-                            ValidIssuer = builder.Configuration["JWT_Issuer"],
-                            ValidAudience = builder.Configuration["JWT_Audience"],
+                            ValidIssuer = builder.Configuration["JWT_Issuer"] ?? builder.Configuration["JWT:Issuer"],
+                            ValidAudience = builder.Configuration["JWT_Audience"] ?? builder.Configuration["JWT:Audience"],
                             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
                         };
                     });
             }
 
-
-
-
             builder.Services.AddControllers();
 
             var app = builder.Build();
 
+            // ── Database migration ─────────────────────────────────────────────────
             using (var scope = app.Services.CreateScope())
             {
                 try
                 {
-                    var dbContext = scope.ServiceProvider
-                        .GetRequiredService<HostContext>();
-
+                    var dbContext = scope.ServiceProvider.GetRequiredService<HostContext>();
                     await dbContext.Database.MigrateAsync();
-
-                    Log.Information("Database migration completed successfully.");
-
-                    var sampleDataService = scope.ServiceProvider
-                        .GetRequiredService<ISampleDataService>();
-
-                    var affectedRows = await sampleDataService.CreatePackageAsync();
-
-                    Log.Information(
-                        "Sample subscription packages seeded successfully. Affected rows: {AffectedRows}",
-                        affectedRows);
                 }
                 catch (Exception ex)
                 {
-                    Log.Fatal(
-                        ex,
-                        "An error occurred while migrating or seeding the database.");
-
+                    Console.WriteLine($"[FATAL] Database migration failed: {ex.Message}");
                     throw;
                 }
             }
 
-            app.UseSerilogRequestLogging();    // middleware of Serilog
-            app.UseHttpsRedirection();
+            // ── Middleware pipeline ────────────────────────────────────────────────
+
+            // Forward headers from Nginx — must be FIRST
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
+
+            // HTTPS handled by Nginx in production — only redirect in Development
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
+
             app.UseCors("AllowFrontend");
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
 
-            app.Run();
+            await app.RunAsync();
         }
     }
 }

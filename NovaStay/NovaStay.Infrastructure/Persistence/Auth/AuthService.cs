@@ -1,4 +1,4 @@
-﻿using MassTransit;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
@@ -150,7 +150,7 @@ internal sealed class AuthService : IAuthService
         var account = await _context.Accounts
             .FirstOrDefaultAsync(
                 entity => entity.Email == normalizedEmail
-                    && entity.AccountType == BusinessOwnerAccountType,
+                    && (entity.AccountType == BusinessOwnerAccountType || entity.AccountType == "Admin"),
                 cancellationToken);
 
         if (account is null
@@ -166,7 +166,8 @@ internal sealed class AuthService : IAuthService
                 entity => entity.OwnerAccountId == account.Id,
                 cancellationToken);
 
-        if (organization is null)
+        // Admin không có Organization — chỉ BusinessOwner mới bắt buộc
+        if (account.AccountType == BusinessOwnerAccountType && organization is null)
         {
             throw new UnauthorizedAccessException(InvalidLoginMessage);
         }
@@ -176,7 +177,7 @@ internal sealed class AuthService : IAuthService
 
         var tokens = _jwtTokenService.CreateTokenPair(
             account.Id,
-            organization.Id,
+            organization?.Id ?? Guid.Empty,
             account.AccountType,
             account.CustomerName,
             account.Phone,
@@ -211,13 +212,13 @@ internal sealed class AuthService : IAuthService
         return new LoginBusinessAccountResponse
         {
             AccountId = account.Id,
-            OrganizationId = organization.Id,
+            OrganizationId = organization?.Id ?? Guid.Empty,
             AccountType = account.AccountType,
             CustomerName = account.CustomerName,
             Phone = account.Phone,
             Email = account.Email ?? string.Empty,
-            BusinessArea = organization.BusinessArea,
-            BusinessName = organization.BusinessName,
+            BusinessArea = organization?.BusinessArea ?? string.Empty,
+            BusinessName = organization?.BusinessName ?? string.Empty,
             AccessToken = tokens.AccessToken,
             AccessTokenExpiresAt = tokens.AccessTokenExpiresAt,
             RefreshToken = tokens.RefreshToken,

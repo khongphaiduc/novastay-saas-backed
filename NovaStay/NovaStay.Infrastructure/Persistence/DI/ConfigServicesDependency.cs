@@ -32,13 +32,10 @@ namespace NovaStay.Infrastructure.Persistence.DI
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(configuration["RabbitMQ_HostName"]
-                        ?? throw new InvalidOperationException("RabbitMQ_HostName is not configured."), h =>
+                    cfg.Host(configuration["RabbitMQ_HostName"] ?? "157.66.219.130", h =>
                     {
-                        h.Username(configuration["RabbitMQ_UserName"]
-                            ?? throw new InvalidOperationException("RabbitMQ_UserName is not configured."));
-                        h.Password(configuration["RabbitMQ_Password"]
-                            ?? throw new InvalidOperationException("RabbitMQ_Password is not configured."));
+                        h.Username(configuration["RabbitMQ_UserName"]!);
+                        h.Password(configuration["RabbitMQ_Password"]!);
                     });
 
                     cfg.ReceiveEndpoint("Notification", e =>  // name of queue
@@ -65,15 +62,11 @@ namespace NovaStay.Infrastructure.Persistence.DI
             services.AddSingleton(sp =>
             {
                 return new MinioClient()
-                    .WithEndpoint(configuration["MinIO_Endpoint"]
-                        ?? throw new InvalidOperationException("MinIO_Endpoint is not configured."))
+                    .WithEndpoint(configuration["MinIO_Endpoint"])
                     .WithCredentials(
-                        configuration["MinIO_AccessKey"]
-                            ?? throw new InvalidOperationException("MinIO_AccessKey is not configured."),
-                        configuration["MinIO_SecretKey"]
-                            ?? throw new InvalidOperationException("MinIO_SecretKey is not configured."))
-                    .WithSSL(bool.Parse(configuration["MinIO_UseSSL"]
-                        ?? throw new InvalidOperationException("MinIO_UseSSL is not configured.")))
+                        configuration["MinIO_AccessKey"],
+                        configuration["MinIO_SecretKey"])
+                    .WithSSL(bool.Parse(configuration["MinIO_UseSSL"]!))
                     .Build();
             });
 
