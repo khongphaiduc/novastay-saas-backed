@@ -1,0 +1,94 @@
+version: '3.8'
+
+networks:
+  novastay-network:
+    driver: bridge
+
+services:
+
+  # =====================
+  # SQL Server
+  # =====================
+  novastay-sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: novastay-sqlserver
+    restart: always
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "REMOVED_ROTATE_BEFORE_USE"
+    ports:
+      - "14333:1433"
+    volumes:
+      - novastay-sqldata:/var/opt/mssql
+    networks:
+      - novastay-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'REMOVED_ROTATE_BEFORE_USE' -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      retries: 10
+      start_period: 30s
+
+  # =====================
+  # MinIO (Object Storage)
+  # =====================
+  novastay-minio:
+    image: quay.io/minio/minio:latest
+    container_name: novastay-minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: "REMOVED_ROTATE_BEFORE_USE"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - novastay-minio-data:/data
+    networks:
+      - novastay-network
+
+  # =====================
+  # Backend API (.NET 8)
+  # =====================
+  novastay-api:
+    image: novastay-api:latest
+    container_name: novastay-api
+    restart: always
+    ports:
+      - "7286:8080"
+    environment:
+      SQLString: "Data Source=novastay-sqlserver,1433;Initial Catalog=NovaStayDatabase;Persist Security Info=True;User ID=sa;Password=REMOVED_ROTATE_BEFORE_USE;Trust Server Certificate=True"
+      RabbitMQ_HostName: "lemsstem-rabbitmq-1"
+      RabbitMQ_UserName: "guest"
+      RabbitMQ_Password: "guest"
+      MinIO__Endpoint: "novastay-minio:9000"
+      MinIO__AccessKey: "admin"
+      MinIO__SecretKey: "REMOVED_ROTATE_BEFORE_USE"
+      MinIO__BucketName: "novastay"
+      MinIO__UseSSL: "false"
+      MinIO__PublicEndpoint: "http://161.248.147.31:9000"
+    depends_on:
+      novastay-sqlserver:
+        condition: service_healthy
+      novastay-minio:
+        condition: service_started
+    networks:
+      - novastay-network
+
+  # =====================
+  # Frontend (React + Nginx)
+  # =====================
+  novastay-frontend:
+    image: novastay-frontend:latest
+    container_name: novastay-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    networks:
+      - novastay-network
+    depends_on:
+      - novastay-api
+
+volumes:
+  novastay-sqldata:
+  novastay-minio-data:
