@@ -25,6 +25,7 @@ public interface IUnitOfWork : IAsyncDisposable
     IAccountRefreshTokenRepository AccountRefreshTokens { get; }
     IStaffUserRepository StaffUsers { get; }
     IIncomeReceiptRepository IncomeReceipts { get; }
+    IInvitationLinkRepository InvitationLinks { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
