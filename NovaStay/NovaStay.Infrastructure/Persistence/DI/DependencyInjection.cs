@@ -47,6 +47,7 @@ public static class DependencyInjection
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<IAccountRefreshTokenRepository, AccountRefreshTokenRepository>();
         services.AddScoped<IStaffUserRepository, StaffUserRepository>();
+        services.AddScoped<IInvitationLinkRepository, InvitationLinkRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
@@ -55,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<IResidentService, ResidentService>();
         services.AddScoped<IResidentInvitationService, ResidentInvitationService>();
         services.AddScoped<IResidentAuthService, ResidentAuthService>();
+        services.AddScoped<IInvitationLinkService, InvitationLinkService>();
         services.AddScoped<IPropertyCatalogService, PropertyCatalogService>();
         services.AddScoped<ILogoutService, LogoutService>();
         services.AddScoped<INotifications, Email>();
