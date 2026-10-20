@@ -60,6 +60,7 @@ public static class DependencyInjection
         services.AddScoped<IPropertyCatalogService, PropertyCatalogService>();
         services.AddScoped<ILogoutService, LogoutService>();
         services.AddScoped<INotifications, Email>();
+        services.AddScoped<IProvideAccessToken, ProvideAccessToken>();
 
         // Room Management
         services.AddSingleton<IMinioStorageService, LocalStorageService>();

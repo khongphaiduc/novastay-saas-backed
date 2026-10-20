@@ -1162,6 +1162,7 @@ internal sealed class AccountRefreshTokenRepository : Repository<DomainAccountRe
 
         return refreshTokens.Count;
     }
+
 }
 
 internal sealed class OrganizationRepository : Repository<DomainOrganization, DatabaseOrganization>, IOrganizationRepository
