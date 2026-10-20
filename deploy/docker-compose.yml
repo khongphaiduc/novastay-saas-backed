@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # ===== SQL Server 2022 =====
+  novastay-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: novastay-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD}"
+    ports:
+      - "127.0.0.1:14433:1433"
+    volumes:
+      - /opt/novastay/data/sqlserver:/var/opt/mssql
+    restart: unless-stopped
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$${SA_PASSWORD}" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ===== Redis 7 =====
+  novastay-redis:
+    image: redis:7-alpine
+    container_name: novastay-redis
+    ports:
+      - "127.0.0.1:16379:6379"
+    volumes:
+      - /opt/novastay/data/redis:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ===== RabbitMQ 3 with Management =====
+  novastay-rabbit:
+    image: rabbitmq:3-management-alpine
+    container_name: novastay-rabbit
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RabbitMQ_UserName}"
+      RABBITMQ_DEFAULT_PASS: "${RabbitMQ_Password}"
+    ports:
+      - "127.0.0.1:15673:5672"
+      - "127.0.0.1:25673:15672"
+    volumes:
+      - /opt/novastay/data/rabbitmq:/var/lib/rabbitmq
+    restart: unless-stopped
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ===== Backend API (ASP.NET Core 8) =====
+  novastay-api:
+    image: anhkddev/benovastay:latest
+    container_name: novastay-api
+    env_file:
+      - /opt/novastay/env/.env
+    ports:
+      - "127.0.0.1:17286:8080"
+    environment:
+      Storage__LocalPath: /opt/novastay/uploads
+      Storage__PublicBaseUrl: https://nestone.io.vn/uploads
+    volumes:
+      - /opt/novastay/data/uploads:/opt/novastay/uploads
+    depends_on:
+      novastay-db:
+        condition: service_healthy
+      novastay-redis:
+        condition: service_healthy
+      novastay-rabbit:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ===== Frontend (React/Nginx) =====
+  novastay-frontend:
+    image: anhkddev/fenovastay:latest
+    container_name: novastay-frontend
+    ports:
+      - "127.0.0.1:13000:80"
+    restart: unless-stopped
+    depends_on:
+      - novastay-api
+
+networks:
+  default:
+    name: novastay-net
