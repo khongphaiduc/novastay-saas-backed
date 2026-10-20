@@ -47,7 +47,7 @@ namespace NovaStay.API
             {
                 if (File.Exists(envPath))
                 {
-                    Env.Load(envPath);
+                    Env.NoClobber().Load(envPath);
                     break;
                 }
             }
@@ -87,7 +87,11 @@ namespace NovaStay.API
             var jwtSecret = builder.Configuration["JWT_SecretKey"]
                          ?? builder.Configuration["JWT:SecretKey"];
 
-            if (!string.IsNullOrWhiteSpace(jwtSecret))
+            if (string.IsNullOrWhiteSpace(jwtSecret) || Encoding.UTF8.GetByteCount(jwtSecret) < 32)
+            {
+                throw new InvalidOperationException("Configure JWT__SecretKey with at least 32 bytes via the environment.");
+            }
+
             {
                 builder.Services
                     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

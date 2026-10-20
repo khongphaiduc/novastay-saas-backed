@@ -88,7 +88,7 @@ internal sealed class JwtTokenService : IJwtTokenService
 
     private string GetJwtString(string key)
     {
-        var value = _configuration[$"JWT_{key}"];
+        var value = _configuration[$"JWT_{key}"] ?? _configuration[$"JWT:{key}"];
         if (string.IsNullOrWhiteSpace(value))
         {
             throw new InvalidOperationException($"JWT_{key} is not configured.");
@@ -99,7 +99,7 @@ internal sealed class JwtTokenService : IJwtTokenService
 
     private int GetJwtInt(string key, int fallback)
     {
-        return int.TryParse(_configuration[$"JWT_{key}"], out var value)
+        return int.TryParse(_configuration[$"JWT_{key}"] ?? _configuration[$"JWT:{key}"], out var value)
             ? value
             : fallback;
     }

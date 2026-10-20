@@ -15,15 +15,16 @@ services:
     restart: always
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "REMOVED_ROTATE_BEFORE_USE"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD:?Set SA_PASSWORD}"
+      SQLCMDPASSWORD: "${SA_PASSWORD:?Set SA_PASSWORD}"
     ports:
-      - "14333:1433"
+      - "127.0.0.1:14333:1433"
     volumes:
       - novastay-sqldata:/var/opt/mssql
     networks:
       - novastay-network
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'REMOVED_ROTATE_BEFORE_USE' -Q 'SELECT 1' || exit 1"]
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -Q 'SELECT 1' || exit 1"]
       interval: 10s
       retries: 10
       start_period: 30s
@@ -37,11 +38,11 @@ services:
     restart: always
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: "REMOVED_ROTATE_BEFORE_USE"
+      MINIO_ROOT_USER: "${MinIO__AccessKey:?Set MinIO__AccessKey}"
+      MINIO_ROOT_PASSWORD: "${MinIO__SecretKey:?Set MinIO__SecretKey}"
     ports:
       - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9001:9001"
     volumes:
       - novastay-minio-data:/data
     networks:
@@ -52,18 +53,20 @@ services:
   # =====================
   novastay-api:
     image: novastay-api:latest
+    env_file:
+      - .env
     container_name: novastay-api
     restart: always
     ports:
       - "7286:8080"
     environment:
-      SQLString: "Data Source=novastay-sqlserver,1433;Initial Catalog=NovaStayDatabase;Persist Security Info=True;User ID=sa;Password=REMOVED_ROTATE_BEFORE_USE;Trust Server Certificate=True"
-      RabbitMQ_HostName: "lemsstem-rabbitmq-1"
-      RabbitMQ_UserName: "guest"
-      RabbitMQ_Password: "guest"
+      SQLString: "${SQLString:?Set SQLString for novastay-sqlserver}"
+      RabbitMQ_HostName: "${RabbitMQ_HostName:?Set RabbitMQ_HostName}"
+      RabbitMQ_UserName: "${RabbitMQ_UserName:?Set RabbitMQ_UserName}"
+      RabbitMQ_Password: "${RabbitMQ_Password:?Set RabbitMQ_Password}"
       MinIO__Endpoint: "novastay-minio:9000"
-      MinIO__AccessKey: "admin"
-      MinIO__SecretKey: "REMOVED_ROTATE_BEFORE_USE"
+      MinIO__AccessKey: "${MinIO__AccessKey:?Set MinIO__AccessKey}"
+      MinIO__SecretKey: "${MinIO__SecretKey:?Set MinIO__SecretKey}"
       MinIO__BucketName: "novastay"
       MinIO__UseSSL: "false"
       MinIO__PublicEndpoint: "http://161.248.147.31:9000"

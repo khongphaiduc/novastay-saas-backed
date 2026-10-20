@@ -13,3 +13,6 @@ appsettings.*.local.json
 *.db-wal
 
 .env
+.env.*
+!.env.example
+!.env.sample
