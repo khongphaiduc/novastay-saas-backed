@@ -50,10 +50,25 @@ namespace NovaStay.Infrastructure.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(100)");
 
+                    b.Property<string>("ExternalProvider")
+                        .HasMaxLength(50)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("GoogleId")
+                        .HasMaxLength(128)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(128)");
+
                     b.Property<bool?>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
+
+                    b.Property<bool>("IsEmailVerified")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime");
@@ -81,6 +96,10 @@ namespace NovaStay.Infrastructure.Migrations
                         .HasName("PK_Accounts");
 
                     b.HasIndex(new[] { "Email" }, "IX_Accounts_Email");
+
+                    b.HasIndex(new[] { "GoogleId" }, "IX_Accounts_GoogleId")
+                        .IsUnique()
+                        .HasFilter("[GoogleId] IS NOT NULL");
 
                     b.HasIndex(new[] { "Phone" }, "IX_Accounts_Phone")
                         .IsUnique();
@@ -726,6 +745,70 @@ namespace NovaStay.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("IncomeReceipts");
+                });
+
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.InvitationLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("(newsequentialid())");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("MaxUses")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PropertyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<int>("UsedCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.HasKey("Id")
+                        .HasName("PK_InvitationLinks");
+
+                    b.HasIndex("PropertyId");
+
+                    b.HasIndex("RoomId");
+
+                    b.HasIndex(new[] { "OrganizationId", "IsActive" }, "IX_InvitationLinks_OrganizationId_IsActive");
+
+                    b.HasIndex(new[] { "Token" }, "UX_InvitationLinks_Token")
+                        .IsUnique();
+
+                    b.ToTable("InvitationLinks");
                 });
 
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Invoice", b =>
@@ -2338,6 +2421,31 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Navigation("Property");
 
                     b.Navigation("Resident");
+
+                    b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.InvitationLink", b =>
+                {
+                    b.HasOne("NovaStay.Infrastructure.Models.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .IsRequired()
+                        .HasConstraintName("FK_InvitationLinks_Organizations_OrganizationId");
+
+                    b.HasOne("NovaStay.Infrastructure.Models.Property", "Property")
+                        .WithMany()
+                        .HasForeignKey("PropertyId")
+                        .HasConstraintName("FK_InvitationLinks_Properties_PropertyId");
+
+                    b.HasOne("NovaStay.Infrastructure.Models.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .HasConstraintName("FK_InvitationLinks_Rooms_RoomId");
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("Property");
 
                     b.Navigation("Room");
                 });
