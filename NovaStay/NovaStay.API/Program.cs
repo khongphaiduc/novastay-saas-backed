@@ -83,7 +83,7 @@ namespace NovaStay.API
                 configuration.AddProfile<DatabaseModelMappingProfile>();
             });
 
-            // ── JWT ────────────────────────────────────────────────────────────────
+            // ── JWT ────────────────────────────────────────────────────────────
             var jwtSecret = builder.Configuration["JWT_SecretKey"]
                          ?? builder.Configuration["JWT:SecretKey"];
 
