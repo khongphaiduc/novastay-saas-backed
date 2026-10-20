@@ -71,6 +71,31 @@ internal sealed class FakeResidentAuthService : IResidentAuthService
 
         return Task.FromResult(Response);
     }
+
+    public RegisterResidentAccountResponse RegisterResponse { get; set; } = new();
+    public Exception? RegisterException { get; set; }
+
+    public Task<RegisterResidentAccountResponse> RegisterAsync(
+        RegisterResidentAccountRequest request,
+        string? ipAddress,
+        CancellationToken cancellationToken = default)
+    {
+        if (RegisterException is not null)
+        {
+            throw RegisterException;
+        }
+
+        return Task.FromResult(RegisterResponse);
+    }
+
+    public Task<LoginResidentAccountResponse> GoogleLoginAsync(
+        GoogleLoginResidentRequest request,
+        string? ipAddress,
+        CancellationToken cancellationToken = default)
+    {
+        // Phase 2 stub
+        throw new NotImplementedException("Google login will be implemented in Phase 2.");
+    }
 }
 
 internal sealed class FakeChangePasswordService : IChangePasswordService
