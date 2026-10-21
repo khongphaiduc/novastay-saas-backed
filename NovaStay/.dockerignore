@@ -9,3 +9,11 @@
 **/TestResults
 Dockerfile
 README.md
+**/.env
+**/.env.*
+**/appsettings.*.local.json
+**/.security-private
+**/*.pfx
+**/*.p12
+**/*.pem
+**/*.key

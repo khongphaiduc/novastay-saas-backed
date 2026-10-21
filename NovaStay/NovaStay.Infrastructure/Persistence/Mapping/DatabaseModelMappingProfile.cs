@@ -41,6 +41,8 @@ using DomainAccountRefreshToken = NovaStay.Domain.Entities.AccountRefreshTokenEn
 using DatabaseAccountRefreshToken = NovaStay.Infrastructure.Models.AccountRefreshToken;
 using DomainStaffUser = NovaStay.Domain.Entities.StaffUserEntity;
 using DatabaseStaffUser = NovaStay.Infrastructure.Models.StaffUser;
+using DomainInvitationLink = NovaStay.Domain.Entities.InvitationLinkEntity;
+using DatabaseInvitationLink = NovaStay.Infrastructure.Models.InvitationLink;
 
 namespace NovaStay.Infrastructure.Persistence.Mapping;
 
@@ -69,5 +71,6 @@ public sealed class DatabaseModelMappingProfile : Profile
         CreateMap<DatabaseOrganization, DomainOrganization>().ReverseMap();
         CreateMap<DatabaseAccountRefreshToken, DomainAccountRefreshToken>().ReverseMap();
         CreateMap<DatabaseStaffUser, DomainStaffUser>().ReverseMap();
+        CreateMap<DatabaseInvitationLink, DomainInvitationLink>().ReverseMap();
     }
 }

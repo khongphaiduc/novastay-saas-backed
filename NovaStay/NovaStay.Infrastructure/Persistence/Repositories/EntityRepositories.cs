@@ -45,6 +45,8 @@ using DomainAccountRefreshToken = NovaStay.Domain.Entities.AccountRefreshTokenEn
 using DatabaseAccountRefreshToken = NovaStay.Infrastructure.Models.AccountRefreshToken;
 using DomainStaffUser = NovaStay.Domain.Entities.StaffUserEntity;
 using DatabaseStaffUser = NovaStay.Infrastructure.Models.StaffUser;
+using DomainInvitationLink = NovaStay.Domain.Entities.InvitationLinkEntity;
+using DatabaseInvitationLink = NovaStay.Infrastructure.Models.InvitationLink;
 using Microsoft.EntityFrameworkCore;
 
 namespace NovaStay.Infrastructure.Persistence.Repositories;
@@ -1079,6 +1081,11 @@ internal sealed class AccountRepository : Repository<DomainAccount, DatabaseAcco
 
     public async Task<DomainAccount?> GetByPhoneAsync(string phone, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(phone))
+        {
+            return null;
+        }
+
         var account = await _context.Accounts
             .AsNoTracking()
             .FirstOrDefaultAsync(entity => entity.Phone == phone, cancellationToken);
@@ -1091,6 +1098,15 @@ internal sealed class AccountRepository : Repository<DomainAccount, DatabaseAcco
         var account = await _context.Accounts
             .AsNoTracking()
             .FirstOrDefaultAsync(entity => entity.Email == email, cancellationToken);
+
+        return account is null ? null : _mapper.ToDomain(account);
+    }
+
+    public async Task<DomainAccount?> GetByGoogleIdAsync(string googleId, CancellationToken cancellationToken = default)
+    {
+        var account = await _context.Accounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(entity => entity.GoogleId == googleId, cancellationToken);
 
         return account is null ? null : _mapper.ToDomain(account);
     }
@@ -1168,5 +1184,36 @@ internal sealed class OrganizationRepository : Repository<DomainOrganization, Da
             .FirstOrDefaultAsync(entity => entity.OwnerEmail == ownerEmail, cancellationToken);
 
         return Organization is null ? null : _mapper.ToDomain(Organization);
+    }
+}
+
+internal sealed class InvitationLinkRepository : Repository<DomainInvitationLink, DatabaseInvitationLink>, IInvitationLinkRepository
+{
+    private readonly HostContext _context;
+    private readonly IDatabaseModelMapper<DomainInvitationLink, DatabaseInvitationLink> _mapper;
+
+    public InvitationLinkRepository(HostContext context, IDatabaseModelMapper<DomainInvitationLink, DatabaseInvitationLink> mapper)
+        : base(context, mapper)
+    {
+        _context = context;
+        _mapper = mapper;
+    }
+
+    public async Task<DomainInvitationLink?> GetByTokenAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var dbLink = await _context.InvitationLinks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.Token == token, cancellationToken);
+        return dbLink is null ? null : _mapper.ToDomain(dbLink);
+    }
+
+    public async Task<IReadOnlyList<DomainInvitationLink>> GetByOrganizationAsync(Guid organizationId, CancellationToken cancellationToken = default)
+    {
+        var dbLinks = await _context.InvitationLinks
+            .AsNoTracking()
+            .Where(l => l.OrganizationId == organizationId)
+            .OrderByDescending(l => l.CreatedAt)
+            .ToListAsync(cancellationToken);
+        return dbLinks.Select(_mapper.ToDomain).ToList();
     }
 }

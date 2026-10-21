@@ -31,7 +31,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IOrganizationRepository organizations,
         IAccountRefreshTokenRepository accountRefreshTokens,
         IStaffUserRepository staffUsers,
-        IIncomeReceiptRepository incomeReceipts)
+        IIncomeReceiptRepository incomeReceipts,
+        IInvitationLinkRepository invitationLinks)
     {
         _context = context;
         Assets = assets;
@@ -57,6 +58,7 @@ public sealed class UnitOfWork : IUnitOfWork
         AccountRefreshTokens = accountRefreshTokens;
         StaffUsers = staffUsers;
         IncomeReceipts = incomeReceipts;
+        InvitationLinks = invitationLinks;
     }
 
     public IAssetRepository Assets { get; }
@@ -104,6 +106,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IStaffUserRepository StaffUsers { get; }
 
     public IIncomeReceiptRepository IncomeReceipts { get; }
+
+    public IInvitationLinkRepository InvitationLinks { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

@@ -9,6 +9,9 @@ public sealed class AccountEntity : Entity
     public string? PasswordHash { get; set; }
     public bool? MustSetPassword { get; set; }
     public DateTime? PasswordSetAt { get; set; }
+    public string? GoogleId { get; set; }
+    public string? ExternalProvider { get; set; }
+    public bool IsEmailVerified { get; set; }
     public bool? IsActive { get; set; }
     public DateTime? LastLoginAt { get; set; }
     public DateTime? CreatedAt { get; set; }

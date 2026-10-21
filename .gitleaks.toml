@@ -1,0 +1,35 @@
+title = "NovaStay secret detection"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Removed historical credentials and empty-safe sample marker"
+regexes = ['''REMOVED_ROTATE_BEFORE_USE''']
+
+[[allowlists]]
+description = "Documentation-only SQL password placeholder"
+regexes = ['''^your_password$''']
+
+[[allowlists]]
+description = "EF column names are schema identifiers"
+regexTarget = "match"
+regexes = ['''e\.(PermissionKey|PackageKey),''']
+
+[[allowlists]]
+description = "Fixed invitation token used only in mapping unit tests"
+condition = "AND"
+paths = ['''NovaStay/NovaStay.UnitTests/Infrastructure/DatabaseModelMappingProfileTests\.cs$''']
+regexes = ['''^abcdef123456$''']
+
+[[rules]]
+id = "novastay-config-credential"
+description = "Literal password or signing key in environment/Compose/JSON configuration"
+regex = '''(?im)^[ \t]*(?:SA_PASSWORD|MSSQL_SA_PASSWORD|RABBITMQ_DEFAULT_PASS|RabbitMQ_Password|MINIO_ROOT_PASSWORD|MinIO__?SecretKey|JWT__?SecretKey|SMTP__Password|"SecretKey"|"Secret")[ \t]*[:=][ \t]*["']?([A-Za-z0-9@!][^"'$\r\n]{7,})'''
+secretGroup = 1
+
+[[rules]]
+id = "novastay-sql-password"
+description = "Password embedded in a SQL connection string"
+regex = '''(?i)(?:Server|Data Source)\s*=[^"'\r\n]*?(?:password|pwd)\s*=\s*([^;"'\r\n$]{8,})'''
+secretGroup = 1

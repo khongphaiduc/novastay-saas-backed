@@ -19,6 +19,7 @@ namespace NovaStay.Infrastructure.Persistence.DI
             services.AddStackExchangeRedisCache(options =>
             {
                 options.Configuration = configuration["Redis_ConnectionString"]
+                    ?? configuration["Redis:ConnectionString"]
                     ?? throw new InvalidOperationException("Redis_ConnectionString is not configured.");
                 options.InstanceName = "NovaStay:";
             });
@@ -32,7 +33,7 @@ namespace NovaStay.Infrastructure.Persistence.DI
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(configuration["RabbitMQ_HostName"] ?? "157.66.219.130", h =>
+                    cfg.Host(configuration["RabbitMQ_HostName"] ?? "localhost", h =>
                     {
                         h.Username(configuration["RabbitMQ_UserName"]!);
                         h.Password(configuration["RabbitMQ_Password"]!);
@@ -44,16 +45,16 @@ namespace NovaStay.Infrastructure.Persistence.DI
                         e.ConfigureConsumer<NotificationEmailComsumer>(context);       // map consumer with queue
                     });
 
-                    cfg.ReceiveEndpoint("NotificationResetPasswordqueue", e =>  
+                    cfg.ReceiveEndpoint("NotificationResetPasswordqueue", e =>
                     {
                         e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
-                        e.ConfigureConsumer<NotificationResetPasswordConsumer>(context);      
+                        e.ConfigureConsumer<NotificationResetPasswordConsumer>(context);
                     });
 
-                    cfg.ReceiveEndpoint("NotificationContractRenewqueue", e =>  
+                    cfg.ReceiveEndpoint("NotificationContractRenewqueue", e =>
                     {
                         e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
-                        e.ConfigureConsumer<NotificationContractRenewConsumer>(context);      
+                        e.ConfigureConsumer<NotificationContractRenewConsumer>(context);
                     });
                 });
             });
@@ -62,11 +63,11 @@ namespace NovaStay.Infrastructure.Persistence.DI
             services.AddSingleton(sp =>
             {
                 return new MinioClient()
-                    .WithEndpoint(configuration["MinIO_Endpoint"])
+                    .WithEndpoint(configuration["MinIO_Endpoint"] ?? configuration["MinIO:Endpoint"])
                     .WithCredentials(
-                        configuration["MinIO_AccessKey"],
-                        configuration["MinIO_SecretKey"])
-                    .WithSSL(bool.Parse(configuration["MinIO_UseSSL"]!))
+                        configuration["MinIO_AccessKey"] ?? configuration["MinIO:AccessKey"],
+                        configuration["MinIO_SecretKey"] ?? configuration["MinIO:SecretKey"])
+                    .WithSSL(bool.TryParse(configuration["MinIO_UseSSL"] ?? configuration["MinIO:UseSSL"], out var useSsl) && useSsl)
                     .Build();
             });
 

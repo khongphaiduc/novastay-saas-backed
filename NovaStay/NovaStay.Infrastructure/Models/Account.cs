@@ -21,6 +21,12 @@ public partial class Account
 
     public DateTime? PasswordSetAt { get; set; }
 
+    public string? GoogleId { get; set; }
+
+    public string? ExternalProvider { get; set; }
+
+    public bool IsEmailVerified { get; set; }
+
     public bool? IsActive { get; set; }
 
     public DateTime? LastLoginAt { get; set; }

@@ -1,0 +1,19 @@
+# Private runtime configuration, at every directory level.
+.env
+.env.*
+!.env.example
+!.env.sample
+appsettings.*.local.json
+.security-private/
+
+# Local build and editor artifacts.
+**/bin/
+**/obj/
+.vs/
+TestResults/
+*.user
+*.suo
+*.pfx
+*.p12
+*.pem
+*.key

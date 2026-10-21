@@ -82,6 +82,8 @@ public partial class HostContext : DbContext
 
     public virtual DbSet<AccountRefreshToken> AccountRefreshTokens { get; set; }
 
+    public virtual DbSet<InvitationLink> InvitationLinks { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>
@@ -89,7 +91,9 @@ public partial class HostContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK_Accounts");
 
             entity.HasIndex(e => e.Email, "IX_Accounts_Email");
-            entity.HasIndex(e => e.Phone, "IX_Accounts_Phone").IsUnique();
+            entity.HasIndex(e => e.Phone, "IX_Accounts_Phone")
+                .IsUnique()
+                .HasFilter("[Phone] IS NOT NULL AND [Phone] <> ''");
 
             entity.Property(e => e.AccountType)
                 .HasMaxLength(30)
@@ -108,6 +112,16 @@ public partial class HostContext : DbContext
                 .IsUnicode(false);
             entity.Property(e => e.MustSetPassword).HasDefaultValue(false);
             entity.Property(e => e.PasswordSetAt).HasColumnType("datetime");
+            entity.Property(e => e.GoogleId)
+                .HasMaxLength(128)
+                .IsUnicode(false);
+            entity.HasIndex(e => e.GoogleId, "IX_Accounts_GoogleId")
+                .IsUnique()
+                .HasFilter("[GoogleId] IS NOT NULL");
+            entity.Property(e => e.ExternalProvider)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.IsEmailVerified).HasDefaultValue(false);
             entity.Property(e => e.Phone)
                 .HasMaxLength(15)
                 .IsUnicode(false);
@@ -1265,6 +1279,39 @@ public partial class HostContext : DbContext
             entity.HasOne(d => d.Room).WithMany()
                 .HasForeignKey(d => d.RoomId)
                 .HasConstraintName("FK_IncomeReceipts_Rooms_RoomId");
+        });
+
+        modelBuilder.Entity<InvitationLink>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_InvitationLinks");
+
+            entity.HasIndex(e => e.Token, "UX_InvitationLinks_Token").IsUnique();
+            entity.HasIndex(e => new { e.OrganizationId, e.IsActive }, "IX_InvitationLinks_OrganizationId_IsActive");
+
+            entity.Property(e => e.Token)
+                .HasMaxLength(64)
+                .IsUnicode(false);
+            entity.Property(e => e.Note).HasMaxLength(255);
+            entity.Property(e => e.ExpiresAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.MaxUses).HasDefaultValue(0);
+            entity.Property(e => e.UsedCount).HasDefaultValue(0);
+
+            entity.HasOne(d => d.Organization).WithMany()
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_InvitationLinks_Organizations_OrganizationId");
+
+            entity.HasOne(d => d.Property).WithMany()
+                .HasForeignKey(d => d.PropertyId)
+                .HasConstraintName("FK_InvitationLinks_Properties_PropertyId");
+
+            entity.HasOne(d => d.Room).WithMany()
+                .HasForeignKey(d => d.RoomId)
+                .HasConstraintName("FK_InvitationLinks_Rooms_RoomId");
         });
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())

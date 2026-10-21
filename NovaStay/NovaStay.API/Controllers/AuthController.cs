@@ -110,6 +110,51 @@ public sealed class AuthController : ControllerBase
         }
     }
 
+    [AllowAnonymous]
+    [HttpPost("resident/register")]
+    public async Task<ActionResult<RegisterResidentAccountResponse>> RegisterResident(
+        [FromBody] RegisterResidentAccountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _residentAuthService.RegisterAsync(
+                request,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                cancellationToken);
+
+            return Created($"/api/residents/{response.ResidentId}", response);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Conflict(new { message = exception.Message });
+        }
+    }
+
+    [AllowAnonymous]
+    [HttpPost("resident/google-login")]
+    public async Task<ActionResult<LoginResidentAccountResponse>> GoogleLoginResident(
+        [FromBody] GoogleLoginResidentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _residentAuthService.GoogleLoginAsync(
+                request,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                cancellationToken);
+            return Ok(response);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Conflict(new { message = exception.Message });
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return Unauthorized(new { message = exception.Message });
+        }
+    }
+
     [Authorize]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken cancellationToken = default)

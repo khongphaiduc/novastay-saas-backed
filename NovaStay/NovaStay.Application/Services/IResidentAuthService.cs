@@ -8,4 +8,14 @@ public interface IResidentAuthService
         LoginResidentAccountRequest request,
         string? ipAddress,
         CancellationToken cancellationToken = default);
+
+    Task<RegisterResidentAccountResponse> RegisterAsync(
+        RegisterResidentAccountRequest request,
+        string? ipAddress,
+        CancellationToken cancellationToken = default);
+
+    Task<LoginResidentAccountResponse> GoogleLoginAsync(
+        GoogleLoginResidentRequest request,
+        string? ipAddress,
+        CancellationToken cancellationToken = default);
 }
