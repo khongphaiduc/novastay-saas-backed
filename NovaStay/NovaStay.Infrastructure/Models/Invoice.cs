@@ -5,6 +5,15 @@ namespace NovaStay.Infrastructure.Models;
 
 public partial class Invoice
 {
+    public string PaymentMode { get; set; } = "Manual";
+    public string? PaymentSource { get; set; }
+    public string? PaymentReference { get; set; }
+    public Guid? BillingBankAccountId { get; set; }
+    public virtual BillingBankAccount? BillingBankAccount { get; set; }
+    public DateTime? TransferReportedAt { get; set; }
+    public Guid? ConfirmedByAccountId { get; set; }
+    public string? ConfirmationNote { get; set; }
+    public byte[]? BillingVersion { get; set; }
     public Guid Id { get; set; }
 
     public Guid OrganizationId { get; set; }
