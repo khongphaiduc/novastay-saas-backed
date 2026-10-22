@@ -311,7 +311,7 @@ internal sealed class ExpenseRepository : IExpenseRepository
         return category;
     }
 
-    private static ExpenseDto MapToDto(Models.Expense expense)
+    internal static ExpenseDto MapToDto(Models.Expense expense)
     {
         return new ExpenseDto
         {

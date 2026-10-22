@@ -27,16 +27,7 @@ public sealed class FinancialTransactionService : IFinancialTransactionService
         int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        if (pageIndex <= 0)
-        {
-            throw new ArgumentException("pageIndex must be greater than 0.");
-        }
-
-        if (pageSize <= 0)
-        {
-            throw new ArgumentException("pageSize must be greater than 0.");
-        }
-
+        Pagination.Offset(pageIndex, pageSize);
         if (!string.IsNullOrWhiteSpace(transactionType))
         {
             var normalizedType = transactionType.Trim().ToLowerInvariant();
