@@ -3,6 +3,7 @@ using NovaStay.Application.Services;
 using NovaStay.Infrastructure.ContextDB;
 using NovaStay.Infrastructure.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace NovaStay.Infrastructure.ServicesImple;
 
@@ -48,11 +49,24 @@ public sealed class UtilityService : IUtilityService
         RecordUtilityReadingRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (!DateTime.TryParseExact(request.BillingPeriod, "yyyy-MM", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out _))
+            throw new InvalidOperationException("Kỳ ghi nhận phải có định dạng yyyy-MM.");
+        if (request.CurrentReading < 0)
+            throw new InvalidOperationException("Chỉ số mới không được âm.");
+
         var meter = await _context.UtilityMeters
             .Include(m => m.PropertyService)
             .Include(m => m.UtilityReadings)
             .FirstOrDefaultAsync(m => m.Id == meterId, cancellationToken)
             ?? throw new KeyNotFoundException($"Không tìm thấy đồng hồ Id={meterId}.");
+
+        if (!meter.IsActive)
+            throw new InvalidOperationException("Đồng hồ đã ngừng hoạt động.");
+        if (meter.UtilityReadings.Any(r => r.BillingPeriod == request.BillingPeriod))
+            throw new InvalidOperationException($"Kỳ '{request.BillingPeriod}' đã được ghi nhận cho đồng hồ này.");
+        if (meter.UtilityReadings.Any(r => string.Compare(r.BillingPeriod, request.BillingPeriod, StringComparison.Ordinal) > 0))
+            throw new InvalidOperationException("Không thể ghi chỉ số cho kỳ trước khi đồng hồ đã có số liệu ở kỳ sau.");
 
         // Tính chỉ số cũ: reading gần nhất hoặc InitialReading nếu chưa ghi lần nào
         var previousReading = meter.UtilityReadings
@@ -64,25 +78,14 @@ public sealed class UtilityService : IUtilityService
             throw new InvalidOperationException(
                 $"Chỉ số mới ({request.CurrentReading}) không được nhỏ hơn chỉ số cũ ({previousReading}).");
 
-        // Kiểm tra kỳ ghi nhận đã tồn tại chưa
-        var periodExists = meter.UtilityReadings
-            .Any(r => r.BillingPeriod == request.BillingPeriod);
-        if (periodExists)
-            throw new InvalidOperationException(
-                $"Kỳ '{request.BillingPeriod}' đã được ghi nhận cho đồng hồ này. Vui lòng kiểm tra lại.");
-
         var consumption = request.CurrentReading - previousReading;
 
-        // Tìm đơn giá hiện tại từ UtilityTariff (nếu có), fallback về DefaultPrice của service
-        var today = DateTime.UtcNow;
-        var tariff = await _context.UtilityTariffs
-            .Where(t => t.PropertyServiceId == meter.PropertyServiceId
-                        && t.EffectiveFrom <= today
-                        && (t.EffectiveTo == null || t.EffectiveTo >= today))
-            .OrderByDescending(t => t.EffectiveFrom)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var unitPrice = tariff?.UnitPrice ?? meter.PropertyService.DefaultPrice;
+        // Match the price owners actually configure in the service catalog, including a room override.
+        var roomService = await _context.RoomServices.AsNoTracking().SingleOrDefaultAsync(
+            x => x.RoomId == meter.RoomId && x.PropertyServiceId == meter.PropertyServiceId && x.IsActive,
+            cancellationToken);
+        var unitPrice = roomService?.PriceOverride ?? meter.PropertyService.DefaultPrice;
+        if (unitPrice < 0) throw new InvalidOperationException("Đơn giá dịch vụ không được âm.");
         var amount = consumption * unitPrice;
 
         var reading = new UtilityReading
@@ -125,14 +128,20 @@ public sealed class UtilityService : IUtilityService
         CancellationToken cancellationToken = default)
     {
         // Kiểm tra phòng tồn tại
-        var roomExists = await _context.Rooms.AnyAsync(r => r.Id == request.RoomId, cancellationToken);
-        if (!roomExists)
-            throw new KeyNotFoundException($"Không tìm thấy phòng Id={request.RoomId}.");
+        var room = await _context.Rooms.FirstOrDefaultAsync(r => r.Id == request.RoomId && !r.IsDeleted, cancellationToken)
+            ?? throw new KeyNotFoundException($"Không tìm thấy phòng Id={request.RoomId}.");
 
         // Kiểm tra service tồn tại
         var service = await _context.PropertyServices
             .FirstOrDefaultAsync(s => s.Id == request.PropertyServiceId, cancellationToken)
             ?? throw new KeyNotFoundException($"Không tìm thấy dịch vụ Id={request.PropertyServiceId}.");
+
+        if (service.PropertyId != room.PropertyId || !service.IsActive)
+            throw new InvalidOperationException("Dịch vụ phải đang hoạt động và thuộc cùng cơ sở với phòng.");
+        if (request.InitialReading < 0)
+            throw new InvalidOperationException("Chỉ số ban đầu không được âm.");
+        if (string.IsNullOrWhiteSpace(request.MeterType) || string.IsNullOrWhiteSpace(request.Unit))
+            throw new InvalidOperationException("Vui lòng nhập loại đồng hồ và đơn vị tính.");
 
         // Không được có 2 đồng hồ cùng loại cho 1 phòng
         var duplicate = await _context.UtilityMeters.AnyAsync(
@@ -163,7 +172,7 @@ public sealed class UtilityService : IUtilityService
     }
 
     // ─── Mappers ──────────────────────────────────────────────────────────────
-    private static UtilityMeterDto MapMeter(UtilityMeter m)
+    internal static UtilityMeterDto MapMeter(UtilityMeter m)
     {
         var latest = m.UtilityReadings?
             .OrderByDescending(r => r.ReadingDate)
@@ -181,10 +190,12 @@ public sealed class UtilityService : IUtilityService
             IsActive = m.IsActive,
             ServiceName = m.PropertyService?.ServiceName ?? "",
             LatestReading = latest != null ? MapReading(latest) : null,
+            Readings = m.UtilityReadings?.OrderByDescending(r => r.BillingPeriod).Select(MapReading).ToList()
+                ?? new List<UtilityReadingDto>(),
         };
     }
 
-    private static UtilityReadingDto MapReading(UtilityReading r) => new()
+    internal static UtilityReadingDto MapReading(UtilityReading r) => new()
     {
         Id = r.Id,
         UtilityMeterId = r.UtilityMeterId,
