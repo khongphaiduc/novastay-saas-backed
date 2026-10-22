@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
@@ -25,6 +26,8 @@ public sealed class OrganizationsController : ControllerBase
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
+        try { Pagination.Offset(page, pageSize); }
+        catch (ArgumentException e) { return BadRequest(new { message = e.Message }); }
         var residents = await _organizationResidentService.GetResidentsAsync(
             organizationId,
             status,
@@ -39,6 +42,26 @@ public sealed class OrganizationsController : ControllerBase
         }
 
         return Ok(residents.Data);
+    }
+
+    [HttpGet("{organizationId:guid}/residents/paged")]
+    public async Task<ActionResult<PagedResult<OrganizationResidentDto>>> GetResidentsPaged(
+        Guid organizationId, int pageIndex = 1, int pageSize = 10,
+        string? status = null, string? search = null, CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("organizationId"), out var tokenOrganization) || tokenOrganization != organizationId)
+            return Forbid();
+        try
+        {
+            Pagination.Offset(pageIndex, pageSize);
+            var result = await _organizationResidentService.GetResidentsAsync(organizationId, status, search, pageIndex, pageSize, cancellationToken);
+            if (result == null) return NotFound(new { message = "Organization not found." });
+            return Ok(new PagedResult<OrganizationResidentDto>
+            {
+                Items = result.Data, TotalCount = result.TotalRecords, PageIndex = pageIndex, PageSize = pageSize
+            });
+        }
+        catch (ArgumentException e) { return BadRequest(new { message = e.Message }); }
     }
 
     [HttpGet("{organizationId:guid}/residents/invitations")]
