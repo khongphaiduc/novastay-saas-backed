@@ -4,6 +4,9 @@ namespace NovaStay.Infrastructure.Models;
 
 public partial class InvoiceLine
 {
+    public Guid? BillingOrganizationId { get; set; }
+    public Guid? BillingRoomId { get; set; }
+    public string? BillingPeriod { get; set; }
     public Guid Id { get; set; }
 
     public Guid InvoiceId { get; set; }

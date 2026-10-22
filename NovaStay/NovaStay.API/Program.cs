@@ -8,6 +8,10 @@ using NovaStay.Infrastructure.ContextDB;
 using NovaStay.Infrastructure.Persistence.DI;
 using NovaStay.Infrastructure.Persistence.Mapping;
 using System.Text;
+using Microsoft.AspNetCore.SignalR;
+using NovaStay.API.Hubs;
+using NovaStay.Application.Services;
+using NovaStay.Infrastructure.Payments;
 
 namespace NovaStay.API
 {
@@ -43,16 +47,20 @@ namespace NovaStay.API
                     builder.Environment.ContentRootPath, "NovaStay.Infrastructure", "Config", ".env"))
             };
 
+            IEnumerable<KeyValuePair<string, string>> localEnvironment = [];
             foreach (var envPath in envPaths)
             {
                 if (File.Exists(envPath))
                 {
+                    localEnvironment = Env.NoEnvVars().Load(envPath).ToArray();
                     Env.NoClobber().Load(envPath);
                     break;
                 }
             }
 
             builder.Configuration.AddEnvironmentVariables();
+            Configuration.DevelopmentPaymentConfiguration.Apply(builder.Configuration,
+                builder.Environment.IsDevelopment(), localEnvironment);
 
             // ── Services ───────────────────────────────────────────────────────────
             builder.Services.ConfigurePersistenceServices(builder.Configuration);
@@ -97,6 +105,10 @@ namespace NovaStay.API
                     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     .AddJwtBearer(options =>
                     {
+                        options.Events = new JwtBearerEvents
+                        {
+                            OnMessageReceived = PaymentHubAuthentication.ReadToken
+                        };
                         options.TokenValidationParameters = new TokenValidationParameters
                         {
                             ValidateIssuer = true,
@@ -111,6 +123,11 @@ namespace NovaStay.API
             }
 
             builder.Services.AddControllers();
+            builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 8 * 1024);
+            builder.Services.AddSingleton<IUserIdProvider, PaymentUserIdProvider>();
+            builder.Services.AddScoped<IPaymentNotifier, SignalRPaymentNotifier>();
+            builder.Services.AddHttpClient<IPayOsGateway, PayOsGateway>(client => client.Timeout = TimeSpan.FromSeconds(15))
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
             var app = builder.Build();
 
@@ -148,6 +165,7 @@ namespace NovaStay.API
             app.UseAuthorization();
 
             app.MapControllers();
+            app.MapHub<PaymentsHub>("/hubs/payments", options => options.CloseOnAuthenticationExpiration = true);
 
             await app.RunAsync();
         }

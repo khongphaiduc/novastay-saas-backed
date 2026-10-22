@@ -2,6 +2,7 @@ using NovaStay.Application.Common.Interfaces;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
 using NovaStay.Infrastructure.ContextDB;
+using Microsoft.EntityFrameworkCore;
 
 namespace NovaStay.Infrastructure.ServicesImple;
 
@@ -22,17 +23,14 @@ public sealed class LogoutService : ILogoutService
         string? ipAddress,
         CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(request.RefreshToken)) return;
         var tokenHash = _jwtTokenService.HashRefreshToken(request.RefreshToken.Trim());
-
-        var user = _dbcontext.AccountRefreshTokens.Where(s => s.TokenHash == tokenHash && s.RevokedAt == null).Select(t => new InforUser
-        {
-            AccountId = t.AccountId,
-            OrganizationId = t.Account.OwnedOrganizations.FirstOrDefault().Id,
-            AccountType = t.Account.AccountType,
-            UserName = t.Account.CustomerName,
-            Phone = t.Account.Phone,
-            Email = t.Account.Email,
-        }).FirstOrDefault();
+        var token = await _dbcontext.AccountRefreshTokens
+            .FirstOrDefaultAsync(t => t.TokenHash == tokenHash && t.RevokedAt == null, cancellationToken);
+        if (token == null) return; // Repeated logout succeeds without changing another session.
+        token.RevokedAt = DateTime.UtcNow;
+        token.RevokedByIp = ipAddress;
+        await _dbcontext.SaveChangesAsync(cancellationToken);
 
     }
 

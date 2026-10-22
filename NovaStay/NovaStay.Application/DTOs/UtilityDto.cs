@@ -14,6 +14,7 @@ public sealed class UtilityMeterDto
     public bool IsActive { get; set; }
     /// <summary>Chỉ số ghi nhận gần nhất (null nếu chưa có reading nào)</summary>
     public UtilityReadingDto? LatestReading { get; set; }
+    public IReadOnlyList<UtilityReadingDto> Readings { get; set; } = Array.Empty<UtilityReadingDto>();
     public string ServiceName { get; set; } = null!;
 }
 

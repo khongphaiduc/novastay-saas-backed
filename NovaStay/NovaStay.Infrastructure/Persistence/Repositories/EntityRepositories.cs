@@ -791,6 +791,7 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
         var data = await query
             .OrderBy(membership => membership.Status)
             .ThenBy(membership => membership.Resident.FullName)
+            .ThenBy(membership => membership.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(membership => new OrganizationResidentDto

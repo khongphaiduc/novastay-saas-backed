@@ -185,6 +185,8 @@ internal sealed class FinancialTransactionRepository : IFinancialTransactionRepo
         var items = await combinedQuery
             .OrderByDescending(transaction => transaction.TransactionDate)
             .ThenByDescending(transaction => transaction.CreatedAt)
+            .ThenBy(transaction => transaction.Id)
+            .ThenBy(transaction => transaction.TransactionType)
             .Skip((pageIndex - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);

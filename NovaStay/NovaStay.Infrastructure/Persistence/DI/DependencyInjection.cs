@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NovaStay.Infrastructure.ServicesImple;
+using NovaStay.Infrastructure.Payments;
 
 namespace NovaStay.Infrastructure.Persistence.DI;
 
@@ -75,6 +76,14 @@ public static class DependencyInjection
         services.AddScoped<IExpenseService, ExpenseService>();
         services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
         services.AddScoped<IIncomeReceiptService, IncomeReceiptService>();
+        services.AddScoped<BillingService>();
+        services.AddSingleton(PayOsOptions.FromConfiguration(configuration));
+        services.AddSingleton<PaymentAccess>();
+        services.AddScoped<InvoiceSettlementService>();
+        services.AddScoped<PaymentProcessingService>();
+        services.AddHostedService<PaymentOutboxWorker>();
+        services.AddHostedService<PayOsReconciliationWorker>();
+        services.AddScoped<ManagementPagingService>();
 
         // Maintenance Management (TASK-021, TASK-022)
         services.AddScoped<IMaintenanceService, MaintenanceService>();

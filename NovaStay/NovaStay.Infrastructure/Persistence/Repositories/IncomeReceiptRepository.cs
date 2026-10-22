@@ -264,7 +264,7 @@ internal sealed class IncomeReceiptRepository : IIncomeReceiptRepository
         return MapToDto(receipt);
     }
 
-    private static IncomeReceiptDto MapToDto(Models.IncomeReceipt receipt)
+    internal static IncomeReceiptDto MapToDto(Models.IncomeReceipt receipt)
     {
         return new IncomeReceiptDto
         {
