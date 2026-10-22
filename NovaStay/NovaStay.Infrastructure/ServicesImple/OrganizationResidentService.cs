@@ -31,6 +31,7 @@ public sealed class OrganizationResidentService : IOrganizationResidentService
         int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
+        Pagination.Offset(page, pageSize);
         var organization = await _organizationRepository.GetByIdAsync(organizationId, cancellationToken);
 
         if (organization is null)
