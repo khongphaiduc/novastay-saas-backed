@@ -273,6 +273,15 @@ internal sealed class ContractRepository : Repository<DomainContract, DatabaseCo
         _mapper = mapper;
     }
 
+    public async Task<ContractDetailDto?> FindActiveCoResidentContractAsync(Guid organizationId, Guid residentId, CancellationToken cancellationToken = default)
+    {
+        var contract = await _context.Contracts.AsNoTracking().Include(c => c.Room)
+            .Where(c => c.OrganizationId == organizationId && c.Status == "Active" &&
+                c.CoResidents.Any(p => p.ResidentId == residentId && p.LeftAt == null))
+            .OrderByDescending(c => c.CreatedAt).FirstOrDefaultAsync(cancellationToken);
+        return contract == null ? null : MapToDetail(contract);
+    }
+
     private static ContractDetailDto MapToDetail(DatabaseContract c) => new()
     {
         Id = c.Id,

@@ -5,6 +5,7 @@ namespace NovaStay.Application.Common.Interfaces;
 
 public interface IContractRepository : IRepository<ContractEntity>
 {
+    Task<ContractDetailDto?> FindActiveCoResidentContractAsync(Guid organizationId, Guid residentId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ContractDetailDto>> GetContractsWithDetailsAsync(
         Guid organizationId,
         string? search = null,
