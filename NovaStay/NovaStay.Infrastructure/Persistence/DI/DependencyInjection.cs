@@ -57,6 +57,8 @@ public static class DependencyInjection
         services.AddScoped<IResidentService, ResidentService>();
         services.AddScoped<IResidentInvitationService, ResidentInvitationService>();
         services.AddScoped<IResidentAuthService, ResidentAuthService>();
+        services.AddScoped<IGoogleIdentityValidator, GoogleIdentityValidator>();
+        services.AddSingleton<GoogleSignInCoordinator>();
         services.AddScoped<IInvitationLinkService, InvitationLinkService>();
         services.AddScoped<IPropertyCatalogService, PropertyCatalogService>();
         services.AddScoped<ILogoutService, LogoutService>();
@@ -73,6 +75,7 @@ public static class DependencyInjection
 
         // Contract Management (TASK-031 to TASK-039)
         services.AddScoped<IContractService, ContractService>();
+        services.AddScoped<RoomOccupancyService>();
         services.AddScoped<IExpenseService, ExpenseService>();
         services.AddScoped<IFinancialTransactionService, FinancialTransactionService>();
         services.AddScoped<IIncomeReceiptService, IncomeReceiptService>();
@@ -81,8 +84,16 @@ public static class DependencyInjection
         services.AddSingleton<PaymentAccess>();
         services.AddScoped<InvoiceSettlementService>();
         services.AddScoped<PaymentProcessingService>();
-        services.AddHostedService<PaymentOutboxWorker>();
-        services.AddHostedService<PayOsReconciliationWorker>();
+        // A local API sharing production SQL must not consume the production notification queue.
+        // Multiple dispatchers require a shared SignalR backplane before they can be enabled together.
+        var configuredWorkers = configuration["Payments:BackgroundWorkersEnabled"];
+        if (configuredWorkers != null && !bool.TryParse(configuredWorkers, out _))
+            throw new InvalidOperationException("Payments:BackgroundWorkersEnabled must be true or false.");
+        if (configuredWorkers == null || bool.Parse(configuredWorkers))
+        {
+            services.AddHostedService<PaymentOutboxWorker>();
+            services.AddHostedService<PayOsReconciliationWorker>();
+        }
         services.AddScoped<ManagementPagingService>();
 
         // Maintenance Management (TASK-021, TASK-022)

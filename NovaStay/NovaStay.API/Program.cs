@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.SignalR;
 using NovaStay.API.Hubs;
 using NovaStay.Application.Services;
 using NovaStay.Infrastructure.Payments;
+using NovaStay.API.Security;
 
 namespace NovaStay.API
 {
@@ -65,6 +66,8 @@ namespace NovaStay.API
             // ── Services ───────────────────────────────────────────────────────────
             builder.Services.ConfigurePersistenceServices(builder.Configuration);
             builder.Services.AddInfrastructure(builder.Configuration);
+            builder.Services.AddSensitiveEndpointProtection(builder.Configuration);
+            builder.Services.AddExceptionHandler<SafeApiExceptionHandler>();
 
             builder.Services.AddCors(options =>
             {
@@ -81,7 +84,8 @@ namespace NovaStay.API
                     policy
                         .WithOrigins(origins)
                         .AllowAnyHeader()
-                        .AllowAnyMethod();
+                        .AllowAnyMethod()
+                        .WithExposedHeaders("Retry-After");
                 });
             });
 
@@ -130,6 +134,8 @@ namespace NovaStay.API
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
             var app = builder.Build();
+            if (!builder.Configuration.GetValue("Payments:BackgroundWorkersEnabled", true))
+                app.Logger.LogWarning("Payment background workers are disabled on this API instance. Payment notifications and scheduled reconciliation must be handled by the designated API instance.");
 
             // ── Database migration ─────────────────────────────────────────────────
             using (var scope = app.Services.CreateScope())
@@ -137,7 +143,10 @@ namespace NovaStay.API
                 try
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<HostContext>();
-                    await dbContext.Database.MigrateAsync();
+                    if (builder.Configuration.GetValue("Database:ApplyMigrationsOnStartup", !app.Environment.IsDevelopment()))
+                        await dbContext.Database.MigrateAsync();
+                    else if ((await dbContext.Database.GetPendingMigrationsAsync()).Any())
+                        throw new InvalidOperationException("Database has pending migrations. Apply the reviewed migrations to an isolated local database before starting development; do not migrate shared production SQL from local.");
                 }
                 catch (Exception ex)
                 {
@@ -149,10 +158,8 @@ namespace NovaStay.API
             // ── Middleware pipeline ────────────────────────────────────────────────
 
             // Forward headers from Nginx — must be FIRST
-            app.UseForwardedHeaders(new ForwardedHeadersOptions
-            {
-                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-            });
+            app.UseForwardedHeaders();
+            app.UseExceptionHandler();
 
             // HTTPS handled by Nginx in production — only redirect in Development
             if (app.Environment.IsDevelopment())
@@ -160,12 +167,15 @@ namespace NovaStay.API
                 app.UseHttpsRedirection();
             }
 
+            app.UseRouting();
             app.UseCors("AllowFrontend");
             app.UseAuthentication();
+            app.UseRateLimiter();
             app.UseAuthorization();
 
             app.MapControllers();
-            app.MapHub<PaymentsHub>("/hubs/payments", options => options.CloseOnAuthenticationExpiration = true);
+            app.MapHub<PaymentsHub>("/hubs/payments", options => options.CloseOnAuthenticationExpiration = true)
+                .RequireRateLimiting(ApiRateLimits.Hub);
 
             await app.RunAsync();
         }
