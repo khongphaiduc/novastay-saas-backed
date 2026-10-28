@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.RateLimiting;
+using NovaStay.API.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
@@ -144,6 +146,8 @@ public sealed class ContractsController : ControllerBase
     }
 
     /// <summary>TASK-NEW: Gửi thông báo nhắc nhở gia hạn thủ công</summary>
+    [EnableRateLimiting(ApiRateLimits.Notice)]
+    [SensitiveOperation("notice")]
     [HttpPost("{id:guid}/send-renewal-notice")]
     public async Task<IActionResult> SendRenewalNotice(
         Guid id,

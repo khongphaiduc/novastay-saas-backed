@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.RateLimiting;
+using NovaStay.API.Security;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -55,6 +57,7 @@ public sealed class InvitationLinksController : ControllerBase
 
     // ─── Chủ trọ: Tạo link mời ──────────────────────────────────────────────
     [Authorize(Roles = "BusinessOwner")]
+    [EnableRateLimiting(ApiRateLimits.Notice)]
     [HttpPost("api/organizations/{organizationId:guid}/invitation-links")]
     public async Task<ActionResult<InvitationLinkDto>> CreateLink(
         Guid organizationId,
@@ -118,6 +121,7 @@ public sealed class InvitationLinksController : ControllerBase
 
     // ─── Người thuê: Xem preview link trước khi accept (không cần đăng nhập) ─
     [AllowAnonymous]
+    [EnableRateLimiting(ApiRateLimits.Invitation)]
     [HttpGet("api/invitation/{token}")]
     public async Task<ActionResult<InvitationLinkPreviewDto>> Preview(
         string token,
@@ -129,6 +133,7 @@ public sealed class InvitationLinksController : ControllerBase
 
     // ─── Người thuê: Chấp nhận link (phải đăng nhập) ────────────────────────
     [Authorize(Roles = "Resident")]
+    [EnableRateLimiting(ApiRateLimits.Invitation)]
     [HttpPost("api/invitation/{token}/accept")]
     public async Task<ActionResult<ResidentMembershipResponse>> Accept(
         string token,

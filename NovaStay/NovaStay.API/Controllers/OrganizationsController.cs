@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.RateLimiting;
+using NovaStay.API.Security;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
@@ -83,6 +85,7 @@ public sealed class OrganizationsController : ControllerBase
         return Ok(invitations);
     }
 
+    [EnableRateLimiting(ApiRateLimits.Notice)]
     [HttpPost("{organizationId:guid}/residents/invitations")]
     public async Task<ActionResult<ResidentMembershipResponse>> InviteResident(
         Guid organizationId,
