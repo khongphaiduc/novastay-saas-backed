@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.RateLimiting;
+using NovaStay.API.Security;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +21,7 @@ public sealed class BillingController(BillingService service) : ControllerBase
     [HttpGet("bank-account"), Authorize(Roles = "BusinessOwner")]
     public Task<IActionResult> Bank(CancellationToken ct) => Run(async () => new JsonResult(await service.GetBank(AccountId, ct)));
 
+    [EnableRateLimiting(ApiRateLimits.BankAccount)]
     [HttpPut("bank-account"), Authorize(Roles = "BusinessOwner"), RequestSizeLimit(3 * 1024 * 1024)]
     public Task<IActionResult> SaveBank([FromForm] BankAccountForm form, CancellationToken ct) => Run(async () =>
     {
