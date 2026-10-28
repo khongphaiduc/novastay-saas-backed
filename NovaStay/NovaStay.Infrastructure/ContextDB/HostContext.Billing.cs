@@ -11,6 +11,7 @@ public partial class HostContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
+        ConfigureCoResidents(modelBuilder);
         modelBuilder.Entity<BillingBankAccount>(e =>
         {
             e.HasKey(x => x.Id);
