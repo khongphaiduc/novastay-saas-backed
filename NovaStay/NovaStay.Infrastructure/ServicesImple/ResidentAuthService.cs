@@ -1,5 +1,7 @@
-using Google.Apis.Auth;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
+using NovaStay.Infrastructure.ContextDB;
+using NovaStay.Infrastructure.Persistence.Auth;
 using NovaStay.Application.Common.Interfaces;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
@@ -14,16 +16,18 @@ public sealed class ResidentAuthService : IResidentAuthService
     private const string InvalidLoginMessage = "Invalid phone or password.";
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJwtTokenService _jwtTokenService;
-    private readonly IConfiguration _configuration;
+    private readonly IGoogleIdentityValidator _google;
+    private readonly GoogleSignInCoordinator _coordinator;
+    private readonly HostContext _context;
 
     public ResidentAuthService(
         IUnitOfWork unitOfWork,
         IJwtTokenService jwtTokenService,
-        IConfiguration configuration)
+        IGoogleIdentityValidator google, GoogleSignInCoordinator coordinator, HostContext context)
     {
         _unitOfWork = unitOfWork;
         _jwtTokenService = jwtTokenService;
-        _configuration = configuration;
+        _google = google; _coordinator = coordinator; _context = context;
     }
 
     public async Task<LoginResidentAccountResponse> LoginAsync(
@@ -267,24 +271,17 @@ public sealed class ResidentAuthService : IResidentAuthService
         string? ipAddress,
         CancellationToken cancellationToken = default)
     {
-        // 1. Validate Google id_token
-        GoogleJsonWebSignature.Payload payload;
-        try
-        {
-            payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken,
-                new GoogleJsonWebSignature.ValidationSettings
-                {
-                    Audience = new[] { _configuration["GoogleAuth:ClientId"] }
-                });
-        }
-        catch (InvalidJwtException)
-        {
-            throw new UnauthorizedAccessException("Google token không hợp lệ hoặc đã hết hạn.");
-        }
+        var identity = await _google.ValidateAsync(request.IdToken, cancellationToken);
+        using var lease = await _coordinator.EnterAsync(identity.Subject, cancellationToken);
+        return await CompleteGoogleLoginAsync(identity, ipAddress, cancellationToken, true);
+    }
 
-        var googleId = payload.Subject;
-        var email = payload.Email?.Trim().ToLowerInvariant();
-        var name = payload.Name ?? email ?? "Google User";
+    private async Task<LoginResidentAccountResponse> CompleteGoogleLoginAsync(
+        GoogleIdentity identity, string? ipAddress, CancellationToken cancellationToken, bool retryUniqueConflict)
+    {
+        var googleId = identity.Subject;
+        var email = identity.Email;
+        var name = identity.Name;
         var now = DateTime.UtcNow;
 
         // 2. Tìm account theo GoogleId
@@ -298,12 +295,14 @@ public sealed class ResidentAuthService : IResidentAuthService
 
             if (account is not null && account.AccountType == ResidentAccountType)
             {
+                if (account.IsActive == false || !string.IsNullOrEmpty(account.GoogleId) && account.GoogleId != googleId)
+                    throw new UnauthorizedAccessException("Không thể đăng nhập bằng tài khoản Google này.");
                 // Liên kết Google vào account hiện tại
                 account.GoogleId = googleId;
                 account.ExternalProvider = "Google";
                 account.IsEmailVerified = true;
                 account.LastLoginAt = now;
-                _unitOfWork.Accounts.Update(account);
+
             }
             else if (account is not null)
             {
@@ -311,6 +310,9 @@ public sealed class ResidentAuthService : IResidentAuthService
             }
         }
 
+        if (account != null && (account.AccountType != ResidentAccountType || account.IsActive == false ||
+            !string.IsNullOrEmpty(account.GoogleId) && account.GoogleId != googleId))
+            throw new UnauthorizedAccessException("Không thể đăng nhập bằng tài khoản Google này.");
         if (account is null)
         {
             // 3. Tạo account + resident mới
@@ -387,7 +389,15 @@ public sealed class ResidentAuthService : IResidentAuthService
             },
             cancellationToken);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try { await _unitOfWork.SaveChangesAsync(cancellationToken); }
+        catch (DbUpdateException error) when (retryUniqueConflict && error.InnerException is SqlException sql && sql.Number is 2601 or 2627)
+        {
+            // SaveChanges is atomic. Discard this request's failed graph before reading the winning signup.
+            _context.ChangeTracker.Clear();
+            var winner = await _unitOfWork.Accounts.GetByGoogleIdAsync(googleId, cancellationToken);
+            if (winner == null) throw new InvalidOperationException("Tài khoản đang được xử lý. Vui lòng thử lại.");
+            return await CompleteGoogleLoginAsync(identity, ipAddress, cancellationToken, false);
+        }
 
         return new LoginResidentAccountResponse
         {

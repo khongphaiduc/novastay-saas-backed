@@ -12,12 +12,14 @@ internal class Repository<TDomain, TDatabase> : IRepository<TDomain>
 {
     private readonly DbSet<TDatabase> _dbSet;
     private readonly IDatabaseModelMapper<TDomain, TDatabase> _mapper;
+    private readonly HostContext _context;
 
     public Repository(
         HostContext context,
         IDatabaseModelMapper<TDomain, TDatabase> mapper)
     {
         _dbSet = context.Set<TDatabase>();
+        _context = context;
         _mapper = mapper;
     }
 
@@ -79,11 +81,27 @@ internal class Repository<TDomain, TDatabase> : IRepository<TDomain>
 
     public void Update(TDomain entity)
     {
-        _dbSet.Update(_mapper.ToDatabase(entity));
+        var mapped = _mapper.ToDatabase(entity);
+        var tracked = FindTracked(mapped);
+        if (tracked == null) { _dbSet.Update(mapped); return; }
+        var entry = _context.Entry(tracked);
+        entry.CurrentValues.SetValues(mapped);
+        // A newly added entity must remain Added until the first SaveChanges.
+        if (entry.State != EntityState.Added) entry.State = EntityState.Modified;
     }
 
     public void Remove(TDomain entity)
     {
-        _dbSet.Remove(_mapper.ToDatabase(entity));
+        var mapped = _mapper.ToDatabase(entity);
+        _dbSet.Remove(FindTracked(mapped) ?? mapped);
+    }
+
+    private TDatabase? FindTracked(TDatabase mapped)
+    {
+        var key = _context.Model.FindEntityType(typeof(TDatabase))!.FindPrimaryKey()!;
+        var incoming = _context.Entry(mapped);
+        return _dbSet.Local.FirstOrDefault(local => key.Properties.All(property =>
+            Equals(_context.Entry(local).Property(property.Name).CurrentValue,
+                incoming.Property(property.Name).CurrentValue)));
     }
 }

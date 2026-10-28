@@ -76,6 +76,15 @@ WebSocket/SSE JWT có thể nằm trong query `access_token`. Không ghi query �
 
 CORS dùng allowlist `AllowedOrigins` đang có. Frontend dùng Bearer và `withCredentials:false`, không cần bật wildcard origin hoặc cookie credentials. Thiết kế hiện phù hợp một API instance; nhiều instance cần SignalR backplane/shared delivery trước khi mở rộng. Outbox có thể phát event lặp; eventId ổn định, frontend deduplicate và luôn đọc trạng thái lại qua API.
 
+### Local dùng chung database VPS
+
+Worker outbox đánh dấu đã gửi sau khi phát vào Hub của chính instance đang chạy; việc này không chứng minh trình duyệt đã nhận. Nếu local và VPS cùng chạy worker với một database, local có thể lấy sự kiện và phát vào Hub local trong khi khách hàng chỉ kết nối VPS. Khi đó tải lại thấy Paid nhưng không có popup. Sự kiện đã đánh dấu Sent không tự phát lại khi refresh.
+
+- Khi kiểm thử website production, đặt `Payments__BackgroundWorkersEnabled=false` trong `.env` local và khởi động lại backend local (hoặc dừng debug local). VPS để `true` hoặc bỏ biến để dùng mặc định `true`.
+- Khi kiểm thử thanh toán local với cùng database: dừng API VPS trước, bật `Payments__BackgroundWorkersEnabled=true` ở local và khởi động lại; webhook PayOS phải trỏ đúng backend local. Sau đó dừng worker local trước khi bật VPS và trả webhook về production.
+- Chỉ chạy một bộ worker trên database này; nếu cần nhiều API phục vụ kết nối đồng thời, bổ sung SignalR backplane và cơ chế delivery dùng chung. Cờ này giúp cô lập local, không triển khai mô hình nhiều replica.
+- Không bỏ xác minh thanh toán hoặc tự sửa hóa đơn thành Paid để thử thông báo. Kiểm tra thêm WebSocket, webhook và rate-limit logs trước khi kết luận nguyên nhân của một giao dịch cụ thể.
+
 ## Hết hạn và cần đối soát
 
 - Không tạo order mới chỉ vì HTTP create timeout. OrderCode được lưu trước khi gọi provider và dùng lại khi retry; nếu PayOS đã tạo thì đọc lại order để phục hồi.

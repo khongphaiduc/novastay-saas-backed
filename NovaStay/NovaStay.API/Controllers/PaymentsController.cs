@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.RateLimiting;
+using NovaStay.API.Security;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -19,9 +21,13 @@ public sealed class PaymentsController(PaymentProcessingService service) : Contr
     [HttpGet("api/billing/invoices/{id:guid}/payment-status")]
     public Task<IActionResult> Status(Guid id, CancellationToken ct) => Run(async () => await service.Status(AccountId, id, ct));
 
+    [EnableRateLimiting(ApiRateLimits.PaymentLink)]
+    [SensitiveOperation("payment-link")]
     [HttpPost("api/billing/invoices/{id:guid}/payment-link")]
     public Task<IActionResult> CreateLink(Guid id, CancellationToken ct) => Run(async () => await service.CreateLink(AccountId, id, ct));
 
+    [EnableRateLimiting(ApiRateLimits.Reconcile)]
+    [SensitiveOperation("reconcile")]
     [HttpPost("api/billing/invoices/{id:guid}/reconcile"), Authorize(Roles = "BusinessOwner")]
     public Task<IActionResult> Reconcile(Guid id, CancellationToken ct) => Run(async () => await service.Reconcile(AccountId, id, ct));
 

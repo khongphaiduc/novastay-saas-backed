@@ -296,7 +296,8 @@ public sealed class ResidentService : IResidentService
             status: "Active",
             cancellationToken: cancellationToken);
 
-        var activeContract = contracts.FirstOrDefault();
+        var activeContract = contracts.FirstOrDefault()
+            ?? await _unitOfWork.Contracts.FindActiveCoResidentContractAsync(organizationId, resident.Id, cancellationToken);
         if (activeContract == null) return null;
 
         var roomDto = await _unitOfWork.Rooms.GetRoomWithImagesAsync(activeContract.RoomId, cancellationToken);

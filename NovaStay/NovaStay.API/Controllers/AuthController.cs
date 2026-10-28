@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
+using NovaStay.API.Security;
 using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
@@ -7,6 +9,7 @@ using System.Security.Claims;
 namespace NovaStay.API.Controllers;
 
 [ApiController]
+[RequestSizeLimit(16 * 1024)]
 [Route("api/auth")]
 public sealed class AuthController : ControllerBase
 {
@@ -30,6 +33,7 @@ public sealed class AuthController : ControllerBase
         _provideNewAccessToken = provideAccessToken;
     }
 
+    [EnableRateLimiting(ApiRateLimits.Register)]
     [HttpPost("register-organization")]
     public async Task<ActionResult<RegisterOrganizationAccountResponse>> RegisterOrganization([FromBody] RegisterOrganizationAccountRequest request, CancellationToken cancellationToken = default)
     {
@@ -42,12 +46,14 @@ public sealed class AuthController : ControllerBase
 
             return Created($"/api/organizations/{response.OrganizationId}", response);
         }
-        catch (InvalidOperationException exception)
+        catch (InvalidOperationException exception) when (SafeAuthErrors.IsExpected(exception))
         {
             return Conflict(new { message = exception.Message });
         }
     }
 
+    [EnableRateLimiting(ApiRateLimits.Login)]
+    [SensitiveOperation("login")]
     [HttpPost("business/login")]
     public async Task<ActionResult<LoginBusinessAccountResponse>> LoginBusiness([FromBody] LoginBusinessAccountRequest request, CancellationToken cancellationToken = default)
     {
@@ -68,6 +74,8 @@ public sealed class AuthController : ControllerBase
 
     // tetst
     [AllowAnonymous]
+    [EnableRateLimiting(ApiRateLimits.Reset)]
+    [SensitiveOperation("reset")]
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken = default)
     {
@@ -78,18 +86,24 @@ public sealed class AuthController : ControllerBase
                 HttpContext.Connection.RemoteIpAddress?.ToString(),
                 cancellationToken);
 
-            return NoContent();
+            return Accepted(new { message = "Nếu tài khoản phù hợp tồn tại, hướng dẫn sẽ được gửi tới email của bạn." });
         }
-        catch (KeyNotFoundException exception)
+        catch (KeyNotFoundException)
         {
-            return NotFound(new { message = exception.Message });
+            return Accepted(new { message = "Nếu tài khoản phù hợp tồn tại, hướng dẫn sẽ được gửi tới email của bạn." });
         }
-        catch (InvalidOperationException exception)
+        catch (InvalidOperationException exception) when (exception.Message == "Account is inactive.")
+        {
+            return Accepted(new { message = "Nếu tài khoản phù hợp tồn tại, hướng dẫn sẽ được gửi tới email của bạn." });
+        }
+        catch (InvalidOperationException exception) when (exception.Message == "Email is required.")
         {
             return BadRequest(new { message = exception.Message });
         }
     }
 
+    [EnableRateLimiting(ApiRateLimits.Login)]
+    [SensitiveOperation("login")]
     [HttpPost("resident/login")]
     public async Task<ActionResult<LoginResidentAccountResponse>> LoginResident(
         [FromBody] LoginResidentAccountRequest request,
@@ -111,6 +125,7 @@ public sealed class AuthController : ControllerBase
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting(ApiRateLimits.Register)]
     [HttpPost("resident/register")]
     public async Task<ActionResult<RegisterResidentAccountResponse>> RegisterResident(
         [FromBody] RegisterResidentAccountRequest request,
@@ -125,13 +140,14 @@ public sealed class AuthController : ControllerBase
 
             return Created($"/api/residents/{response.ResidentId}", response);
         }
-        catch (InvalidOperationException exception)
+        catch (InvalidOperationException exception) when (SafeAuthErrors.IsExpected(exception))
         {
             return Conflict(new { message = exception.Message });
         }
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting(ApiRateLimits.Login)]
     [HttpPost("resident/google-login")]
     public async Task<ActionResult<LoginResidentAccountResponse>> GoogleLoginResident(
         [FromBody] GoogleLoginResidentRequest request,
@@ -145,7 +161,7 @@ public sealed class AuthController : ControllerBase
                 cancellationToken);
             return Ok(response);
         }
-        catch (InvalidOperationException exception)
+        catch (InvalidOperationException exception) when (SafeAuthErrors.IsExpected(exception))
         {
             return Conflict(new { message = exception.Message });
         }
@@ -164,6 +180,7 @@ public sealed class AuthController : ControllerBase
     }
 
     [Authorize]
+    [EnableRateLimiting(ApiRateLimits.ChangePassword)]
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken = default)
     {
@@ -187,7 +204,7 @@ public sealed class AuthController : ControllerBase
         {
             return Unauthorized(new { message = exception.Message });
         }
-        catch (InvalidOperationException exception)
+        catch (InvalidOperationException exception) when (SafeAuthErrors.IsExpected(exception))
         {
             return BadRequest(new { message = exception.Message });
         }
@@ -195,6 +212,8 @@ public sealed class AuthController : ControllerBase
 
 
     [AllowAnonymous]
+    [EnableRateLimiting(ApiRateLimits.Refresh)]
+    [SensitiveOperation("refresh")]
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
     {

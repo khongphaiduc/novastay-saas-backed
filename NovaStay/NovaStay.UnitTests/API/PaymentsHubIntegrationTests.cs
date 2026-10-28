@@ -12,8 +12,10 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using NovaStay.API.Hubs;
+using NovaStay.API.Security;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
 
@@ -32,6 +34,7 @@ public sealed class PaymentsHubIntegrationTests
         builder.Services.AddSingleton<IUserIdProvider, PaymentUserIdProvider>();
         builder.Services.AddScoped<IPaymentNotifier, SignalRPaymentNotifier>();
         builder.Services.AddAuthorization();
+        builder.Services.AddSensitiveEndpointProtection(new ConfigurationBuilder().Build());
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
         {
             options.TokenValidationParameters = new()
@@ -42,8 +45,9 @@ public sealed class PaymentsHubIntegrationTests
             options.Events = new() { OnMessageReceived = PaymentHubAuthentication.ReadToken };
         });
         await using var app = builder.Build();
-        app.UseAuthentication(); app.UseAuthorization();
-        app.MapHub<PaymentsHub>("/hubs/payments");
+        app.UseRouting(); app.UseAuthentication(); app.UseRateLimiter(); app.UseAuthorization();
+        app.MapHub<PaymentsHub>("/hubs/payments", options => options.CloseOnAuthenticationExpiration = true)
+            .RequireRateLimiting(ApiRateLimits.Hub);
         app.MapGet("/private", () => "private").RequireAuthorization();
         await app.StartAsync();
         try

@@ -5,6 +5,7 @@ namespace NovaStay.Infrastructure.Models;
 
 public partial class Contract
 {
+    public virtual ICollection<ContractCoResident> CoResidents { get; set; } = new List<ContractCoResident>();
     public Guid Id { get; set; }
 
     public Guid OrganizationId { get; set; }

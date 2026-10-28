@@ -158,6 +158,10 @@ public sealed class RoomsController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
+        catch (NovaStay.Application.Common.RoomOccupancyException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     /// <summary>

@@ -504,6 +504,27 @@ namespace NovaStay.Infrastructure.Migrations
                     b.ToTable("Contracts");
                 });
 
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.ContractCoResident", b =>
+                {
+                    b.Property<Guid>("ContractId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ResidentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LeftAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ContractId", "ResidentId");
+
+                    b.HasIndex("ResidentId", "LeftAt");
+
+                    b.ToTable("ContractCoResidents");
+                });
+
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Expense", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2539,6 +2560,25 @@ namespace NovaStay.Infrastructure.Migrations
                     b.Navigation("Room");
                 });
 
+            modelBuilder.Entity("NovaStay.Infrastructure.Models.ContractCoResident", b =>
+                {
+                    b.HasOne("NovaStay.Infrastructure.Models.Contract", "Contract")
+                        .WithMany("CoResidents")
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("NovaStay.Infrastructure.Models.Resident", "Resident")
+                        .WithMany()
+                        .HasForeignKey("ResidentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Contract");
+
+                    b.Navigation("Resident");
+                });
+
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Expense", b =>
                 {
                     b.HasOne("NovaStay.Infrastructure.Models.StaffUser", "ApprovedByStaffUser")
@@ -3194,6 +3234,8 @@ namespace NovaStay.Infrastructure.Migrations
 
             modelBuilder.Entity("NovaStay.Infrastructure.Models.Contract", b =>
                 {
+                    b.Navigation("CoResidents");
+
                     b.Navigation("Invoices");
                 });
 
