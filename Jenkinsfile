@@ -32,6 +32,9 @@ pipeline {
                       --name benovastay \
                       -p 8888:8080 \
                       --env-file /opt/novastay/.env \
+                      -e Storage__LocalPath=/opt/novastay/uploads \
+                      -e Storage__PublicBaseUrl=https://nestone.io.vn/uploads \
+                      -v /opt/novastay/data/uploads:/opt/novastay/uploads \
                       --restart unless-stopped \
                       ptrungduc1011/benovastay:v1
                 '''

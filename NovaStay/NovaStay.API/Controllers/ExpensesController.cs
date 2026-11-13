@@ -1,3 +1,4 @@
+using NovaStay.API.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
@@ -8,6 +9,7 @@ namespace NovaStay.API.Controllers;
 
 [Authorize(Roles = "BusinessOwner")]
 [ApiController]
+[OwnerData]
 [Route("api/organizations/{organizationId:guid}/properties/{propertyId:guid}/expenses")]
 public sealed class ExpensesController : ControllerBase
 {

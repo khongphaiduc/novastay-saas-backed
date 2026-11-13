@@ -65,7 +65,7 @@ public sealed class BillingService(HostContext db, PaymentAccess? paymentAccess 
     public async Task<IReadOnlyList<object>> Properties(Guid ownerId, CancellationToken ct = default)
     {
         var org = await OwnerOrganization(ownerId, ct);
-        return await db.Properties.Where(x => x.OrganizationId == org).OrderBy(x => x.PropertyName)
+        return await db.Properties.Where(x => x.OrganizationId == org && x.Status != "Deleted").OrderBy(x => x.PropertyName)
             .Select(x => (object)new { x.Id, Name = x.PropertyName }).ToListAsync(ct);
     }
 
@@ -74,7 +74,7 @@ public sealed class BillingService(HostContext db, PaymentAccess? paymentAccess 
         var org = await OwnerOrganization(ownerId, ct);
         var start = ParsePeriod(period);
         var end = start.AddMonths(1).AddDays(-1);
-        if (!await db.Properties.AnyAsync(x => x.Id == propertyId && x.OrganizationId == org, ct))
+        if (!await db.Properties.AnyAsync(x => x.Id == propertyId && x.OrganizationId == org && x.Status != "Deleted", ct))
             throw new KeyNotFoundException("Không tìm thấy nhà trọ.");
         var rooms = await db.Rooms.AsNoTracking().Where(x => x.PropertyId == propertyId && !x.IsDeleted)
             .Include(x => x.Contracts).ThenInclude(x => x.Resident)
@@ -89,7 +89,14 @@ public sealed class BillingService(HostContext db, PaymentAccess? paymentAccess 
         {
             var contracts = room.Contracts.Where(x => x.OrganizationId == org && x.Status == "Active" && x.StartDate <= end && x.EndDate >= start).ToList();
             var errors = new List<string>();
-            if (contracts.Count != 1) errors.Add("Phòng cần đúng một hợp đồng có hiệu lực trong kỳ để xác định người đại diện.");
+            if (contracts.Count > 1) errors.Add("Có nhiều hợp đồng cùng hiệu lực trong kỳ. Cần kiểm tra hợp đồng để xác định người đại diện.");
+            else if (contracts.Count == 0)
+            {
+                var activeContracts = room.Contracts.Where(x => x.OrganizationId == org && x.Status == "Active").ToList();
+                errors.Add(activeContracts.Count == 0 ? "Phòng chưa có hợp đồng đang hoạt động. Hãy tạo hợp đồng và chọn người đại diện."
+                    : activeContracts.All(x => x.StartDate > end) ? "Hợp đồng chưa bắt đầu trong kỳ thu đã chọn. Kiểm tra ngày bắt đầu hoặc chọn kỳ thu phù hợp."
+                    : "Không có hợp đồng có hiệu lực trong kỳ thu đã chọn. Kiểm tra thời hạn hợp đồng.");
+            }
             var contract = contracts.Count == 1 ? contracts[0] : null;
             var lines = new List<BillingLineDto>();
             bool Already(string type, Guid id) => billed.Any(x => x.BillingRoomId == room.Id && x.SourceType == type && x.SourceId == id);
@@ -212,15 +219,21 @@ public sealed class BillingService(HostContext db, PaymentAccess? paymentAccess 
         var query = Bills().AsNoTracking().Where(x => x.OrganizationId == org);
         if (propertyId.HasValue)
         {
-            if (!await db.Properties.AnyAsync(x => x.Id == propertyId && x.OrganizationId == org, ct))
+            if (!await db.Properties.AnyAsync(x => x.Id == propertyId && x.OrganizationId == org && x.Status != "Deleted", ct))
                 throw new KeyNotFoundException("Không tìm thấy nhà trọ.");
             query = query.Where(x => x.PropertyId == propertyId);
         }
         if (!string.IsNullOrWhiteSpace(status))
         {
-            var normalized = new[] { "Unpaid", "AwaitingConfirmation", "Paid" }.FirstOrDefault(x => x.Equals(status.Trim(), StringComparison.OrdinalIgnoreCase))
-                ?? throw new ArgumentException("status must be Unpaid, AwaitingConfirmation or Paid.");
-            query = query.Where(x => x.Status == normalized);
+            // NotPaid = mọi hóa đơn chưa thanh toán (Unpaid + AwaitingConfirmation)
+            if (status.Trim().Equals("NotPaid", StringComparison.OrdinalIgnoreCase))
+                query = query.Where(x => x.Status != "Paid");
+            else
+            {
+                var normalized = new[] { "Unpaid", "AwaitingConfirmation", "Paid" }.FirstOrDefault(x => x.Equals(status.Trim(), StringComparison.OrdinalIgnoreCase))
+                    ?? throw new ArgumentException("status must be NotPaid, Unpaid, AwaitingConfirmation or Paid.");
+                query = query.Where(x => x.Status == normalized);
+            }
         }
         if (!string.IsNullOrWhiteSpace(period)) { ParsePeriod(period); query = query.Where(x => x.InvoicePeriod == period); }
         if (!string.IsNullOrWhiteSpace(search))

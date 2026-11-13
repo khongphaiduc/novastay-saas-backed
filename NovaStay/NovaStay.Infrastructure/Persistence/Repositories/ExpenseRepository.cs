@@ -26,7 +26,7 @@ internal sealed class ExpenseRepository : IExpenseRepository
         var propertyExists = await _context.Properties
             .AsNoTracking()
             .AnyAsync(
-                entity => entity.Id == propertyId && entity.OrganizationId == organizationId,
+                entity => entity.Id == propertyId && entity.OrganizationId == organizationId && entity.Status != "Deleted",
                 cancellationToken);
 
         if (!propertyExists)
@@ -92,7 +92,7 @@ internal sealed class ExpenseRepository : IExpenseRepository
         var propertyExists = await _context.Properties
             .AsNoTracking()
             .AnyAsync(
-                entity => entity.Id == propertyId && entity.OrganizationId == organizationId,
+                entity => entity.Id == propertyId && entity.OrganizationId == organizationId && entity.Status != "Deleted",
                 cancellationToken);
 
         if (!propertyExists)

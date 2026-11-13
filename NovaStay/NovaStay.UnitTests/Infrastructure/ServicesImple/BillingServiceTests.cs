@@ -30,6 +30,8 @@ public sealed partial class BillingServiceTests : IDisposable
         property = new() { Id = Guid.NewGuid(), OrganizationId = org, PropertyName = "Nhà A", Address = "Test", PropertyType = "BoardingHouse", Status = "Active" };
         room = new() { Id = Guid.NewGuid(), PropertyId = property.Id, RoomNumber = "101", BasePrice = 2500000, Status = "Occupied", RowVersion = [] };
         resident = new() { Id = Guid.NewGuid(), AccountId = residentAccount, FullName = "Người đại diện", Sex = "Other", Phone = "000" };
+        db.Accounts.Add(new Account { Id = residentAccount, AccountType = "Resident", CustomerName = "Test", Phone = "000", IsActive = true });
+        db.ResidentMemberships.Add(new ResidentMembership { Id = Guid.NewGuid(), ResidentId = resident.Id, AccountId = residentAccount, OrganizationId = org, MembershipCode = "test-primary", Status = "ACTIVE" });
         db.AddRange(property, room, resident, new Contract { Id = Guid.NewGuid(), OrganizationId = org, PropertyId = property.Id, RoomId = room.Id, ResidentId = resident.Id, StartDate = new(2026, 1, 1), EndDate = new(2027, 1, 1), Status = "Active" });
         electric = new() { Id = Guid.NewGuid(), PropertyId = property.Id, ServiceName = "Điện", DefaultPrice = 3000, Unit = "kWh", IsActive = true };
         internet = new() { Id = Guid.NewGuid(), PropertyId = property.Id, ServiceName = "Internet", DefaultPrice = 150000, Unit = "phòng/tháng", BillingCycle = "Monthly", IsActive = true };
@@ -172,6 +174,8 @@ public sealed partial class BillingServiceTests : IDisposable
         await SaveBank();
         var otherRoom = new Room { Id = Guid.NewGuid(), PropertyId = property.Id, RoomNumber = "102", BasePrice = 3000000, Status = "Occupied", RowVersion = [] };
         var otherResident = new Resident { Id = Guid.NewGuid(), AccountId = Guid.NewGuid(), FullName = "Người nộp thứ hai", Sex = "Other", Phone = "000" };
+        db.Accounts.Add(new Account { Id = otherResident.AccountId, AccountType = "Resident", CustomerName = "Other", Phone = "000", IsActive = true });
+        db.ResidentMemberships.Add(new ResidentMembership { Id = Guid.NewGuid(), ResidentId = otherResident.Id, AccountId = otherResident.AccountId, OrganizationId = org, MembershipCode = "other-primary", Status = "ACTIVE" });
         db.AddRange(otherRoom, otherResident, new Contract { Id = Guid.NewGuid(), RoomId = otherRoom.Id, PropertyId = property.Id, OrganizationId = org, ResidentId = otherResident.Id, Status = "Active", StartDate = new(2026, 1, 1), EndDate = new(2027, 1, 1) });
         await db.SaveChangesAsync();
         var invalid = Request("rent"); invalid.RoomIds.Add(Guid.NewGuid());
@@ -186,12 +190,12 @@ public sealed partial class BillingServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task AmbiguousRepresentative_BlocksIssuingInsteadOfChargingTwice()
+    public async Task AmbiguousRepresentative_IsRejectedBeforeItCanBePersisted()
     {
         await SaveBank();
         db.Contracts.Add(new Contract { Id = Guid.NewGuid(), RoomId = room.Id, PropertyId = property.Id, OrganizationId = org, ResidentId = resident.Id, Status = "Active", StartDate = new(2026, 1, 1), EndDate = new(2027, 1, 1) });
-        await db.SaveChangesAsync();
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.Issue(owner, Request("rent")));
+        await Assert.ThrowsAsync<NovaStay.Application.Common.RoomOccupancyException>(() => db.SaveChangesAsync());
+        Assert.Equal(1, await db.Contracts.AsNoTracking().CountAsync());
         Assert.Empty(db.Invoices);
     }
 

@@ -113,25 +113,33 @@ public sealed class ResidentService : IResidentService
             phone.Trim(),
             cancellationToken);
 
-
-        // fix exposed information 
-        var ResidentTemp = residents.Select(r => new ResidentDto
-        {
-            Id = r.Id,          
-            FullName = r.FullName.Value,
-            Phone = r.Phone,
-            ProfileImageUrl = "Mày xem cái gì ở đây",
-            Address = "Mày xem cái gì ở đây",
-            Email = "Mày xem cái gì ở đây",
-            IdBackImageUrl = "Mày xem cái gì ở đây",
-            IdentityCardNumber = "Mày xem cái gì ở đây",
-            IdFrontImageUrl = "Không xem được đâu cưng",
-            CreatedAt = DateTime.Now,
-            Sex = "Mày xem cái gì ở đây"
-        }).ToList();
-
-        return ResidentTemp;
+        return residents.Select(ToSearchResult).ToList();
     }
+
+    public async Task<IReadOnlyList<ResidentDto>> SearchByEmailAsync(
+        string? email,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return [];
+        }
+
+        var residents = await _unitOfWork.Residents.SearchByEmailAsync(
+            email.Trim(),
+            cancellationToken);
+
+        return residents.Select(ToSearchResult).ToList();
+    }
+
+    // Kết quả tra cứu chỉ gồm thông tin nhận diện cần cho chủ trọ mời cư dân; không trả giấy tờ hay địa chỉ
+    private static ResidentDto ToSearchResult(ResidentEntity r) => new()
+    {
+        Id = r.Id,
+        FullName = r.FullName.Value,
+        Phone = r.Phone,
+        Email = r.Email
+    };
 
     public async Task<IReadOnlyList<ResidentAccommodationDto>> GetActiveAccommodationsAsync(
         Guid accountId,
@@ -322,8 +330,94 @@ public sealed class ResidentService : IResidentService
                 Id       = img.Id,
                 ImageUrl = img.ImageUrl,
                 IsCover  = img.IsCover,
-            }).ToList() ?? []
+            }).ToList() ?? [],
+            Assets          = (await _unitOfWork.Assets.GetAssetsByRoomAsync(roomDto.Id, cancellationToken))
+                .Select(a => new RoomAssetDto
+                {
+                    Id        = a.Id,
+                    AssetName = a.AssetName,
+                    Category  = a.Category,
+                    Brand     = a.Brand,
+                    Model     = a.Model,
+                    AssetCode = a.AssetCode,
+                    PurchaseDate = a.PurchaseDate,
+                    WarrantyExpiryDate = a.WarrantyExpiryDate,
+                    LastAssignedAt = a.LastAssignedAt,
+                    Status    = a.CurrentStatus,
+                    Note      = a.CurrentNote,
+                }).ToList()
         };
+    }
+
+    // ─── Báo hỏng / gửi sự cố phòng ở ─────────────────────────────────────────
+    public async Task<MaintenanceTicketDetailDto> ReportIncidentAsync(
+        Guid accountId,
+        CreateResidentIncidentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (accountId == Guid.Empty)
+            throw new UnauthorizedAccessException("Invalid access token.");
+        if (string.IsNullOrWhiteSpace(request.Category))
+            throw new ArgumentException("Vui lòng chọn vấn đề cần hỗ trợ.");
+        if (string.IsNullOrWhiteSpace(request.Description))
+            throw new ArgumentException("Vui lòng mô tả chi tiết sự cố.");
+        // Giới hạn theo cột trong database (Category 50 ký tự, UserDescription 500 ký tự)
+        if (request.Category.Trim().Length > 50)
+            throw new ArgumentException("Vấn đề cần hỗ trợ quá dài (tối đa 50 ký tự).");
+        if (request.Description.Trim().Length > 500)
+            throw new ArgumentException("Mô tả sự cố quá dài (tối đa 500 ký tự).");
+
+        var resident = await _unitOfWork.Residents.GetByAccountIdAsync(accountId, cancellationToken)
+            ?? throw new KeyNotFoundException("Không tìm thấy hồ sơ cư dân.");
+        var membership = await _unitOfWork.ResidentMemberships.GetActiveByAccountIdAsync(accountId, cancellationToken)
+            ?? throw new InvalidOperationException("Bạn chưa thuộc tổ chức nào.");
+        var room = await GetMyRoomAsync(accountId, cancellationToken)
+            ?? throw new InvalidOperationException("Không tìm thấy phòng đang ở. Hợp đồng có thể chưa được kích hoạt.");
+
+        var now = DateTime.UtcNow;
+        var ticket = new MaintenanceTicketEntity
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = membership.OrganizationId,
+            RoomId = room.RoomId,
+            ResidentId = resident.Id,
+            Category = request.Category.Trim(),
+            UserDescription = request.Description.Trim(),
+            Status = "Pending",
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        await _unitOfWork.MaintenanceTickets.AddAsync(ticket, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new MaintenanceTicketDetailDto
+        {
+            Id = ticket.Id,
+            OrganizationId = ticket.OrganizationId,
+            RoomId = ticket.RoomId,
+            ResidentId = ticket.ResidentId,
+            Category = ticket.Category,
+            UserDescription = ticket.UserDescription,
+            Status = ticket.Status,
+            CreatedAt = ticket.CreatedAt,
+            UpdatedAt = ticket.UpdatedAt,
+            ResidentName = resident.FullName,
+            RoomNumber = room.RoomNumber
+        };
+    }
+
+    public async Task<IReadOnlyList<MaintenanceTicketDetailDto>> GetMyIncidentsAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        if (accountId == Guid.Empty)
+            throw new UnauthorizedAccessException("Invalid access token.");
+
+        var resident = await _unitOfWork.Residents.GetByAccountIdAsync(accountId, cancellationToken);
+        if (resident is null) return [];
+
+        return await _unitOfWork.MaintenanceTickets.GetByResidentIdAsync(resident.Id, cancellationToken);
     }
 
     // ─── TASK-051: Danh sách hợp đồng ─────────────────────────────────────────

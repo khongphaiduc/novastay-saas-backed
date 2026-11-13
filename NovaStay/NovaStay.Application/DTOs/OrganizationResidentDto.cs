@@ -19,4 +19,6 @@ public sealed class OrganizationResidentDto
     public string? ProfileImageUrl { get; set; }
     public bool? AccountIsActive { get; set; }
     public bool? MustSetPassword { get; set; }
+    // True when the resident is the representative or an active co-resident of an Active contract in this organization.
+    public bool HasActiveContract { get; set; }
 }

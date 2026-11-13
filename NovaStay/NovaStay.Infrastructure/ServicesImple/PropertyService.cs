@@ -18,6 +18,11 @@ public sealed class PropertyService : IPropertyService
         _mapper = mapper;
     }
 
+    private const string DeletedStatus = "Deleted";
+
+    private static bool IsDeleted(PropertyEntity property) =>
+        string.Equals(property.Status.Value, DeletedStatus, StringComparison.OrdinalIgnoreCase);
+
     public async Task<PagedResult<PropertyDto>> GetPropertiesAsync(
         Guid organizationId,
         string? search = null,
@@ -26,7 +31,9 @@ public sealed class PropertyService : IPropertyService
         int pageSize = 12,
         CancellationToken cancellationToken = default)
     {
-        var allProperties = await _unitOfWork.Properties.FindAsync(p => p.OrganizationId == organizationId, cancellationToken);
+        var allProperties = await _unitOfWork.Properties.FindAsync(
+            p => p.OrganizationId == organizationId && !IsDeleted(p),
+            cancellationToken);
 
         // In memory filtering
         var query = allProperties.AsEnumerable();
@@ -67,6 +74,11 @@ public sealed class PropertyService : IPropertyService
 
     public async Task<PropertyDto> CreatePropertyAsync(Guid organizationId, CreatePropertyRequest request, CancellationToken cancellationToken = default)
     {
+        var status = string.IsNullOrWhiteSpace(request.Status) ||
+            string.Equals(request.Status.Trim(), DeletedStatus, StringComparison.OrdinalIgnoreCase)
+            ? "Active"
+            : request.Status.Trim();
+
         var property = new PropertyEntity
         {
             Id = Guid.NewGuid(),
@@ -74,7 +86,7 @@ public sealed class PropertyService : IPropertyService
             PropertyName = new EntityName(request.PropertyName),
             Address = request.Address,
             PropertyType = new Code(request.PropertyType),
-            Status = new Status(request.Status),
+            Status = new Status(status),
             CreatedAt = DateTime.UtcNow
         };
 
@@ -120,7 +132,9 @@ public sealed class PropertyService : IPropertyService
 
     public async Task<PropertyDto> UpdatePropertyAsync(Guid organizationId, Guid propertyId, UpdatePropertyRequest request, CancellationToken cancellationToken = default)
     {
-        var properties = await _unitOfWork.Properties.FindAsync(p => p.Id == propertyId && p.OrganizationId == organizationId, cancellationToken);
+        var properties = await _unitOfWork.Properties.FindAsync(
+            p => p.Id == propertyId && p.OrganizationId == organizationId && !IsDeleted(p),
+            cancellationToken);
         var property = properties.FirstOrDefault();
 
         if (property == null)
@@ -129,7 +143,11 @@ public sealed class PropertyService : IPropertyService
         property.PropertyName = new EntityName(request.PropertyName);
         property.Address = request.Address;
         property.PropertyType = new Code(request.PropertyType);
-        property.Status = new Status(request.Status);
+        if (!string.IsNullOrWhiteSpace(request.Status) &&
+            !string.Equals(request.Status.Trim(), DeletedStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            property.Status = new Status(request.Status.Trim());
+        }
 
         _unitOfWork.Properties.Update(property);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -139,17 +157,21 @@ public sealed class PropertyService : IPropertyService
 
     public async Task DeletePropertyAsync(Guid organizationId, Guid propertyId, CancellationToken cancellationToken = default)
     {
-        var properties = await _unitOfWork.Properties.FindAsync(p => p.Id == propertyId && p.OrganizationId == organizationId, cancellationToken);
+        var properties = await _unitOfWork.Properties.FindAsync(
+            p => p.Id == propertyId && p.OrganizationId == organizationId && !IsDeleted(p),
+            cancellationToken);
         var property = properties.FirstOrDefault();
 
         if (property == null)
             throw new KeyNotFoundException($"Property with ID {propertyId} not found or does not belong to the organization.");
 
-        var rooms = await _unitOfWork.Rooms.FindAsync(r => r.PropertyId == propertyId, cancellationToken);
+        var rooms = await _unitOfWork.Rooms.FindAsync(r => r.PropertyId == propertyId && !r.IsDeleted, cancellationToken);
         if (rooms.Any())
             throw new InvalidOperationException("Không thể xóa cơ sở vì vẫn còn phòng trọ thuộc cơ sở này. Vui lòng chuyển hoặc xóa hết các phòng trước.");
 
-        _unitOfWork.Properties.Remove(property);
+        // Soft delete via Status so historical records and soft-deleted rooms keep their FK integrity.
+        property.Status = new Status(DeletedStatus);
+        _unitOfWork.Properties.Update(property);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

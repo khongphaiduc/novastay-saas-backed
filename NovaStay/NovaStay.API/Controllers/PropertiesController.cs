@@ -1,3 +1,4 @@
+using NovaStay.API.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
@@ -7,6 +8,7 @@ namespace NovaStay.API.Controllers;
 
 [Authorize]
 [ApiController]
+[OwnerData]
 [Route("api/organizations/{organizationId:guid}/properties")]
 public sealed class PropertiesController : ControllerBase
 {
@@ -55,6 +57,38 @@ public sealed class PropertiesController : ControllerBase
         }
 
         return Ok(response);
+    }
+
+    /// <summary>
+    /// Danh sách dịch vụ của cơ sở có phân trang phía server.
+    /// Query: search, pageIndex, pageSize
+    /// </summary>
+    [Authorize(Roles = "BusinessOwner,Resident")]
+    [HttpGet("{propertyId:guid}/services/paged")]
+    public async Task<ActionResult<PagedResult<PropertyServiceDto>>> GetPropertyServicesPaged(
+        Guid organizationId,
+        Guid propertyId,
+        [FromQuery] string? search = null,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _propertyCatalogService.GetPropertyServicesPagedAsync(
+                organizationId, propertyId, search, pageIndex, pageSize, cancellationToken);
+
+            if (response is null)
+            {
+                return NotFound(new { message = "Property not found in organization." });
+            }
+
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [Authorize(Roles = "BusinessOwner")]

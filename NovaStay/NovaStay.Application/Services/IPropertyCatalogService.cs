@@ -10,6 +10,14 @@ public interface IPropertyCatalogService
         string? search = null,
         CancellationToken cancellationToken = default);
 
+    Task<PagedResult<PropertyServiceDto>?> GetPropertyServicesPagedAsync(
+        Guid organizationId,
+        Guid propertyId,
+        string? search,
+        int pageIndex,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
     Task<PropertyServiceDto> CreatePropertyServiceAsync(
         Guid organizationId,
         Guid propertyId,

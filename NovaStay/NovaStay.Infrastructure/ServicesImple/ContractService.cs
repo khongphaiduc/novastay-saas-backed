@@ -32,22 +32,9 @@ public sealed class ContractService : IContractService
         int pageSize = 12,
         CancellationToken cancellationToken = default)
     {
-        var allContracts = await _unitOfWork.Contracts.GetContractsWithDetailsAsync(organizationId, search, status, residentId, cancellationToken);
-        
-        var totalCount = allContracts.Count;
-        var pagedItems = allContracts
-            .OrderByDescending(c => c.CreatedAt)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-        return new PagedResult<ContractDetailDto>
-        {
-            Items = pagedItems,
-            TotalCount = totalCount,
-            PageIndex = pageIndex,
-            PageSize = pageSize
-        };
+        if (pageIndex < 1 || pageSize < 1 || pageSize > 200 || (long)(pageIndex - 1) * pageSize > int.MaxValue)
+            throw new ArgumentException("Trang phải từ 1 và số dòng mỗi trang từ 1 đến 200.");
+        return await _unitOfWork.Contracts.GetPagedContractsAsync(organizationId, search, status, residentId, pageIndex, pageSize, cancellationToken);
     }
 
     // TASK-031: Tạo hợp đồng thuê
@@ -55,17 +42,18 @@ public sealed class ContractService : IContractService
         CreateContractRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.OrganizationId == Guid.Empty) throw new ArgumentException("OrganizationId is required.");
-        if (request.RoomId == Guid.Empty) throw new ArgumentException("RoomId is required.");
-        if (request.ResidentId == Guid.Empty) throw new ArgumentException("ResidentId is required.");
+        if (request.OrganizationId == Guid.Empty) throw new ArgumentException("Thiếu mã tổ chức.");
+        if (request.RoomId == Guid.Empty) throw new ArgumentException("Vui lòng chọn phòng.");
+        if (request.ResidentId == Guid.Empty) throw new ArgumentException("Vui lòng chọn khách thuê.");
         if (request.EndDate <= request.StartDate)
-            throw new InvalidOperationException("EndDate must be after StartDate.");
+            throw new InvalidOperationException("Ngày kết thúc phải sau ngày bắt đầu.");
+        ValidateMoney(request.DepositAmount, request.BrokerCommission, "Tiền cọc");
 
         // Kiểm tra phòng có đang Available không
         var room = await _unitOfWork.Rooms.GetByIdAsync(request.RoomId, cancellationToken)
             ?? throw new KeyNotFoundException($"Room {request.RoomId} not found.");
         if (room.Status.Value == "Occupied")
-            throw new InvalidOperationException("Room is already occupied.");
+            throw new InvalidOperationException("Phòng đã có người thuê, không thể tạo thêm hợp đồng.");
 
         var now = DateTime.UtcNow;
         var contract = new ContractEntity
@@ -105,6 +93,9 @@ public sealed class ContractService : IContractService
         var contract = await _unitOfWork.Contracts.GetByIdAsync(contractId, cancellationToken)
             ?? throw new KeyNotFoundException($"Contract {contractId} not found.");
 
+        if ((request.EndDate ?? contract.EndDate) <= (request.StartDate ?? contract.StartDate))
+            throw new ArgumentException("Ngày kết thúc phải sau ngày bắt đầu.");
+        ValidateMoney(request.DepositAmount, request.BrokerCommission, "Tiền cọc");
         if (request.StartDate.HasValue) contract.StartDate = request.StartDate.Value;
         if (request.EndDate.HasValue) contract.EndDate = request.EndDate.Value;
         if (request.DepositAmount.HasValue) contract.DepositAmount = new Money(request.DepositAmount.Value);
@@ -127,9 +118,17 @@ public sealed class ContractService : IContractService
         var contract = await _unitOfWork.Contracts.GetByIdAsync(contractId, cancellationToken)
             ?? throw new KeyNotFoundException($"Contract {contractId} not found.");
 
+        if (contract.Status.Value != "Active")
+            throw new InvalidOperationException("Chỉ được gia hạn hợp đồng đang hoạt động.");
         if (request.NewEndDate <= contract.EndDate)
-            throw new InvalidOperationException("New end date must be after current end date.");
+            throw new InvalidOperationException("Ngày kết thúc mới phải sau ngày kết thúc hiện tại.");
+        if (request.NewDepositAmount is < 0 || request.NewDepositAmount > MaxMoneyAmount)
+            throw new ArgumentException("Tiền cọc mới phải từ 0 đến giới hạn cho phép.");
 
+        var occupiedRoom = await _unitOfWork.Rooms.GetByIdAsync(contract.RoomId, cancellationToken)
+            ?? throw new KeyNotFoundException("Không tìm thấy phòng.");
+        occupiedRoom.Status = new Status("Occupied");
+        _unitOfWork.Rooms.Update(occupiedRoom);
         contract.EndDate = request.NewEndDate;
         if (request.NewDepositAmount.HasValue)
             contract.DepositAmount = new Money(request.NewDepositAmount.Value);
@@ -151,11 +150,17 @@ public sealed class ContractService : IContractService
         var contract = await _unitOfWork.Contracts.GetByIdAsync(contractId, cancellationToken)
             ?? throw new KeyNotFoundException($"Contract {contractId} not found.");
 
+        if (contract.Status.Value == "Terminated")
+            return await _unitOfWork.Contracts.GetContractDetailByIdAsync(contractId, cancellationToken)
+                ?? _mapper.Map<ContractDetailDto>(contract);
+        if (request.NewRoomStatus is not null && request.NewRoomStatus is not ("Available" or "Maintenance"))
+            throw new ArgumentException("Trạng thái phòng sau thanh lý chỉ có thể là Available hoặc Maintenance.");
+        var roomStillOccupied = await _unitOfWork.Contracts.HasOtherActiveContractForRoomAsync(contract.RoomId, contract.Id, cancellationToken);
         contract.Status = new Status("Terminated");
         _unitOfWork.Contracts.Update(contract);
 
         // Cập nhật trạng thái phòng
-        var newRoomStatus = request.NewRoomStatus ?? "Available";
+        var newRoomStatus = roomStillOccupied ? "Occupied" : request.NewRoomStatus ?? "Available";
         var room = await _unitOfWork.Rooms.GetByIdAsync(contract.RoomId, cancellationToken);
         if (room is not null)
         {
@@ -230,5 +235,15 @@ public sealed class ContractService : IContractService
             PropertyName = property.PropertyName,
             EndDate = contract.EndDate.ToDateTime(TimeOnly.MinValue)
         }, cancellationToken);
+    }
+    // decimal(18,2) trong database
+    private const decimal MaxMoneyAmount = 9_999_999_999_999_999.99m;
+
+    private static void ValidateMoney(decimal? deposit, decimal? brokerCommission, string label)
+    {
+        if (deposit is < 0 || deposit > MaxMoneyAmount)
+            throw new ArgumentException($"{label} phải từ 0 đến giới hạn cho phép.");
+        if (brokerCommission is < 0 || brokerCommission > MaxMoneyAmount)
+            throw new ArgumentException("Hoa hồng môi giới phải từ 0 đến giới hạn cho phép.");
     }
 }

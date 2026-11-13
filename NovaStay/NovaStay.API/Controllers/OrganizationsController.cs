@@ -9,6 +9,7 @@ using NovaStay.Application.Services;
 namespace NovaStay.API.Controllers;
 [Authorize(Roles = "BusinessOwner")]
 [ApiController]
+[OwnerData]
 [Route("api/organizations")]
 public sealed class OrganizationsController : ControllerBase
 {
@@ -159,7 +160,8 @@ public sealed class OrganizationsController : ControllerBase
         }
         catch (InvalidOperationException exception)
         {
-            return BadRequest(new { message = exception.Message });
+            // Vi phạm ràng buộc nghiệp vụ (còn hợp đồng hiệu lực hoặc hóa đơn chưa thanh toán)
+            return Conflict(new { message = exception.Message });
         }
     }
 }

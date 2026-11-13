@@ -11,7 +11,7 @@ public sealed class ManagementPagingService(HostContext db)
 {
     private async Task Property(Guid owner, Guid propertyId, Guid? organizationId, CancellationToken ct)
     {
-        if (!await db.Properties.AnyAsync(p => p.Id == propertyId && p.Organization.OwnerAccountId == owner &&
+        if (!await db.Properties.AnyAsync(p => p.Id == propertyId && p.Status != "Deleted" && p.Organization.OwnerAccountId == owner &&
                 (!organizationId.HasValue || p.OrganizationId == organizationId), ct))
             throw new KeyNotFoundException("Không tìm thấy nhà trọ.");
     }

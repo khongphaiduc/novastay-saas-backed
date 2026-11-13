@@ -120,6 +120,7 @@ namespace NovaStay.UnitTests.Infrastructure.ServicesImple
                 .Returns(expectedDto);
 
             // Act
+            _mockUnitOfWork.Setup(u => u.Contracts.HasOtherActiveContractForRoomAsync(roomId, contractId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
             var result = await _contractService.TerminateContractAsync(contractId, request);
 
             // Assert

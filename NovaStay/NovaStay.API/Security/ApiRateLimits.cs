@@ -11,7 +11,8 @@ public static class ApiRateLimits
 {
     public const string Login = "auth-login", Register = "auth-register", Reset = "auth-reset", Refresh = "auth-refresh",
         ChangePassword = "auth-password", PaymentLink = "payment-link", Reconcile = "payment-reconcile",
-        BankAccount = "bank-account", Notice = "send-notice", Invitation = "invitation", Hub = "payment-hub", RoomOccupancy = "room-occupancy";
+        BankAccount = "bank-account", Notice = "send-notice", Invitation = "invitation", Hub = "payment-hub", RoomOccupancy = "room-occupancy",
+        ProxyImage = "proxy-image";
 
     public static IServiceCollection AddSensitiveEndpointProtection(this IServiceCollection services, IConfiguration configuration)
     {
@@ -60,6 +61,7 @@ public static class ApiRateLimits
             Policy(BankAccount, 5, 60, true); Policy(Notice, 10, 600, true); Policy(Invitation, 20, 60, true);
             Policy(Hub, 30, 60, true);
             Policy(RoomOccupancy, 20, 60, true);
+            Policy(ProxyImage, 120, 60);
         });
         return services;
     }

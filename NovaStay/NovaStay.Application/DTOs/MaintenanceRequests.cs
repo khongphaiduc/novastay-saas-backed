@@ -10,6 +10,13 @@ public sealed class CreateMaintenanceTicketRequest
     public string UserDescription { get; set; } = string.Empty;
 }
 
+// Cư dân báo hỏng / gửi sự cố phòng ở
+public sealed class CreateResidentIncidentRequest
+{
+    public string Category { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
+
 // Enriched maintenance ticket DTO
 public sealed class MaintenanceTicketDetailDto
 {

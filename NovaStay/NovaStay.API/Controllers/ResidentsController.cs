@@ -1,3 +1,4 @@
+using NovaStay.API.Security;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,7 @@ namespace NovaStay.API.Controllers;
 
 [Authorize]
 [ApiController]
+[OwnerData]
 [Route("api/residents")]
 public sealed class ResidentsController : ControllerBase
 {
@@ -45,9 +47,13 @@ public sealed class ResidentsController : ControllerBase
     [HttpGet("search")]
     public async Task<ActionResult<IReadOnlyList<ResidentDto>>> SearchByPhone(
         [FromQuery] string? phone,
+        [FromQuery] string? email = null,
         CancellationToken cancellationToken = default)
     {
-        var residents = await _residentService.SearchByPhoneAsync(phone, cancellationToken);
+        // Ưu tiên email nếu có; nếu không thì tra cứu theo số điện thoại
+        var residents = string.IsNullOrWhiteSpace(email)
+            ? await _residentService.SearchByPhoneAsync(phone, cancellationToken)
+            : await _residentService.SearchByEmailAsync(email, cancellationToken);
 
         return Ok(residents);
     }
@@ -133,6 +139,39 @@ public sealed class ResidentsController : ControllerBase
             return NotFound(new { message = "Không tìm thấy phòng đang ở. Hợp đồng có thể chưa được kích hoạt." });
 
         return Ok(room);
+    }
+
+    // ─── Báo hỏng / gửi sự cố phòng ở ───────────────────────────────────────────
+    [Authorize(Roles = "Resident")]
+    [HttpPost("me/incidents")]
+    public async Task<ActionResult<MaintenanceTicketDetailDto>> ReportIncident(
+        [FromBody] CreateResidentIncidentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var accountIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(accountIdClaim, out var accountId))
+            return Unauthorized(new { message = "Invalid access token." });
+
+        try
+        {
+            var ticket = await _residentService.ReportIncidentAsync(accountId, request, cancellationToken);
+            return Created($"/api/residents/me/incidents/{ticket.Id}", ticket);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+    }
+
+    [Authorize(Roles = "Resident")]
+    [HttpGet("me/incidents")]
+    public async Task<ActionResult<IReadOnlyList<MaintenanceTicketDetailDto>>> GetMyIncidents(
+        CancellationToken cancellationToken = default)
+    {
+        var accountIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(accountIdClaim, out var accountId))
+            return Unauthorized(new { message = "Invalid access token." });
+
+        return Ok(await _residentService.GetMyIncidentsAsync(accountId, cancellationToken));
     }
 
     // ─── TASK-051: Danh sách hợp đồng ───────────────────────────────────────────

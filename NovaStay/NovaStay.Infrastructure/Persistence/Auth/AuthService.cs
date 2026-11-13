@@ -11,6 +11,7 @@ namespace NovaStay.Infrastructure.Persistence.Auth;
 internal sealed class AuthService : IAuthService
 {
     private const string BusinessOwnerAccountType = "BusinessOwner";
+    private const string ResidentAccountType = "Resident";
     private const string InvalidLoginMessage = "Invalid email or password.";
     private const int TemporaryPasswordLength = 12;
     private const string TemporaryPasswordCharacters = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
@@ -244,6 +245,38 @@ internal sealed class AuthService : IAuthService
             throw new InvalidOperationException("Account is inactive.");
         }
 
+        await ResetAccountPasswordAsync(account, normalizedEmail, ipAddress, cancellationToken);
+    }
+
+    // Quên mật khẩu cư dân: tìm tài khoản cư dân theo SĐT rồi cấp mật khẩu tạm gửi qua email đã đăng ký.
+    public async Task ResidentForgotPasswordAsync(string phone, string? ipAddress, CancellationToken cancellationToken = default)
+    {
+        var normalizedPhone = phone?.Trim() ?? string.Empty;
+        if (normalizedPhone.Length == 0)
+        {
+            throw new InvalidOperationException("Phone is required.");
+        }
+
+        var account = await _context.Accounts
+            .FirstOrDefaultAsync(
+                entity => entity.Phone == normalizedPhone && entity.AccountType == ResidentAccountType,
+                cancellationToken);
+
+        if (account is null || string.IsNullOrWhiteSpace(account.Email))
+        {
+            throw new KeyNotFoundException("Resident account was not found.");
+        }
+
+        if (account.IsActive == false)
+        {
+            throw new InvalidOperationException("Account is inactive.");
+        }
+
+        await ResetAccountPasswordAsync(account, account.Email.Trim().ToLowerInvariant(), ipAddress, cancellationToken);
+    }
+
+    private async Task ResetAccountPasswordAsync(Account account, string email, string? ipAddress, CancellationToken cancellationToken)
+    {
         var now = DateTime.UtcNow;
         var temporaryPassword = GenerateTemporaryPassword();
         account.PasswordHash = HashPassword(temporaryPassword);
@@ -266,7 +299,7 @@ internal sealed class AuthService : IAuthService
 
         await _rabbitMQ.Publish(new NofiticationResetPassword
         {
-            Email = normalizedEmail,
+            Email = email,
             NewPassword = temporaryPassword
         }, cancellationToken);
     }

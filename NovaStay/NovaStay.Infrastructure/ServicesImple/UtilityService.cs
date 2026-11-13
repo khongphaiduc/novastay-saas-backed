@@ -63,8 +63,11 @@ public sealed class UtilityService : IUtilityService
 
         if (!meter.IsActive)
             throw new InvalidOperationException("Đồng hồ đã ngừng hoạt động.");
-        if (meter.UtilityReadings.Any(r => r.BillingPeriod == request.BillingPeriod))
-            throw new InvalidOperationException($"Kỳ '{request.BillingPeriod}' đã được ghi nhận cho đồng hồ này.");
+        // Kỳ đã có số: đây là thao tác "Sửa số đã chốt" -> cập nhật số thay vì tạo bản ghi mới.
+        var existing = meter.UtilityReadings.FirstOrDefault(r => r.BillingPeriod == request.BillingPeriod);
+        if (existing is not null)
+            return await CorrectReadingAsync(meter, existing, request, cancellationToken);
+
         if (meter.UtilityReadings.Any(r => string.Compare(r.BillingPeriod, request.BillingPeriod, StringComparison.Ordinal) > 0))
             throw new InvalidOperationException("Không thể ghi chỉ số cho kỳ trước khi đồng hồ đã có số liệu ở kỳ sau.");
 
@@ -107,6 +110,45 @@ public sealed class UtilityService : IUtilityService
         _context.UtilityReadings.Add(reading);
         await _context.SaveChangesAsync(cancellationToken);
 
+        return MapReading(reading);
+    }
+
+    // Sửa số của kỳ đã chốt. Chỉ cho phép với kỳ gần nhất, vì sửa kỳ cũ sẽ làm sai
+    // chỉ số cũ và tiêu thụ của kỳ sau. Hóa đơn được tính từ chỉ số tại thời điểm xuất.
+    private async Task<UtilityReadingDto> CorrectReadingAsync(
+        UtilityMeter meter,
+        UtilityReading reading,
+        RecordUtilityReadingRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (meter.UtilityReadings.Any(r => string.Compare(r.BillingPeriod, reading.BillingPeriod, StringComparison.Ordinal) > 0))
+            throw new InvalidOperationException("Chỉ có thể sửa số của kỳ gần nhất. Kỳ sau đã có số liệu.");
+
+        var previousReading = meter.UtilityReadings
+            .Where(r => r.Id != reading.Id)
+            .OrderByDescending(r => r.BillingPeriod)
+            .Select(r => (decimal?)r.CurrentReading)
+            .FirstOrDefault() ?? meter.InitialReading;
+
+        if (request.CurrentReading < previousReading)
+            throw new InvalidOperationException(
+                $"Chỉ số mới ({request.CurrentReading}) không được nhỏ hơn chỉ số cũ ({previousReading}).");
+
+        var roomService = await _context.RoomServices.AsNoTracking().SingleOrDefaultAsync(
+            x => x.RoomId == meter.RoomId && x.PropertyServiceId == meter.PropertyServiceId && x.IsActive,
+            cancellationToken);
+        var unitPrice = roomService?.PriceOverride ?? meter.PropertyService.DefaultPrice;
+        if (unitPrice < 0) throw new InvalidOperationException("Đơn giá dịch vụ không được âm.");
+
+        var consumption = request.CurrentReading - previousReading;
+        reading.PreviousReading = previousReading;
+        reading.CurrentReading = request.CurrentReading;
+        reading.Consumption = consumption;
+        reading.UnitPrice = unitPrice;
+        reading.Amount = consumption * unitPrice;
+        reading.Note = request.Note;
+
+        await _context.SaveChangesAsync(cancellationToken);
         return MapReading(reading);
     }
 

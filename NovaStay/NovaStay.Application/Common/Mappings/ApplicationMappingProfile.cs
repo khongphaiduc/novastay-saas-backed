@@ -26,6 +26,7 @@ public sealed class ApplicationMappingProfile : Profile
             .ForMember(d => d.CurrentAssignmentId, opt => opt.Ignore())
             .ForMember(d => d.CurrentRoomId, opt => opt.Ignore())
             .ForMember(d => d.CurrentRoomNumber, opt => opt.Ignore())
+            .ForMember(d => d.CurrentPropertyName, opt => opt.Ignore())
             .ForMember(d => d.CurrentStatus, opt => opt.Ignore())
             .ForMember(d => d.CurrentNote, opt => opt.Ignore())
             .ForMember(d => d.LastAssignedAt, opt => opt.Ignore())
@@ -35,6 +36,8 @@ public sealed class ApplicationMappingProfile : Profile
         CreateMap<BrokerEntity, BrokerDto>().ReverseMap();
         CreateMap<ContractEntity, ContractDto>().ReverseMap();
         CreateMap<ContractEntity, ContractDetailDto>()
+            .ForMember(d => d.RoomCapacity, opt => opt.Ignore())
+            .ForMember(d => d.RoomOccupantCount, opt => opt.Ignore())
             .ForMember(d => d.ResidentName, opt => opt.Ignore())
             .ForMember(d => d.ResidentPhone, opt => opt.Ignore())
             .ForMember(d => d.RoomNumber, opt => opt.Ignore())

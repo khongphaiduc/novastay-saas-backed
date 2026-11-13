@@ -61,6 +61,18 @@ internal sealed class AssetRepository : Repository<DomainAsset, DatabaseAsset>, 
         _context = context;
     }
 
+    public Task<bool> AssetCodeExistsAsync(Guid organizationId, string assetCode, Guid? excludeAssetId, CancellationToken cancellationToken = default)
+    {
+        var code = assetCode.Trim().ToLower();
+        return _context.Assets.AsNoTracking().AnyAsync(a =>
+            a.OrganizationId == organizationId &&
+            !a.IsDeleted &&
+            a.AssetCode != null &&
+            a.AssetCode.ToLower() == code &&
+            (excludeAssetId == null || a.Id != excludeAssetId.Value),
+            cancellationToken);
+    }
+
     /// <summary>TASK-055: Lấy danh sách tài sản kèm assignment mới nhất, có thể lọc theo search/category/status</summary>
     public async Task<IReadOnlyList<AssetDto>> GetAssetsWithCurrentStatusAsync(
         Guid organizationId,
@@ -99,6 +111,7 @@ internal sealed class AssetRepository : Repository<DomainAsset, DatabaseAsset>, 
                         CurrentAssignmentId = latestAss != null ? latestAss.Id : (Guid?)null,
                         CurrentRoomId = latestAss != null ? latestAss.RoomId : null,
                         CurrentRoomNumber = assignedRoom != null ? assignedRoom.RoomNumber : null,
+                        CurrentPropertyName = assignedRoom != null ? assignedRoom.Property.PropertyName : null,
                         CurrentStatus = latestAss != null ? latestAss.Status : "Good",
                         CurrentNote = latestAss != null ? latestAss.Note : null,
                         LastAssignedAt = latestAss != null ? latestAss.AssignedAt : null
@@ -119,6 +132,83 @@ internal sealed class AssetRepository : Repository<DomainAsset, DatabaseAsset>, 
         return await query
             .OrderBy(a => a.AssetName)
             .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>Danh sách tài sản có phân trang, lọc theo search/category/status và vị trí (storage | assigned | issue)</summary>
+    public async Task<(IReadOnlyList<AssetDto> Items, int TotalCount)> GetAssetsPagedAsync(
+        Guid organizationId,
+        string? search,
+        string? category,
+        string? status,
+        string? location,
+        int pageIndex,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var offset = Pagination.Offset(pageIndex, pageSize);
+
+        var latestAssignmentIds = _context.AssetAssignments
+            .GroupBy(a => a.AssetId)
+            .Select(g => g.OrderByDescending(a => a.AssignedAt).First().Id);
+
+        var query = from asset in _context.Assets
+                    where asset.OrganizationId == organizationId && !asset.IsDeleted
+                    join aa in _context.AssetAssignments.Where(a => latestAssignmentIds.Contains(a.Id))
+                        on asset.Id equals aa.AssetId into assignments
+                    from latestAss in assignments.DefaultIfEmpty()
+                    join room in _context.Rooms
+                        on latestAss.RoomId equals room.Id into rooms
+                    from assignedRoom in rooms.DefaultIfEmpty()
+                    select new AssetDto
+                    {
+                        Id = asset.Id,
+                        OrganizationId = asset.OrganizationId,
+                        AssetName = asset.AssetName,
+                        Category = asset.Category,
+                        Brand = asset.Brand,
+                        Model = asset.Model,
+                        AssetCode = asset.AssetCode,
+                        PurchaseDate = asset.PurchaseDate,
+                        WarrantyExpiryDate = asset.WarrantyExpiryDate,
+                        BaseValue = asset.BaseValue,
+                        CreatedAt = asset.CreatedAt,
+                        IsDeleted = asset.IsDeleted,
+                        CurrentAssignmentId = latestAss != null ? latestAss.Id : (Guid?)null,
+                        CurrentRoomId = latestAss != null ? latestAss.RoomId : null,
+                        CurrentRoomNumber = assignedRoom != null ? assignedRoom.RoomNumber : null,
+                        CurrentPropertyName = assignedRoom != null ? assignedRoom.Property.PropertyName : null,
+                        CurrentStatus = latestAss != null ? latestAss.Status : "Good",
+                        CurrentNote = latestAss != null ? latestAss.Note : null,
+                        LastAssignedAt = latestAss != null ? latestAss.AssignedAt : null
+                    };
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(a =>
+                a.AssetName.Contains(search) ||
+                (a.AssetCode != null && a.AssetCode.Contains(search)) ||
+                (a.Brand != null && a.Brand.Contains(search)));
+
+        if (!string.IsNullOrWhiteSpace(category))
+            query = query.Where(a => a.Category == category);
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(a => a.CurrentStatus == status);
+
+        if (location == "storage")
+            query = query.Where(a => a.CurrentRoomId == null);
+        else if (location == "assigned")
+            query = query.Where(a => a.CurrentRoomId != null);
+        else if (location == "issue")
+            query = query.Where(a => a.CurrentStatus == "Damaged" || a.CurrentStatus == "Maintenance" || a.CurrentStatus == "Broken");
+
+        var total = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderBy(a => a.AssetName)
+            .Skip(offset)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
     }
 
     /// <summary>Task phát sinh: Lấy tài sản trong phòng</summary>
@@ -154,6 +244,7 @@ internal sealed class AssetRepository : Repository<DomainAsset, DatabaseAsset>, 
                         CurrentAssignmentId = aa.Id,
                         CurrentRoomId = aa.RoomId,
                         CurrentRoomNumber = assignedRoom != null ? assignedRoom.RoomNumber : null,
+                        CurrentPropertyName = assignedRoom != null ? assignedRoom.Property.PropertyName : null,
                         CurrentStatus = aa.Status,
                         CurrentNote = aa.Note,
                         LastAssignedAt = aa.AssignedAt
@@ -221,6 +312,7 @@ internal sealed class AssetAssignmentRepository : Repository<DomainAssetAssignme
                 AssetId = aa.AssetId,
                 RoomId = aa.RoomId,
                 RoomNumber = assignedRoom != null ? assignedRoom.RoomNumber : null,
+                PropertyName = assignedRoom != null ? assignedRoom.Property.PropertyName : null,
                 Status = aa.Status,
                 Note = aa.Note,
                 AssignedAt = aa.AssignedAt
@@ -273,6 +365,20 @@ internal sealed class ContractRepository : Repository<DomainContract, DatabaseCo
         _mapper = mapper;
     }
 
+    public async Task<ContractDetailDto?> FindActiveContractOfResidentAsync(Guid organizationId, Guid residentId, CancellationToken cancellationToken = default)
+    {
+        var contract = await _context.Contracts.AsNoTracking().Include(c => c.Room)
+            .Where(c => c.OrganizationId == organizationId && c.Status == "Active" &&
+                (c.ResidentId == residentId || c.CoResidents.Any(p => p.ResidentId == residentId && p.LeftAt == null)))
+            .OrderBy(c => c.ResidentId == residentId ? 0 : 1)
+            .ThenByDescending(c => c.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+        return contract == null ? null : MapToDetail(contract);
+    }
+
+    public Task<bool> HasOtherActiveContractForRoomAsync(Guid roomId, Guid excludeContractId, CancellationToken cancellationToken = default) =>
+        _context.Contracts.AsNoTracking().AnyAsync(c => c.RoomId == roomId && c.Id != excludeContractId && c.Status == "Active", cancellationToken);
+
     public async Task<ContractDetailDto?> FindActiveCoResidentContractAsync(Guid organizationId, Guid residentId, CancellationToken cancellationToken = default)
     {
         var contract = await _context.Contracts.AsNoTracking().Include(c => c.Room)
@@ -322,18 +428,89 @@ internal sealed class ContractRepository : Repository<DomainContract, DatabaseCo
             query = query.Where(c => c.ResidentId == residentId.Value);
 
         if (!string.IsNullOrWhiteSpace(status))
-            query = query.Where(c => c.Status == status.Trim());
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+            var soon = today.AddDays(30);
+            query = status.Trim() switch
+            {
+                "Còn hiệu lực" => query.Where(c => c.Status == "Active" && c.EndDate > soon),
+                "Sắp hết hạn" => query.Where(c => c.Status == "Active" && c.EndDate >= today && c.EndDate <= soon),
+                "Quá hạn" => query.Where(c => c.Status == "Active" && c.EndDate < today),
+                "Đã thanh lý" => query.Where(c => c.Status == "Terminated"),
+                "Active" or "Terminated" or "Renewed" or "Pending" => query.Where(c => c.Status == status.Trim()),
+                _ => throw new ArgumentException("Trạng thái hợp đồng không hợp lệ.")
+            };
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             var lower = search.Trim().ToLower();
             query = query.Where(c =>
                 c.Resident.FullName.ToLower().Contains(lower) ||
-                c.Room.RoomNumber.ToLower().Contains(lower));
+                c.Room.RoomNumber.ToLower().Contains(lower) || c.Id.ToString().Contains(lower));
         }
 
         var contracts = await query.OrderByDescending(c => c.CreatedAt).ToListAsync(cancellationToken);
         return contracts.Select(MapToDetail).ToList();
+    }
+
+    public async Task<PagedResult<ContractDetailDto>> GetPagedContractsAsync(Guid organizationId, string? search, string? status, Guid? residentId, int pageIndex, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Contracts
+            .AsNoTracking()
+            .Include(c => c.Resident)
+            .Include(c => c.Room)
+            .Where(c => c.OrganizationId == organizationId);
+
+        if (residentId.HasValue)
+            query = query.Where(c => c.ResidentId == residentId.Value);
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+            var soon = today.AddDays(30);
+            query = status.Trim() switch
+            {
+                "Còn hiệu lực" => query.Where(c => c.Status == "Active" && c.EndDate > soon),
+                "Sắp hết hạn" => query.Where(c => c.Status == "Active" && c.EndDate >= today && c.EndDate <= soon),
+                "Quá hạn" => query.Where(c => c.Status == "Active" && c.EndDate < today),
+                "Đã thanh lý" => query.Where(c => c.Status == "Terminated"),
+                "Active" or "Terminated" or "Renewed" or "Pending" => query.Where(c => c.Status == status.Trim()),
+                _ => throw new ArgumentException("Trạng thái hợp đồng không hợp lệ.")
+            };
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var lower = search.Trim().ToLower();
+            query = query.Where(c =>
+                c.Resident.FullName.ToLower().Contains(lower) ||
+                c.Room.RoomNumber.ToLower().Contains(lower) || c.Id.ToString().Contains(lower));
+        }
+
+        var count = await query.CountAsync(cancellationToken);
+        var contracts = await query.OrderByDescending(c => c.CreatedAt).ThenBy(c => c.Id).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+
+        // Số người đang ở của từng phòng trong trang: mỗi hợp đồng Active tính 1 người đại diện + người ở ghép chưa rời
+        var roomIds = contracts.Select(c => c.RoomId).Distinct().ToList();
+        var activeOccupancies = await _context.Contracts
+            .AsNoTracking()
+            .Where(c => roomIds.Contains(c.RoomId) && c.Status == "Active")
+            .Select(c => new { c.RoomId, CoResidentCount = c.CoResidents.Count(p => p.LeftAt == null) })
+            .ToListAsync(cancellationToken);
+        var occupantsByRoom = activeOccupancies
+            .GroupBy(x => x.RoomId)
+            .ToDictionary(g => g.Key, g => g.Sum(x => 1 + x.CoResidentCount));
+
+        var items = contracts.Select(c =>
+        {
+            var dto = MapToDetail(c);
+            dto.RoomCapacity = c.Room?.MaxOccupants ?? 1;
+            dto.RoomOccupantCount = occupantsByRoom.TryGetValue(c.RoomId, out var occupants) ? occupants : 0;
+            return dto;
+        }).ToList();
+
+        return new() { Items = items, TotalCount = count, PageIndex = pageIndex, PageSize = pageSize };
     }
 
     public async Task<ContractDetailDto?> GetContractDetailByIdAsync(
@@ -390,9 +567,23 @@ internal sealed class ContractRepository : Repository<DomainContract, DatabaseCo
 
 internal sealed class InvoiceRepository : Repository<DomainInvoice, DatabaseInvoice>, IInvoiceRepository
 {
+    private static readonly string[] OpenInvoiceStatuses = ["Unpaid", "AwaitingConfirmation"];
+    private readonly HostContext _context;
+
     public InvoiceRepository(HostContext context, IDatabaseModelMapper<DomainInvoice, DatabaseInvoice> mapper)
         : base(context, mapper)
     {
+        _context = context;
+    }
+
+    public async Task<(int Count, decimal Total)> GetOpenInvoiceSummaryForResidentAsync(Guid organizationId, Guid residentId, CancellationToken cancellationToken = default)
+    {
+        var amounts = await _context.Invoices.AsNoTracking()
+            .Where(i => i.OrganizationId == organizationId && i.ResidentId == residentId &&
+                i.Status != null && OpenInvoiceStatuses.Contains(i.Status))
+            .Select(i => i.TotalAmount)
+            .ToListAsync(cancellationToken);
+        return (amounts.Count, amounts.Sum());
     }
 }
 
@@ -464,6 +655,20 @@ internal sealed class MaintenanceTicketRepository : Repository<DomainMaintenance
         var tickets = await query.OrderByDescending(t => t.CreatedAt).ToListAsync(cancellationToken);
         return tickets.Select(MapToDetail).ToList();
     }
+
+    public async Task<IReadOnlyList<MaintenanceTicketDetailDto>> GetByResidentIdAsync(
+        Guid residentId,
+        CancellationToken cancellationToken = default)
+    {
+        var tickets = await _context.MaintenanceTickets
+            .AsNoTracking()
+            .Include(t => t.Resident)
+            .Include(t => t.Room)
+            .Where(t => t.ResidentId == residentId)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync(cancellationToken);
+        return tickets.Select(MapToDetail).ToList();
+    }
 }
 
 
@@ -492,6 +697,67 @@ internal sealed class PropertyServiceRepository : IPropertyServiceRepository
         _context = context;
     }
 
+    public async Task<PagedResult<PropertyServiceDto>?> GetPropertyServicesPagedAsync(
+        Guid organizationId,
+        Guid propertyId,
+        string? search,
+        int pageIndex,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var offset = Pagination.Offset(pageIndex, pageSize);
+
+        var propertyExists = await _context.Properties
+            .AsNoTracking()
+            .AnyAsync(
+                entity => entity.Id == propertyId && entity.OrganizationId == organizationId && entity.Status != "Deleted",
+                cancellationToken);
+
+        if (!propertyExists)
+        {
+            return null;
+        }
+
+        var query = _context.PropertyServices
+            .AsNoTracking()
+            .Where(service => service.PropertyId == propertyId);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(service => service.ServiceName.Contains(search));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderBy(service => service.ServiceName)
+            .Skip(offset)
+            .Take(pageSize)
+            .Select(service => new PropertyServiceDto
+            {
+                Id = service.Id,
+                PropertyId = service.PropertyId,
+                ServiceName = service.ServiceName,
+                ServiceCode = service.ServiceCode,
+                Description = service.Description,
+                DefaultPrice = service.DefaultPrice,
+                Unit = service.Unit,
+                BillingCycle = service.BillingCycle,
+                IsActive = service.IsActive,
+                CreatedAt = service.CreatedAt,
+                UpdatedAt = service.UpdatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<PropertyServiceDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
+    }
+
     public async Task<IReadOnlyList<PropertyServiceDto>?> GetPropertyServicesAsync(
         Guid organizationId,
         Guid propertyId,
@@ -501,7 +767,7 @@ internal sealed class PropertyServiceRepository : IPropertyServiceRepository
         var propertyExists = await _context.Properties
             .AsNoTracking()
             .AnyAsync(
-                entity => entity.Id == propertyId && entity.OrganizationId == organizationId,
+                entity => entity.Id == propertyId && entity.OrganizationId == organizationId && entity.Status != "Deleted",
                 cancellationToken);
 
         if (!propertyExists)
@@ -546,7 +812,7 @@ internal sealed class PropertyServiceRepository : IPropertyServiceRepository
         var propertyExists = await _context.Properties
             .AsNoTracking()
             .AnyAsync(
-                entity => entity.Id == propertyId && entity.OrganizationId == organizationId,
+                entity => entity.Id == propertyId && entity.OrganizationId == organizationId && entity.Status != "Deleted",
                 cancellationToken);
 
         if (!propertyExists)
@@ -680,6 +946,21 @@ internal sealed class ResidentRepository : Repository<DomainResident, DatabaseRe
                 cancellationToken);
 
         return resident is null ? null : _mapper.ToDomain(resident);
+    }
+
+    // Tra cứu theo email đúng bằng nhau (không phân biệt hoa thường), tránh liệt kê email theo từ khóa
+    public async Task<IReadOnlyList<DomainResident>> SearchByEmailAsync(
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = email.Trim().ToLower();
+        var residents = await _context.Residents
+            .AsNoTracking()
+            .Where(resident => resident.Email != null && resident.Email.ToLower() == normalized)
+            .OrderBy(resident => resident.FullName)
+            .ToListAsync(cancellationToken);
+
+        return residents.Select(_mapper.ToDomain).ToList();
     }
 
     public async Task<IReadOnlyList<DomainResident>> SearchByPhoneAsync(
@@ -821,7 +1102,12 @@ internal sealed class ResidentMembershipRepository : Repository<DomainResidentMe
                 IdentityCardNumber = membership.Resident.IdentityCardNumber,
                 ProfileImageUrl = membership.Resident.ProfileImageUrl,
                 AccountIsActive = membership.Account.IsActive,
-                MustSetPassword = membership.Account.MustSetPassword
+                MustSetPassword = membership.Account.MustSetPassword,
+                HasActiveContract = _context.Contracts.Any(c =>
+                    c.OrganizationId == organizationId
+                    && c.Status == "Active"
+                    && (c.ResidentId == membership.ResidentId
+                        || c.CoResidents.Any(p => p.ResidentId == membership.ResidentId && p.LeftAt == null)))
             })
             .ToListAsync(cancellationToken);
         return (data, totalRecords);
@@ -947,6 +1233,15 @@ internal sealed class RoomRepository : Repository<DomainRoom, DatabaseRoom>, IRo
         _context = context;
     }
 
+    public Task<bool> RoomNumberExistsAsync(Guid propertyId, string roomNumber, Guid? excludeRoomId, CancellationToken cancellationToken = default)
+    {
+        var number = roomNumber.Trim().ToLower();
+        return _context.Rooms.AsNoTracking().AnyAsync(
+            r => r.PropertyId == propertyId && !r.IsDeleted && r.RoomNumber.ToLower() == number
+                && (excludeRoomId == null || r.Id != excludeRoomId.Value),
+            cancellationToken);
+    }
+
     public async Task<IReadOnlyList<RoomDto>> GetRoomsWithImagesAsync(
         Guid propertyId,
         string? search = null,
@@ -998,6 +1293,58 @@ internal sealed class RoomRepository : Repository<DomainRoom, DatabaseRoom>, IRo
                     .ToList()
             })
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<PagedResult<RoomDto>> GetPagedRoomsAsync(Guid propertyId, string? search, string? status, int pageIndex, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Rooms
+            .AsNoTracking()
+            .Where(r => r.PropertyId == propertyId && !r.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var lower = search.Trim().ToLower();
+            query = query.Where(r => r.RoomNumber.ToLower().Contains(lower));
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(r => r.Status == status.Trim());
+        }
+
+        var count = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderBy(r => r.Floor)
+            .ThenBy(r => r.RoomNumber).ThenBy(r => r.Id)
+            .Skip((pageIndex - 1) * pageSize).Take(pageSize)
+            .Select(r => new RoomDto
+            {
+                Id = r.Id,
+                PropertyId = r.PropertyId,
+                RoomNumber = r.RoomNumber,
+                Floor = r.Floor,
+                BasePrice = r.BasePrice,
+                Status = r.Status,
+                MaxOccupants = r.MaxOccupants,
+                AmenitiesJson = r.AmenitiesJson,
+                RowVersion = r.RowVersion,
+                CreatedAt = r.CreatedAt,
+                IsDeleted = r.IsDeleted,
+                Images = r.RoomImages
+                    .OrderByDescending(i => i.IsCover)
+                    .ThenBy(i => i.UploadedAt)
+                    .Select(i => new RoomImageDto
+                    {
+                        Id = i.Id,
+                        RoomId = i.RoomId,
+                        ImageUrl = i.ImageUrl,
+                        IsCover = i.IsCover,
+                        UploadedAt = i.UploadedAt
+                    })
+                    .ToList()
+            })
+            .ToListAsync(cancellationToken);
+        return new() { Items = items, TotalCount = count, PageIndex = pageIndex, PageSize = pageSize };
     }
 
     public async Task<RoomDto?> GetRoomWithImagesAsync(

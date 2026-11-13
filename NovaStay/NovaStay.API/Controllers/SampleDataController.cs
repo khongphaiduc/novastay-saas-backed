@@ -6,6 +6,7 @@ using NovaStay.Application.Services;
 namespace NovaStay.API.Controllers;
 
 [ApiController]
+[Authorize(Roles = "Admin")]
 [Route("api/[controller]")]
 public class SampleDataController : ControllerBase
 {

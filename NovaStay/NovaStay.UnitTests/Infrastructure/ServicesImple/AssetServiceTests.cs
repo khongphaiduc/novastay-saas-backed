@@ -21,11 +21,14 @@ namespace NovaStay.UnitTests.Infrastructure.ServicesImple
         private readonly Mock<IMapper> _mockMapper;
         private readonly Mock<IAssetRepository> _mockAssetRepo;
         private readonly Mock<IAssetAssignmentRepository> _mockAssignmentRepo;
+        private readonly Mock<IRoomRepository> _mockRoomRepo = new();
+        private readonly Mock<IPropertyRepository> _mockPropertyRepo = new();
         private readonly AssetService _assetService;
 
         private readonly Guid _orgId = Guid.NewGuid();
         private readonly Guid _assetId = Guid.NewGuid();
         private readonly Guid _roomId = Guid.NewGuid();
+        private readonly Guid _propertyId = Guid.NewGuid();
 
         public AssetServiceTests()
         {
@@ -39,7 +42,31 @@ namespace NovaStay.UnitTests.Infrastructure.ServicesImple
             _mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1);
 
+            // Phòng thuộc cơ sở của tổ chức _orgId (mặc định)
+            _mockRoomRepo.Setup(r => r.GetByIdAsync(_roomId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new RoomEntity { Id = _roomId, PropertyId = _propertyId });
+            _mockPropertyRepo.Setup(r => r.GetByIdAsync(_propertyId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PropertyEntity { Id = _propertyId, OrganizationId = _orgId });
+            _mockUnitOfWork.Setup(u => u.Rooms).Returns(_mockRoomRepo.Object);
+            _mockUnitOfWork.Setup(u => u.Properties).Returns(_mockPropertyRepo.Object);
+
             _assetService = new AssetService(_mockUnitOfWork.Object, _mockMapper.Object);
+        }
+
+        [Fact]
+        public async Task AssignAssetToRoomAsync_WhenRoomBelongsToAnotherOrganization_ThrowsKeyNotFound()
+        {
+            var otherOrgProperty = Guid.NewGuid();
+            var otherRoom = Guid.NewGuid();
+            _mockRoomRepo.Setup(r => r.GetByIdAsync(otherRoom, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new RoomEntity { Id = otherRoom, PropertyId = otherOrgProperty });
+            _mockPropertyRepo.Setup(r => r.GetByIdAsync(otherOrgProperty, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PropertyEntity { Id = otherOrgProperty, OrganizationId = Guid.NewGuid() });
+            _mockAssetRepo.Setup(r => r.GetByIdAsync(_assetId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AssetEntity { Id = _assetId, OrganizationId = _orgId, AssetName = new EntityName("Test") });
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _assetService.AssignAssetToRoomAsync(_assetId, new AssignAssetRequest { RoomId = otherRoom }));
         }
 
         #region TASK-055: GetAssetsAsync

@@ -47,4 +47,20 @@ public sealed class ResidentsControllerTests
         Assert.Same(service.SearchResults, ok.Value);
         Assert.Equal("090", service.SearchPhone);
     }
+    [Fact]
+    public async Task SearchByEmail_UsesEmailLookupWhenProvided()
+    {
+        var service = new FakeResidentService
+        {
+            SearchResults = [new ResidentDto { Id = Guid.NewGuid(), Email = "a@example.com" }]
+        };
+        var controller = new ResidentsController(service, null);
+
+        var result = await controller.SearchByPhone(null, "a@example.com");
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Same(service.SearchResults, ok.Value);
+        Assert.Equal("a@example.com", service.SearchEmail);
+        Assert.Null(service.SearchPhone);
+    }
 }

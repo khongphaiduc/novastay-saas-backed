@@ -3,6 +3,7 @@ using NovaStay.Application.Common.Interfaces;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
 using NovaStay.Domain.Entities;
+using System.Globalization;
 using System.Security.Cryptography;
 
 namespace NovaStay.Infrastructure.ServicesImple;
@@ -100,12 +101,29 @@ public sealed class OrganizationResidentService : IOrganizationResidentService
             request.ResidentId,
             organizationId,
             cancellationToken);
-        if (existingMembership is not null)
-        {
-            throw new InvalidOperationException("Resident already has a membership with this organization.");
-        }
 
         var now = DateTime.UtcNow;
+
+        // Đã có dòng membership (đang chờ, đã xóa khỏi cơ sở, đã từ chối...): dùng lại dòng đó vì có unique index (AccountId, OrganizationId).
+        if (existingMembership is not null)
+        {
+            if (IsActiveMembership(existingMembership.Status.Value))
+            {
+                throw new InvalidOperationException("Cư dân này đã là thành viên đang hoạt động của cơ sở này.");
+            }
+
+            // Đang chờ phản hồi: gửi lại (làm mới thời gian mời). Đã xóa/đã từ chối: mời lại từ đầu.
+            existingMembership.Status = ResidentMembershipStatuses.Pending;
+            existingMembership.InvitedAt = now;
+            existingMembership.RespondedAt = null;
+            existingMembership.JoinedAt = null;
+            existingMembership.ActivatedAt = null;
+            _unitOfWork.ResidentMemberships.Update(existingMembership);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return ToResponse(existingMembership);
+        }
+
         var membership = new ResidentMembershipEntity
         {
             Id = Guid.NewGuid(),
@@ -150,12 +168,26 @@ public sealed class OrganizationResidentService : IOrganizationResidentService
             residentId,
             organizationId,
             cancellationToken);
+        var now = DateTime.UtcNow;
         if (existingMembership is not null)
         {
-            throw new InvalidOperationException("Resident already has a membership with this organization.");
+            if (IsActiveMembership(existingMembership.Status.Value))
+            {
+                throw new InvalidOperationException("Cư dân này đã là thành viên đang hoạt động của cơ sở này.");
+            }
+
+            // Đã từng xóa khỏi cơ sở hoặc từ chối: kích hoạt lại dòng cũ (không tạo dòng mới vì unique index).
+            existingMembership.Status = ResidentMembershipStatuses.Active;
+            existingMembership.InvitedAt = now;
+            existingMembership.RespondedAt = now;
+            existingMembership.JoinedAt = now;
+            existingMembership.ActivatedAt = now;
+            _unitOfWork.ResidentMemberships.Update(existingMembership);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return ToResponse(existingMembership);
         }
 
-        var now = DateTime.UtcNow;
         var membership = new ResidentMembershipEntity
         {
             Id = Guid.NewGuid(),
@@ -177,6 +209,10 @@ public sealed class OrganizationResidentService : IOrganizationResidentService
         return ToResponse(membership);
     }
 
+    private static bool IsActiveMembership(string status) =>
+        string.Equals(status, ResidentMembershipStatuses.Active, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(status, ResidentMembershipStatuses.LegacyActive, StringComparison.OrdinalIgnoreCase);
+
     public async Task RemoveResidentAsync(
         Guid organizationId,
         Guid residentId,
@@ -189,7 +225,32 @@ public sealed class OrganizationResidentService : IOrganizationResidentService
 
         if (membership is null)
         {
-            throw new KeyNotFoundException("Resident membership not found.");
+            throw new KeyNotFoundException("Không tìm thấy cư dân trong cơ sở này.");
+        }
+
+        if (string.Equals(membership.Status.Value, "INACTIVE", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new KeyNotFoundException("Cư dân này đã được xóa khỏi cơ sở.");
+        }
+
+        // Ràng buộc 1: hợp đồng đang hiệu lực (đại diện hoặc ở ghép) trong cơ sở này
+        var activeContract = await _unitOfWork.Contracts.FindActiveContractOfResidentAsync(organizationId, residentId, cancellationToken);
+        if (activeContract is not null)
+        {
+            var roomNumber = activeContract.RoomNumber ?? "không xác định";
+            var endDate = activeContract.EndDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+            throw new InvalidOperationException(activeContract.ResidentId == residentId
+                ? $"Không thể xóa cư dân này: đang là người đại diện của hợp đồng hiệu lực ở phòng {roomNumber} (kết thúc ngày {endDate}). Hãy thanh lý hoặc kết thúc hợp đồng đó trước."
+                : $"Không thể xóa cư dân này: đang ở ghép trong hợp đồng hiệu lực ở phòng {roomNumber} (kết thúc ngày {endDate}). Hãy gỡ cư dân khỏi danh sách ở ghép của hợp đồng đó trước.");
+        }
+
+        // Ràng buộc 2: hóa đơn còn nợ (chưa thanh toán hoặc đang chờ xác nhận)
+        var openInvoices = await _unitOfWork.Invoices.GetOpenInvoiceSummaryForResidentAsync(organizationId, residentId, cancellationToken);
+        if (openInvoices.Count > 0)
+        {
+            var total = openInvoices.Total.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"));
+            throw new InvalidOperationException(
+                $"Không thể xóa cư dân này: còn {openInvoices.Count} hóa đơn chưa thanh toán hoặc đang chờ xác nhận (tổng {total} đ). Hãy thu xong hoặc xác nhận các hóa đơn đó trước.");
         }
 
         membership.Status = "INACTIVE";

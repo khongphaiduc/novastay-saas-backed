@@ -24,4 +24,16 @@ public interface IMaintenanceService
     Task<MaintenanceTicketDetailDto> CreateTicketAsync(
         CreateMaintenanceTicketRequest request,
         CancellationToken cancellationToken = default);
+
+    // Chủ nhà xem phiếu sự cố / bảo trì của cơ sở
+    Task<IReadOnlyList<MaintenanceTicketDetailDto>> GetOrganizationTicketsAsync(
+        Guid organizationId,
+        string? status = null,
+        CancellationToken cancellationToken = default);
+
+    // Chủ nhà đổi trạng thái phiếu (Pending -> InProgress -> Resolved)
+    Task<MaintenanceTicketDetailDto> UpdateTicketStatusAsync(
+        Guid ticketId,
+        string status,
+        CancellationToken cancellationToken = default);
 }

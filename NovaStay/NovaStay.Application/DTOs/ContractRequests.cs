@@ -62,7 +62,10 @@ public sealed class ContractDetailDto
     public string? ResidentPhone { get; set; }
     public string? RoomNumber { get; set; }
     public decimal BasePrice { get; set; }
+    // Sức chứa tối đa của phòng và số người đang ở (người đại diện đang Active + người ở ghép chưa rời)
+    public int RoomCapacity { get; set; } = 1;
+    public int RoomOccupantCount { get; set; }
     // TASK-038: Số ngày đến khi hết hạn
-    public int DaysUntilExpiry => StartDate == default ? 0 : (int)(EndDate.ToDateTime(TimeOnly.MinValue) - DateTime.UtcNow.Date).TotalDays;
+    public int DaysUntilExpiry => StartDate == default ? 0 : (int)(EndDate.ToDateTime(TimeOnly.MinValue) - DateTime.UtcNow.AddHours(7).Date).TotalDays;
     public bool IsExpiringSoon => DaysUntilExpiry is >= 0 and <= 30;
 }

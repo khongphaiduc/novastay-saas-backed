@@ -12,6 +12,17 @@ public interface IAssetService
         string? status = null,
         CancellationToken cancellationToken = default);
 
+    // Danh sách tài sản có phân trang (server-side)
+    Task<PagedResult<AssetDto>> GetAssetsPagedAsync(
+        Guid organizationId,
+        string? search = null,
+        string? category = null,
+        string? status = null,
+        string? location = null,
+        int pageIndex = 1,
+        int pageSize = 12,
+        CancellationToken cancellationToken = default);
+
     // TASK-055 (derived): Xem tài sản trong một phòng
     Task<IReadOnlyList<AssetDto>> GetAssetsByRoomAsync(
         Guid roomId,

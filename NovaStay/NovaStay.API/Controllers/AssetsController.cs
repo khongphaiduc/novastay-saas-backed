@@ -1,3 +1,4 @@
+using NovaStay.API.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
@@ -7,6 +8,7 @@ namespace NovaStay.API.Controllers;
 
 [Authorize(Roles = "BusinessOwner")]
 [ApiController]
+[OwnerData]
 [Route("api/assets")]
 public sealed class AssetsController : ControllerBase
 {
@@ -35,6 +37,33 @@ public sealed class AssetsController : ControllerBase
             var assets = await _assetService.GetAssetsAsync(
                 organizationId, search, category, status, cancellationToken);
             return Ok(assets);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Danh sách tài sản có phân trang. Query: organizationId, pageIndex, pageSize, search, category, status,
+    /// location (storage | assigned | issue)
+    /// </summary>
+    [HttpGet("paged")]
+    public async Task<ActionResult<PagedResult<AssetDto>>> GetAssetsPaged(
+        [FromQuery] Guid organizationId,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 12,
+        [FromQuery] string? search = null,
+        [FromQuery] string? category = null,
+        [FromQuery] string? status = null,
+        [FromQuery] string? location = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await _assetService.GetAssetsPagedAsync(
+                organizationId, search, category, status, location, pageIndex, pageSize, cancellationToken);
+            return Ok(result);
         }
         catch (ArgumentException ex)
         {
@@ -100,6 +129,10 @@ public sealed class AssetsController : ControllerBase
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
         }
     }
 

@@ -1,3 +1,4 @@
+using NovaStay.API.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
@@ -10,6 +11,7 @@ namespace NovaStay.API.Controllers;
 /// </summary>
 [Authorize(Roles = "BusinessOwner")]
 [ApiController]
+[OwnerData]
 [Route("api/maintenance")]
 public sealed class MaintenanceController : ControllerBase
 {
@@ -54,12 +56,41 @@ public sealed class MaintenanceController : ControllerBase
                 cancellationToken);
             return Ok(new { status = finalStatus });
         }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
         {
-            return StatusCode(500, new { message = "Database update error", details = dbEx.InnerException?.Message ?? dbEx.Message, reqOrgId = request.OrganizationId });
+            return Conflict(new { message = "Dữ liệu vừa thay đổi. Vui lòng tải lại và thử lại." });
         }
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
         catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    /// <summary>Chủ nhà xem phiếu sự cố / bảo trì của cơ sở (lọc theo trạng thái)</summary>
+    [HttpGet("tickets")]
+    public async Task<ActionResult<IReadOnlyList<MaintenanceTicketDetailDto>>> GetTickets(
+        [FromQuery] Guid organizationId,
+        [FromQuery] string? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return Ok(await _maintenanceService.GetOrganizationTicketsAsync(organizationId, status, cancellationToken));
+        }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    /// <summary>Chủ nhà cập nhật trạng thái phiếu</summary>
+    [HttpPatch("tickets/{id:guid}/status")]
+    public async Task<ActionResult<MaintenanceTicketDetailDto>> UpdateTicketStatus(
+        Guid id,
+        [FromBody] UpdateTicketStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return Ok(await _maintenanceService.UpdateTicketStatusAsync(id, request.Status, cancellationToken));
+        }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
     }
 
     /// <summary>TASK-021: Tạo phiếu bảo trì thủ công</summary>
@@ -75,6 +106,11 @@ public sealed class MaintenanceController : ControllerBase
         }
         catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
     }
+}
+
+public sealed class UpdateTicketStatusRequest
+{
+    public string Status { get; set; } = string.Empty;
 }
 
 public sealed class MarkRoomStatusRequest

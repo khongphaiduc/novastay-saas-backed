@@ -13,4 +13,8 @@ public interface IResidentRepository : IRepository<ResidentEntity>
     Task<IReadOnlyList<ResidentEntity>> SearchByPhoneAsync(
         string phone,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ResidentEntity>> SearchByEmailAsync(
+        string email,
+        CancellationToken cancellationToken = default);
 }
