@@ -52,7 +52,7 @@ phase_a_prepare() {
 
     # Step 6: Create directories
     echo ">>> Step 6: Creating directories..."
-    sudo mkdir -p /opt/novastay/{backend,frontend,data/{sqlserver,redis,rabbitmq,minio,jenkins},env,deploy/nginx}
+    sudo mkdir -p /opt/novastay/{backend,frontend,data/{sqlserver,redis,rabbitmq,minio,jenkins,uploads},env,deploy/nginx}
     sudo chown -R $USER:$USER /opt/novastay
 
     echo ">>> [Phase A] DONE! Now copy deploy files to /opt/novastay/"

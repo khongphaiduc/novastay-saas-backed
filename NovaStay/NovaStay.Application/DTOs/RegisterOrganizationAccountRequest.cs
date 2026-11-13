@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using NovaStay.Application.Common.Validation;
 
 namespace NovaStay.Application.DTOs;
 
@@ -9,7 +10,7 @@ public sealed class RegisterOrganizationAccountRequest
     public string CustomerName { get; set; } = string.Empty;
 
     [Required]
-    [Phone]
+    [VietnamesePhone]
     [MaxLength(15)]
     public string Phone { get; set; } = string.Empty;
 

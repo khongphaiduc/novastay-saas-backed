@@ -12,6 +12,10 @@ public interface IResidentService
         string? phone,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<ResidentDto>> SearchByEmailAsync(
+        string? email,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<ResidentAccommodationDto>> GetActiveAccommodationsAsync(
         Guid accountId,
         CancellationToken cancellationToken = default);
@@ -39,6 +43,17 @@ public interface IResidentService
 
     // TASK-051: Lấy danh sách hợp đồng của cư dân
     Task<IReadOnlyList<ContractDetailDto>> GetMyContractsAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default);
+
+    // Cư dân gửi báo hỏng cho phòng đang ở
+    Task<MaintenanceTicketDetailDto> ReportIncidentAsync(
+        Guid accountId,
+        CreateResidentIncidentRequest request,
+        CancellationToken cancellationToken = default);
+
+    // Cư dân xem các sự cố đã gửi
+    Task<IReadOnlyList<MaintenanceTicketDetailDto>> GetMyIncidentsAsync(
         Guid accountId,
         CancellationToken cancellationToken = default);
 

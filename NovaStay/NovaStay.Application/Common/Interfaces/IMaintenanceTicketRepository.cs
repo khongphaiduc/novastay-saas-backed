@@ -15,4 +15,8 @@ public interface IMaintenanceTicketRepository : IRepository<MaintenanceTicketEnt
         Guid organizationId,
         string? status = null,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<MaintenanceTicketDetailDto>> GetByResidentIdAsync(
+        Guid residentId,
+        CancellationToken cancellationToken = default);
 }

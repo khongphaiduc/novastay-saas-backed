@@ -9,4 +9,6 @@ public interface IAuthService
     Task<LoginBusinessAccountResponse> LoginBusinessOwnerAsync(LoginBusinessAccountRequest request, string? ipAddress, CancellationToken cancellationToken = default);
 
     Task ResetPasswordAsync(ResetPasswordRequest request, string? ipAddress, CancellationToken cancellationToken = default);
+
+    Task ResidentForgotPasswordAsync(string phone, string? ipAddress, CancellationToken cancellationToken = default);
 }

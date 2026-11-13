@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using NovaStay.API.Security;
 using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
 using NovaStay.Application.Services;
@@ -5,7 +7,9 @@ using NovaStay.Domain.Enums;
 
 namespace NovaStay.API.Controllers;
 
+[Authorize(Roles = "BusinessOwner")]
 [ApiController]
+[OwnerData]
 [Route("api/organizations/{organizationId:guid}/properties/{propertyId:guid}/financial-transactions")]
 public sealed class FinancialTransactionsController : ControllerBase
 {

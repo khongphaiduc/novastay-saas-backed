@@ -1,3 +1,5 @@
+// TẠM TẮT: chức năng link mời. Toàn bộ controller được comment để không mở endpoint nào.
+/*
 using Microsoft.AspNetCore.RateLimiting;
 using NovaStay.API.Security;
 using System.Security.Claims;
@@ -12,6 +14,7 @@ namespace NovaStay.API.Controllers;
 /// Quản lý Invitation Links — Chủ trọ tạo link, người thuê dùng link để gia nhập
 /// </summary>
 [ApiController]
+[OwnerData]
 public sealed class InvitationLinksController : ControllerBase
 {
     private readonly IInvitationLinkService _invitationLinkService;
@@ -215,3 +218,4 @@ public sealed class InvitationLinksController : ControllerBase
         }
     }
 }
+*/

@@ -1,3 +1,4 @@
+using NovaStay.API.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NovaStay.Application.DTOs;
@@ -10,6 +11,7 @@ namespace NovaStay.API.Controllers;
 /// </summary>
 [Authorize(Roles = "BusinessOwner")]
 [ApiController]
+[OwnerData]
 [Route("api/utility-meters")]
 public sealed class UtilityMetersController : ControllerBase
 {

@@ -1,6 +1,7 @@
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NovaStay.Application.Common.Mappings;
@@ -13,6 +14,7 @@ using NovaStay.API.Hubs;
 using NovaStay.Application.Services;
 using NovaStay.Infrastructure.Payments;
 using NovaStay.API.Security;
+using NovaStay.API.Configuration;
 
 namespace NovaStay.API
 {
@@ -127,10 +129,18 @@ namespace NovaStay.API
             }
 
             builder.Services.AddControllers();
+            builder.Services.AddNovaStaySwagger();
             builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 8 * 1024);
             builder.Services.AddSingleton<IUserIdProvider, PaymentUserIdProvider>();
             builder.Services.AddScoped<IPaymentNotifier, SignalRPaymentNotifier>();
             builder.Services.AddHttpClient<IPayOsGateway, PayOsGateway>(client => client.Timeout = TimeSpan.FromSeconds(15))
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+
+            builder.Services.AddHttpClient("storage-proxy", client =>
+                {
+                    client.Timeout = TimeSpan.FromSeconds(15);
+                    client.MaxResponseContentBufferSize = 10 * 1024 * 1024;
+                })
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
             var app = builder.Build();
@@ -167,12 +177,27 @@ namespace NovaStay.API
                 app.UseHttpsRedirection();
             }
 
+            // Local dev only: production serves /uploads through Nginx (see deploy/nginx).
+            // LocalStorageService writes files to Storage:LocalPath, so expose that folder at /uploads
+            // so the URLs saved for contract PDFs and room images can be opened.
+            if (app.Environment.IsDevelopment())
+            {
+                var uploadsPath = builder.Configuration["Storage:LocalPath"] ?? "/opt/novastay/uploads";
+                Directory.CreateDirectory(uploadsPath);
+                app.UseStaticFiles(new StaticFileOptions
+                {
+                    FileProvider = new PhysicalFileProvider(uploadsPath),
+                    RequestPath = "/uploads"
+                });
+            }
+
             app.UseRouting();
             app.UseCors("AllowFrontend");
             app.UseAuthentication();
             app.UseRateLimiter();
             app.UseAuthorization();
 
+            app.UseNovaStaySwagger();
             app.MapControllers();
             app.MapHub<PaymentsHub>("/hubs/payments", options => options.CloseOnAuthenticationExpiration = true)
                 .RequireRateLimiting(ApiRateLimits.Hub);

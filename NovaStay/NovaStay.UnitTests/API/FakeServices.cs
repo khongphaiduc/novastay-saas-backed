@@ -39,6 +39,14 @@ internal sealed class FakeAuthService : IAuthService
         return Task.FromResult(LoginBusinessResponse);
     }
 
+    public string? ResidentForgotPasswordPhone { get; private set; }
+
+    public Task ResidentForgotPasswordAsync(string phone, string? ipAddress, CancellationToken cancellationToken = default)
+    {
+        ResidentForgotPasswordPhone = phone;
+        return Task.CompletedTask;
+    }
+
     public Task ResetPasswordAsync(
         ResetPasswordRequest request,
         string? ipAddress,
@@ -233,11 +241,23 @@ internal sealed class FakeOrganizationResidentService : IOrganizationResidentSer
 
 internal sealed class FakeResidentService : IResidentService
 {
+    public Task<MaintenanceTicketDetailDto> ReportIncidentAsync(
+        Guid accountId,
+        CreateResidentIncidentRequest request,
+        CancellationToken cancellationToken = default)
+        => Task.FromResult(new MaintenanceTicketDetailDto { Category = request.Category, UserDescription = request.Description, Status = "Pending" });
+
+    public Task<IReadOnlyList<MaintenanceTicketDetailDto>> GetMyIncidentsAsync(
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<MaintenanceTicketDetailDto>>([]);
+
     public CreateResidentAccountResponse CreateResponse { get; set; } = new();
     public IReadOnlyList<ResidentDto> SearchResults { get; set; } = [];
     public IReadOnlyList<ResidentAccommodationDto> Accommodations { get; set; } = [];
     public Exception? CreateException { get; set; }
     public string? SearchPhone { get; private set; }
+    public string? SearchEmail { get; private set; }
 
     public Task<CreateResidentAccountResponse> CreateResidentAccountAsync(
         CreateResidentAccountRequest request,
@@ -256,6 +276,14 @@ internal sealed class FakeResidentService : IResidentService
         CancellationToken cancellationToken = default)
     {
         SearchPhone = phone;
+        return Task.FromResult(SearchResults);
+    }
+
+    public Task<IReadOnlyList<ResidentDto>> SearchByEmailAsync(
+        string? email,
+        CancellationToken cancellationToken = default)
+    {
+        SearchEmail = email;
         return Task.FromResult(SearchResults);
     }
 
@@ -705,6 +733,27 @@ internal sealed class FakePropertyCatalogService : IPropertyCatalogService
     public PropertyServiceDto UpdateResponse { get; set; } = new();
     public KeyNotFoundException? UpdateException { get; set; }
     public ArgumentException? UpdateArgumentException { get; set; }
+
+    public Task<PagedResult<PropertyServiceDto>?> GetPropertyServicesPagedAsync(
+        Guid organizationId,
+        Guid propertyId,
+        string? search,
+        int pageIndex,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        OrganizationId = organizationId;
+        PropertyId = propertyId;
+        Search = search;
+        var items = Services ?? Array.Empty<PropertyServiceDto>();
+        return Task.FromResult<PagedResult<PropertyServiceDto>?>(new PagedResult<PropertyServiceDto>
+        {
+            Items = items,
+            TotalCount = items.Count,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        });
+    }
 
     public Task<IReadOnlyList<PropertyServiceDto>?> GetPropertyServicesAsync(
         Guid organizationId,

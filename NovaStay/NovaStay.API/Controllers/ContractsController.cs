@@ -13,6 +13,7 @@ namespace NovaStay.API.Controllers;
 /// </summary>
 [Authorize(Roles = "BusinessOwner")]
 [ApiController]
+[OwnerData]
 [Route("api/contracts")]
 public sealed class ContractsController : ControllerBase
 {
@@ -60,6 +61,7 @@ public sealed class ContractsController : ControllerBase
             return Created($"/api/contracts/{contract.Id}", contract);
         }
         catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+        catch (NovaStay.Application.Common.RoomOccupancyException ex) { return Conflict(new { message = ex.Message }); }
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
         catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
     }
@@ -76,6 +78,7 @@ public sealed class ContractsController : ControllerBase
             var contract = await _contractService.UpdateContractAsync(id, request, cancellationToken);
             return Ok(contract);
         }
+        catch (NovaStay.Application.Common.RoomOccupancyException ex) { return Conflict(new { message = ex.Message }); }
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
     }
 
@@ -91,6 +94,7 @@ public sealed class ContractsController : ControllerBase
             var contract = await _contractService.RenewContractAsync(id, request, cancellationToken);
             return Ok(contract);
         }
+        catch (NovaStay.Application.Common.RoomOccupancyException ex) { return Conflict(new { message = ex.Message }); }
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
         catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
     }
@@ -107,6 +111,8 @@ public sealed class ContractsController : ControllerBase
             var contract = await _contractService.TerminateContractAsync(id, request, cancellationToken);
             return Ok(contract);
         }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+        catch (NovaStay.Application.Common.RoomOccupancyException ex) { return Conflict(new { message = ex.Message }); }
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
     }
 
@@ -127,6 +133,7 @@ public sealed class ContractsController : ControllerBase
             var contract = await _contractService.UploadContractPdfAsync(id, pdfUrl, cancellationToken);
             return Ok(contract);
         }
+        catch (NovaStay.Application.Common.RoomOccupancyException ex) { return Conflict(new { message = ex.Message }); }
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
     }
 
@@ -158,6 +165,7 @@ public sealed class ContractsController : ControllerBase
             await _contractService.SendRenewalNotificationAsync(id, cancellationToken);
             return NoContent();
         }
+        catch (NovaStay.Application.Common.RoomOccupancyException ex) { return Conflict(new { message = ex.Message }); }
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }

@@ -8,6 +8,12 @@ public sealed class SafeApiExceptionHandler(ILogger<SafeApiExceptionHandler> log
     public async ValueTask<bool> TryHandleAsync(HttpContext context, Exception error, CancellationToken ct)
     {
         if (error is OperationCanceledException && context.RequestAborted.IsCancellationRequested) return true;
+        if (error is NovaStay.Application.Common.RoomOccupancyException || error is ArgumentException)
+        {
+            context.Response.StatusCode = error is ArgumentException ? 400 : 409;
+            await context.Response.WriteAsJsonAsync(new { message = error.Message }, ct);
+            return true;
+        }
         logger.LogError(error, "Request failed. TraceId={TraceId}", context.TraceIdentifier);
         context.Response.StatusCode = error is DbUpdateException ? 409 : 500;
         await context.Response.WriteAsJsonAsync(new

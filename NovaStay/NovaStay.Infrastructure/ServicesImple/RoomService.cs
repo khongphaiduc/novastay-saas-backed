@@ -35,21 +35,9 @@ public sealed class RoomService : IRoomService
         if (propertyId == Guid.Empty)
             throw new ArgumentException("propertyId là bắt buộc.");
 
-        var allRooms = await _unitOfWork.Rooms.GetRoomsWithImagesAsync(propertyId, search, status, cancellationToken);
-        
-        var totalCount = allRooms.Count;
-        var pagedItems = allRooms
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-        return new PagedResult<RoomDto>
-        {
-            Items = pagedItems,
-            TotalCount = totalCount,
-            PageIndex = pageIndex,
-            PageSize = pageSize
-        };
+        if (pageIndex < 1 || pageSize < 1 || pageSize > 200 || (long)(pageIndex - 1) * pageSize > int.MaxValue)
+            throw new ArgumentException("Trang phải từ 1 và số dòng mỗi trang từ 1 đến 200.");
+        return await _unitOfWork.Rooms.GetPagedRoomsAsync(propertyId, search, status, pageIndex, pageSize, cancellationToken);
     }
 
     // TASK-014: Thêm phòng mới
@@ -57,11 +45,16 @@ public sealed class RoomService : IRoomService
         CreateRoomRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (request.PropertyId == Guid.Empty)
+            throw new ArgumentException("propertyId là bắt buộc.");
+        ValidateRoomFields(request.RoomNumber, request.BasePrice, request.MaxOccupants);
+        await EnsureRoomNumberAvailableAsync(request.PropertyId, request.RoomNumber, null, cancellationToken);
+
         var room = new RoomEntity
         {
             Id = Guid.NewGuid(),
             PropertyId = request.PropertyId,
-            RoomNumber = new Code(request.RoomNumber),
+            RoomNumber = new Code(request.RoomNumber.Trim()),
             Floor = request.Floor,
             BasePrice = new Money(request.BasePrice),
             Status = new Status(request.Status),
@@ -86,7 +79,10 @@ public sealed class RoomService : IRoomService
         var room = await _unitOfWork.Rooms.GetByIdAsync(roomId, cancellationToken)
             ?? throw new KeyNotFoundException($"Room {roomId} không tìm thấy.");
 
-        room.RoomNumber = new Code(request.RoomNumber);
+        ValidateRoomFields(request.RoomNumber, request.BasePrice, request.MaxOccupants);
+        await EnsureRoomNumberAvailableAsync(room.PropertyId, request.RoomNumber, roomId, cancellationToken);
+
+        room.RoomNumber = new Code(request.RoomNumber.Trim());
         room.Floor = request.Floor;
         room.BasePrice = new Money(request.BasePrice);
         room.Status = new Status(request.Status);
@@ -177,6 +173,8 @@ public sealed class RoomService : IRoomService
         var room = await _unitOfWork.Rooms.GetByIdAsync(roomId, cancellationToken)
             ?? throw new KeyNotFoundException($"Room {roomId} không tìm thấy.");
 
+        if (request.BasePrice < 0 || request.BasePrice > MaxRoomBasePrice)
+            throw new ArgumentException("Giá thuê phòng phải từ 0 đến giới hạn cho phép.");
         room.BasePrice = new Money(request.BasePrice);
 
         _unitOfWork.Rooms.Update(room);
@@ -195,6 +193,8 @@ public sealed class RoomService : IRoomService
         var room = await _unitOfWork.Rooms.GetByIdAsync(roomId, cancellationToken)
             ?? throw new KeyNotFoundException($"Room {roomId} không tìm thấy.");
 
+        if (request.MaxOccupants < 1)
+            throw new ArgumentException("Sức chứa tối đa của phòng phải từ 1 người trở lên.");
         room.MaxOccupants = request.MaxOccupants;
 
         _unitOfWork.Rooms.Update(room);
@@ -236,5 +236,26 @@ public sealed class RoomService : IRoomService
 
         _unitOfWork.RoomImages.Remove(image);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+    // Giới hạn theo cột database: RoomNumber tối đa 20 ký tự, BasePrice decimal(18,2)
+    private const decimal MaxRoomBasePrice = 9_999_999_999_999_999.99m;
+
+    private static void ValidateRoomFields(string? roomNumber, decimal basePrice, int? maxOccupants)
+    {
+        var number = roomNumber?.Trim();
+        if (string.IsNullOrWhiteSpace(number))
+            throw new ArgumentException("Số phòng là bắt buộc.");
+        if (number.Length > 20)
+            throw new ArgumentException("Số phòng không được vượt quá 20 ký tự.");
+        if (basePrice < 0 || basePrice > MaxRoomBasePrice)
+            throw new ArgumentException("Giá thuê phòng phải từ 0 đến giới hạn cho phép.");
+        if (maxOccupants is < 1)
+            throw new ArgumentException("Sức chứa tối đa của phòng phải từ 1 người trở lên.");
+    }
+
+    private async Task EnsureRoomNumberAvailableAsync(Guid propertyId, string roomNumber, Guid? excludeRoomId, CancellationToken cancellationToken)
+    {
+        if (await _unitOfWork.Rooms.RoomNumberExistsAsync(propertyId, roomNumber, excludeRoomId, cancellationToken))
+            throw new InvalidOperationException($"Cơ sở đã có phòng số {roomNumber.Trim()}.");
     }
 }

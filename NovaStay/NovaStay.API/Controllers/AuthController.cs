@@ -102,6 +102,32 @@ public sealed class AuthController : ControllerBase
         }
     }
 
+    // Quên mật khẩu cư dân: luôn trả 202 chung chung để không lộ SĐT nào đã đăng ký.
+    [AllowAnonymous]
+    [EnableRateLimiting(ApiRateLimits.Reset)]
+    [SensitiveOperation("reset")]
+    [HttpPost("resident/forgot-password")]
+    public async Task<IActionResult> ResidentForgotPassword([FromBody] ResidentForgotPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        const string genericMessage = "Nếu số điện thoại phù hợp tồn tại, mật khẩu tạm thời sẽ được gửi tới email đã đăng ký.";
+        try
+        {
+            await _authService.ResidentForgotPasswordAsync(
+                request.Sdt,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                cancellationToken);
+        }
+        catch (KeyNotFoundException)
+        {
+            // Không tiết lộ tài khoản có tồn tại hay không
+        }
+        catch (InvalidOperationException exception) when (exception.Message == "Account is inactive.")
+        {
+            // Tài khoản bị khóa: trả lời chung chung như trường hợp không tồn tại
+        }
+        return Accepted(new { message = genericMessage });
+    }
+
     [EnableRateLimiting(ApiRateLimits.Login)]
     [SensitiveOperation("login")]
     [HttpPost("resident/login")]

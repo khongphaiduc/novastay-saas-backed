@@ -1,3 +1,5 @@
+using NovaStay.Application.Common.Validation;
+
 namespace NovaStay.Application.DTOs;
 
 /// <summary>
@@ -6,6 +8,7 @@ namespace NovaStay.Application.DTOs;
 public sealed class UpdateMyProfileRequest
 {
     public string FullName { get; set; } = string.Empty;
+    [VietnamesePhone]
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string? Address { get; set; }

@@ -24,7 +24,7 @@ internal sealed class IncomeReceiptRepository : IIncomeReceiptRepository
         return _context.Properties
             .AsNoTracking()
             .AnyAsync(
-                entity => entity.Id == propertyId && entity.OrganizationId == organizationId,
+                entity => entity.Id == propertyId && entity.OrganizationId == organizationId && entity.Status != "Deleted",
                 cancellationToken);
     }
 

@@ -75,8 +75,9 @@ public sealed class MaintenanceService : IMaintenanceService
         else if (previousStatus == "Maintenance" && (newStatus == "Available" || newStatus == "Occupied"))
         {
             // Resolve the pending ticket
+            // Chỉ đóng phiếu bảo trì do chủ nhà tạo, không đóng nhầm phiếu sự cố của cư dân
             var pendingTickets = await _unitOfWork.MaintenanceTickets.FindAsync(
-                t => t.RoomId == roomId && t.Status == "Pending", cancellationToken);
+                t => t.RoomId == roomId && t.Status == "Pending" && t.Category == "Maintenance", cancellationToken);
             
             var ticket = pendingTickets.OrderByDescending(t => t.CreatedAt).FirstOrDefault();
             if (ticket != null)
@@ -118,6 +119,36 @@ public sealed class MaintenanceService : IMaintenanceService
         };
 
         await _unitOfWork.MaintenanceTickets.AddAsync(ticket, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return _mapper.Map<MaintenanceTicketDetailDto>(ticket);
+    }
+
+    private static readonly string[] OwnerTicketStatuses = ["Pending", "InProgress", "Resolved"];
+
+    public async Task<IReadOnlyList<MaintenanceTicketDetailDto>> GetOrganizationTicketsAsync(
+        Guid organizationId,
+        string? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (organizationId == Guid.Empty) throw new ArgumentException("organizationId is required.");
+        return await _unitOfWork.MaintenanceTickets.GetByOrganizationIdAsync(organizationId, status, cancellationToken);
+    }
+
+    public async Task<MaintenanceTicketDetailDto> UpdateTicketStatusAsync(
+        Guid ticketId,
+        string status,
+        CancellationToken cancellationToken = default)
+    {
+        if (!OwnerTicketStatuses.Contains(status))
+            throw new ArgumentException($"Trạng thái không hợp lệ. Cho phép: {string.Join(", ", OwnerTicketStatuses)}.");
+
+        var ticket = await _unitOfWork.MaintenanceTickets.GetByIdAsync(ticketId, cancellationToken)
+            ?? throw new KeyNotFoundException("Không tìm thấy phiếu.");
+
+        ticket.Status = status;
+        ticket.UpdatedAt = DateTime.UtcNow;
+        _unitOfWork.MaintenanceTickets.Update(ticket);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return _mapper.Map<MaintenanceTicketDetailDto>(ticket);

@@ -20,6 +20,7 @@ public sealed class AssetDto
     public Guid? CurrentAssignmentId { get; set; }
     public Guid? CurrentRoomId { get; set; }
     public string? CurrentRoomNumber { get; set; }
+    public string? CurrentPropertyName { get; set; }
     public string? CurrentStatus { get; set; }
     public string? CurrentNote { get; set; }
     public DateTime? LastAssignedAt { get; set; }
@@ -32,6 +33,7 @@ public sealed class AssetHistoryDto
     public Guid AssetId { get; set; }
     public Guid? RoomId { get; set; }
     public string? RoomNumber { get; set; }
+    public string? PropertyName { get; set; }
     public string? Status { get; set; }
     public string? Note { get; set; }
     public DateTime? AssignedAt { get; set; }

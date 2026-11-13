@@ -44,26 +44,52 @@ public sealed class AssetService : IAssetService
         return await _unitOfWork.Assets.GetAssetsByRoomAsync(roomId, cancellationToken);
     }
 
+    public async Task<PagedResult<AssetDto>> GetAssetsPagedAsync(
+        Guid organizationId,
+        string? search = null,
+        string? category = null,
+        string? status = null,
+        string? location = null,
+        int pageIndex = 1,
+        int pageSize = 12,
+        CancellationToken cancellationToken = default)
+    {
+        if (organizationId == Guid.Empty)
+            throw new ArgumentException("organizationId là bắt buộc.");
+
+        var (items, total) = await _unitOfWork.Assets.GetAssetsPagedAsync(
+            organizationId, search, category, status, location, pageIndex, pageSize, cancellationToken);
+
+        return new PagedResult<AssetDto>
+        {
+            Items = items,
+            TotalCount = total,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
+    }
+
     // TASK-056: Thêm tài sản mới
     public async Task<AssetDto> CreateAssetAsync(
         CreateAssetRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.AssetName))
-            throw new ArgumentException("Tên tài sản là bắt buộc.");
-
         if (request.OrganizationId == Guid.Empty)
             throw new ArgumentException("organizationId là bắt buộc.");
+
+        ValidateAssetFields(request.AssetName, request.Category, request.Brand, request.Model, request.AssetCode, request.BaseValue);
+        ValidateWarranty(request.PurchaseDate, request.WarrantyExpiryDate);
+        await EnsureAssetCodeAvailableAsync(request.OrganizationId, request.AssetCode, null, cancellationToken);
 
         var asset = new AssetEntity
         {
             Id = Guid.NewGuid(),
             OrganizationId = request.OrganizationId,
-            AssetName = new EntityName(request.AssetName),
-            Category = request.Category,
-            Brand = request.Brand,
-            Model = request.Model,
-            AssetCode = request.AssetCode,
+            AssetName = new EntityName(request.AssetName.Trim()),
+            Category = CleanOptional(request.Category),
+            Brand = CleanOptional(request.Brand),
+            Model = CleanOptional(request.Model),
+            AssetCode = CleanOptional(request.AssetCode),
             PurchaseDate = request.PurchaseDate,
             WarrantyExpiryDate = request.WarrantyExpiryDate,
             BaseValue = request.BaseValue,
@@ -133,14 +159,15 @@ public sealed class AssetService : IAssetService
         if (asset.IsDeleted)
             throw new InvalidOperationException("Không thể cập nhật tài sản đã bị xóa.");
 
-        if (string.IsNullOrWhiteSpace(request.AssetName))
-            throw new ArgumentException("Tên tài sản là bắt buộc.");
+        ValidateAssetFields(request.AssetName, request.Category, request.Brand, request.Model, request.AssetCode, request.BaseValue);
+        ValidateWarranty(request.PurchaseDate, request.WarrantyExpiryDate);
+        await EnsureAssetCodeAvailableAsync(asset.OrganizationId, request.AssetCode, assetId, cancellationToken);
 
-        asset.AssetName = new EntityName(request.AssetName);
-        asset.Category = request.Category;
-        asset.Brand = request.Brand;
-        asset.Model = request.Model;
-        asset.AssetCode = request.AssetCode;
+        asset.AssetName = new EntityName(request.AssetName.Trim());
+        asset.Category = CleanOptional(request.Category);
+        asset.Brand = CleanOptional(request.Brand);
+        asset.Model = CleanOptional(request.Model);
+        asset.AssetCode = CleanOptional(request.AssetCode);
         asset.PurchaseDate = request.PurchaseDate;
         asset.WarrantyExpiryDate = request.WarrantyExpiryDate;
         asset.BaseValue = request.BaseValue;
@@ -167,6 +194,13 @@ public sealed class AssetService : IAssetService
 
         if (asset.IsDeleted)
             throw new InvalidOperationException("Không thể gán tài sản đã bị xóa.");
+
+        // Phòng phải tồn tại và thuộc cùng tổ chức với tài sản
+        var room = await _unitOfWork.Rooms.GetByIdAsync(request.RoomId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Không tìm thấy phòng Id={request.RoomId}.");
+        var property = await _unitOfWork.Properties.GetByIdAsync(room.PropertyId, cancellationToken);
+        if (property is null || property.OrganizationId != asset.OrganizationId)
+            throw new KeyNotFoundException("Phòng không thuộc tổ chức của tài sản.");
 
         // Kiểm tra tài sản đã gán phòng khác chưa
         var latestAssignment = await _unitOfWork.AssetAssignments
@@ -298,5 +332,48 @@ public sealed class AssetService : IAssetService
             throw new ArgumentException("organizationId là bắt buộc.");
 
         return await _unitOfWork.Assets.GetStatisticsAsync(organizationId, cancellationToken);
+    }
+
+    // Hạn bảo hành không được trước ngày mua/nhập kho.
+    private static void ValidateWarranty(DateOnly? purchaseDate, DateOnly? warrantyExpiryDate)
+    {
+        if (purchaseDate.HasValue && warrantyExpiryDate.HasValue && warrantyExpiryDate.Value < purchaseDate.Value)
+            throw new ArgumentException("Hạn bảo hành không được trước ngày mua nhập kho.");
+    }
+
+    // Mã tài sản là duy nhất trong mỗi cơ sở (bỏ qua mã trống)
+    private async Task EnsureAssetCodeAvailableAsync(Guid organizationId, string? assetCode, Guid? excludeAssetId, CancellationToken cancellationToken)
+    {
+        var code = CleanOptional(assetCode);
+        if (code is null) return;
+
+        if (await _unitOfWork.Assets.AssetCodeExistsAsync(organizationId, code, excludeAssetId, cancellationToken))
+            throw new InvalidOperationException($"Mã tài sản \"{code}\" đã tồn tại trong cơ sở này.");
+    }
+
+    // Giới hạn theo cột database: AssetName 100, Category/Brand/Model/AssetCode 50, BaseValue decimal(18,2)
+    private const decimal MaxAssetBaseValue = 9_999_999_999_999_999.99m;
+
+    private static string? CleanOptional(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static void ValidateAssetFields(string? assetName, string? category, string? brand, string? model, string? assetCode, decimal? baseValue)
+    {
+        var name = assetName?.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Tên tài sản là bắt buộc.");
+        if (name.Length > 100)
+            throw new ArgumentException("Tên tài sản không được vượt quá 100 ký tự.");
+        if (CleanOptional(category)?.Length > 50)
+            throw new ArgumentException("Danh mục không được vượt quá 50 ký tự.");
+        if (CleanOptional(brand)?.Length > 50)
+            throw new ArgumentException("Thương hiệu không được vượt quá 50 ký tự.");
+        if (CleanOptional(model)?.Length > 50)
+            throw new ArgumentException("Model không được vượt quá 50 ký tự.");
+        if (CleanOptional(assetCode)?.Length > 50)
+            throw new ArgumentException("Mã tài sản không được vượt quá 50 ký tự.");
+        if (baseValue is < 0)
+            throw new ArgumentException("Giá trị tài sản không được âm.");
+        if (baseValue > MaxAssetBaseValue)
+            throw new ArgumentException("Giá trị tài sản vượt quá giới hạn cho phép.");
     }
 }

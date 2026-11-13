@@ -26,6 +26,23 @@ public sealed class PropertyCatalogService : IPropertyCatalogService
             cancellationToken);
     }
 
+    public Task<PagedResult<PropertyServiceDto>?> GetPropertyServicesPagedAsync(
+        Guid organizationId,
+        Guid propertyId,
+        string? search,
+        int pageIndex,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        return _propertyServiceRepository.GetPropertyServicesPagedAsync(
+            organizationId,
+            propertyId,
+            string.IsNullOrWhiteSpace(search) ? null : search.Trim(),
+            pageIndex,
+            pageSize,
+            cancellationToken);
+    }
+
     public Task<PropertyServiceDto> CreatePropertyServiceAsync(
         Guid organizationId,
         Guid propertyId,

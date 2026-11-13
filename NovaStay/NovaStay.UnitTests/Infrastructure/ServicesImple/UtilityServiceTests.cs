@@ -125,12 +125,35 @@ public sealed class UtilityServiceTests : IDisposable
         await _service.RecordReadingAsync(meter.Id, new() { BillingPeriod = "2026-10", CurrentReading = 150 });
         foreach (var request in new[]
         {
-            new RecordUtilityReadingRequest { BillingPeriod = "2026-10", CurrentReading = 160 },
             new RecordUtilityReadingRequest { BillingPeriod = "2026-11", CurrentReading = 140 },
             new RecordUtilityReadingRequest { BillingPeriod = "2026-09", CurrentReading = 160 }
         })
             await Assert.ThrowsAsync<InvalidOperationException>(() => _service.RecordReadingAsync(meter.Id, request));
         Assert.Equal(1, await _context.UtilityReadings.CountAsync());
+    }
+
+    [Fact]
+    public async Task RecordReading_CorrectsLatestPeriodInsteadOfDuplicating()
+    {
+        var meter = await _service.CreateMeterAsync(MeterRequest());
+        await _service.RecordReadingAsync(meter.Id, new() { BillingPeriod = "2026-10", CurrentReading = 150 });
+
+        var corrected = await _service.RecordReadingAsync(meter.Id, new() { BillingPeriod = "2026-10", CurrentReading = 160 });
+
+        Assert.Equal(1, await _context.UtilityReadings.CountAsync());
+        Assert.Equal(160m, corrected.CurrentReading);
+        Assert.Equal(corrected.CurrentReading - corrected.PreviousReading, corrected.Consumption);
+    }
+
+    [Fact]
+    public async Task RecordReading_RejectsCorrectingPeriodWhenLaterPeriodExists()
+    {
+        var meter = await _service.CreateMeterAsync(MeterRequest());
+        await _service.RecordReadingAsync(meter.Id, new() { BillingPeriod = "2026-10", CurrentReading = 150 });
+        await _service.RecordReadingAsync(meter.Id, new() { BillingPeriod = "2026-11", CurrentReading = 170 });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.RecordReadingAsync(meter.Id,
+            new() { BillingPeriod = "2026-10", CurrentReading = 155 }));
     }
 
     [Fact]
